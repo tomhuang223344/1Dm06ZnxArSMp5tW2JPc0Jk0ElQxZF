@@ -205,7 +205,7 @@
             border-collapse: collapse;
             border-spacing: 0;
             font-size: 0.9rem;
-            table-layout: auto; /* 改為自動佈局以實現欄寬自動調整 */
+            table-layout: auto;
         }
         
         th {
@@ -267,16 +267,15 @@
             text-align: center;
         }
         
-        /* 其他欄位 - 移除固定寬度，讓欄寬自動調整 */
+        /* 其他欄位 */
         th:not(:first-child):not(:nth-child(2)),
         td:not(:first-child):not(:nth-child(2)) {
             padding: 8px 12px;
             overflow: hidden;
             text-overflow: ellipsis;
             text-align: center;
-            /* 移除固定寬度，讓欄寬根據內容自動調整 */
-            min-width: 100px; /* 設置最小寬度 */
-            max-width: 300px; /* 設置最大寬度 */
+            min-width: 100px;
+            max-width: 300px;
         }
         
         /* 斑馬紋效果 */
@@ -312,7 +311,7 @@
             accent-color: #4b6cb7;
         }
         
-        /* 改進表頭樣式以確保排序箭頭有足夠空間 */
+        /* 排序样式 */
         th.sortable {
             cursor: pointer;
             transition: background-color 0.3s;
@@ -335,7 +334,6 @@
             padding: 2px 0;
         }
         
-        /* 調整排序圖標大小和間距 */
         .sort-icons {
             display: flex;
             flex-direction: column;
@@ -343,7 +341,6 @@
             margin-left: 4px;
         }
         
-        /* 三角形排序图标 */
         .sort-icon {
             width: 0;
             height: 0;
@@ -603,28 +600,6 @@
             font-size: 0.85rem;
         }
 
-        /* 欄寬調整控制按鈕 */
-        .column-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .column-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .column-btn:hover {
-            background: #5a6268;
-        }
-
         @media (max-width: 768px) {
             h1 {
                 font-size: 1.8rem;
@@ -876,14 +851,6 @@
             <div class="filter-actions">
                 <button class="filter-btn apply" id="applyFilter">套用篩選</button>
                 <button class="filter-btn" id="clearFilter">清除篩選</button>
-                <button class="filter-btn" id="selectAllFilter">全選</button>
-                <button class="filter-btn" id="deselectAllFilter">取消全選</button>
-            </div>
-            
-            <!-- 欄寬控制按鈕 -->
-            <div class="column-controls">
-                <button class="column-btn" id="autoResizeColumns">自動調整欄寬</button>
-                <button class="column-btn" id="resetColumnWidths">重置欄寬</button>
             </div>
         </div>
         
@@ -908,8 +875,6 @@
             const localFileBtn = document.getElementById('localFileBtn');
             const selectionInfo = document.getElementById('selectionInfo');
             const filterToggleBtn = document.getElementById('filterToggleBtn');
-            const autoResizeColumnsBtn = document.getElementById('autoResizeColumns');
-            const resetColumnWidthsBtn = document.getElementById('resetColumnWidths');
             
             // 篩選相關元素
             const filterPanel = document.getElementById('filterPanel');
@@ -921,8 +886,6 @@
             const mgpNoData = document.getElementById('mgpNoData');
             const applyFilterBtn = document.getElementById('applyFilter');
             const clearFilterBtn = document.getElementById('clearFilter');
-            const selectAllFilterBtn = document.getElementById('selectAllFilter');
-            const deselectAllFilterBtn = document.getElementById('deselectAllFilter');
             
             let currentWorkbook = null;
             let currentSheetData = null;
@@ -948,8 +911,10 @@
             // 當前顯示的數據（篩選後）
             let currentDisplayData = [];
             
-            // 欄寬狀態
-            let columnWidths = {};
+            // 篩選選項的完整數據（用於動態更新計數）
+            let cpuFilterOptionsData = [];
+            let gpuFilterOptionsData = [];
+            let mgpFilterOptionsData = [];
             
             // 創建快捷鍵提示元素
             const createShortcutHint = () => {
@@ -1007,26 +972,6 @@
             
             // 頁面載入時載入篩選面板狀態
             loadFilterPanelState();
-            
-            // 載入欄寬設置
-            function loadColumnWidths() {
-                const savedWidths = localStorage.getItem('columnWidths');
-                if (savedWidths) {
-                    try {
-                        columnWidths = JSON.parse(savedWidths);
-                    } catch (e) {
-                        console.error('載入欄寬設置失敗:', e);
-                    }
-                }
-            }
-            
-            // 保存欄寬設置
-            function saveColumnWidths() {
-                localStorage.setItem('columnWidths', JSON.stringify(columnWidths));
-            }
-            
-            // 頁面載入時載入欄寬設置
-            loadColumnWidths();
             
             // 新增本地讀取按鈕事件
             localFileBtn.addEventListener('click', function() {
@@ -1137,114 +1082,9 @@
                 localStorage.setItem('filterPanelVisible', isFilterPanelVisible.toString());
             });
             
-            // 欄寬控制事件
-            autoResizeColumnsBtn.addEventListener('click', autoResizeColumns);
-            resetColumnWidthsBtn.addEventListener('click', resetColumnWidths);
-            
-            // 自動調整欄寬
-            function autoResizeColumns() {
-                const table = tableContainer.querySelector('table');
-                if (!table) return;
-                
-                const headers = table.querySelectorAll('th');
-                const rows = table.querySelectorAll('tr');
-                
-                // 計算每列的最大寬度
-                const maxWidths = {};
-                
-                // 遍歷所有行和列，計算每列的最大內容寬度
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('th, td');
-                    cells.forEach((cell, index) => {
-                        // 跳過固定列（第一列和第二列）
-                        if (index === 0 || index === 1) return;
-                        
-                        const cellWidth = getTextWidth(cell.textContent || '');
-                        if (!maxWidths[index] || cellWidth > maxWidths[index]) {
-                            maxWidths[index] = cellWidth;
-                        }
-                    });
-                });
-                
-                // 應用計算出的寬度
-                headers.forEach((header, index) => {
-                    // 跳過固定列（第一列和第二列）
-                    if (index === 0 || index === 1) return;
-                    
-                    if (maxWidths[index]) {
-                        const calculatedWidth = Math.max(100, Math.min(300, maxWidths[index] + 24)); // 加上padding
-                        header.style.width = calculatedWidth + 'px';
-                        header.style.minWidth = calculatedWidth + 'px';
-                        header.style.maxWidth = calculatedWidth + 'px';
-                        
-                        // 保存欄寬設置
-                        columnWidths[index] = calculatedWidth;
-                    }
-                });
-                
-                // 保存欄寬設置
-                saveColumnWidths();
-                
-                showShortcutHint('欄寬已自動調整');
-            }
-            
-            // 重置欄寬
-            function resetColumnWidths() {
-                const table = tableContainer.querySelector('table');
-                if (!table) return;
-                
-                const headers = table.querySelectorAll('th');
-                
-                headers.forEach((header, index) => {
-                    // 跳過固定列（第一列和第二列）
-                    if (index === 0 || index === 1) return;
-                    
-                    header.style.width = '';
-                    header.style.minWidth = '';
-                    header.style.maxWidth = '';
-                    
-                    // 從保存的設置中移除
-                    delete columnWidths[index];
-                });
-                
-                // 保存欄寬設置
-                saveColumnWidths();
-                
-                showShortcutHint('欄寬已重置');
-            }
-            
-            // 計算文字寬度
-            function getTextWidth(text) {
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                context.font = '0.9rem "Segoe UI", "Microsoft JhengHei", sans-serif';
-                return context.measureText(text).width;
-            }
-            
-            // 應用保存的欄寬設置
-            function applySavedColumnWidths() {
-                const table = tableContainer.querySelector('table');
-                if (!table) return;
-                
-                const headers = table.querySelectorAll('th');
-                
-                headers.forEach((header, index) => {
-                    // 跳過固定列（第一列和第二列）
-                    if (index === 0 || index === 1) return;
-                    
-                    if (columnWidths[index]) {
-                        header.style.width = columnWidths[index] + 'px';
-                        header.style.minWidth = columnWidths[index] + 'px';
-                        header.style.maxWidth = columnWidths[index] + 'px';
-                    }
-                });
-            }
-            
             // 篩選功能事件監聽
             applyFilterBtn.addEventListener('click', applyFilter);
             clearFilterBtn.addEventListener('click', clearFilter);
-            selectAllFilterBtn.addEventListener('click', selectAllFilter);
-            deselectAllFilterBtn.addEventListener('click', deselectAllFilter);
             
             // 添加篩選區段折疊/展開功能
             document.querySelectorAll('.filter-header').forEach(header => {
@@ -1261,13 +1101,12 @@
                 const headers = currentSheetData[0];
                 const dataRows = currentSheetData.slice(1);
                 
-                // 更新篩選計數（基於完整數據）
-                updateFilterCounts(dataRows);
-                
                 // 如果沒有任何篩選值被選擇，顯示所有數據
                 if (cpuFilterValues.size === 0 && gpuFilterValues.size === 0 && mgpFilterValues.size === 0) {
                     currentDisplayData = dataRows;
                     displayFilteredData(currentDisplayData);
+                    // 更新篩選計數（基於完整數據）
+                    updateFilterCounts(dataRows);
                     return;
                 }
                 
@@ -1299,6 +1138,9 @@
                 });
                 
                 displayFilteredData(currentDisplayData);
+                
+                // 更新篩選計數（基於篩選後的數據）
+                updateFilterCounts(currentDisplayData);
                 
                 // 保存篩選狀態
                 saveFilterState();
@@ -1350,9 +1192,6 @@
                 });
                 
                 updateRowSelectionStyles();
-                
-                // 應用保存的欄寬設置
-                applySavedColumnWidths();
             }
             
             // 清除篩選
@@ -1379,46 +1218,11 @@
                 saveFilterState();
             }
             
-            // 全選篩選
-            function selectAllFilter() {
-                const checkboxes = filterPanel.querySelectorAll('.filter-checkbox');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = true;
-                    const value = checkbox.value;
-                    const filterType = checkbox.dataset.filterType;
-                    
-                    if (filterType === 'cpu') {
-                        cpuFilterValues.add(value);
-                    } else if (filterType === 'gpu') {
-                        gpuFilterValues.add(value);
-                    } else if (filterType === 'mgp') {
-                        mgpFilterValues.add(value);
-                    }
-                });
-                
-                // 保存篩選狀態
-                saveFilterState();
-            }
-            
-            // 取消全選篩選
-            function deselectAllFilter() {
-                const checkboxes = filterPanel.querySelectorAll('.filter-checkbox');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                cpuFilterValues.clear();
-                gpuFilterValues.clear();
-                mgpFilterValues.clear();
-                
-                // 保存篩選狀態
-                saveFilterState();
-            }
-            
-            // 更新篩選計數（根據完整數據）
+            // 更新篩選計數（根據傳入的數據）
             function updateFilterCounts(data) {
                 if (!data || data.length === 0) return;
                 
-                // 計算每個篩選類別在完整數據中的計數
+                // 計算每個篩選類別在傳入數據中的計數
                 const cpuCounts = {};
                 const gpuCounts = {};
                 const mgpCounts = {};
@@ -1469,7 +1273,7 @@
                         countElement.textContent = count;
                         
                         // 如果計數為0，則禁用該選項
-                        if (count === 0 && !checkbox.checked) {
+                        if (count === 0) {
                             checkbox.disabled = true;
                             checkbox.parentNode.style.opacity = '0.5';
                             checkbox.parentNode.style.cursor = 'not-allowed';
@@ -1551,6 +1355,9 @@
                 extractAndRenderFilterValues('gpu', gpuColumnIndex, gpuFilterOptions, gpuNoData);
                 extractAndRenderFilterValues('mgp', mgpColumnIndex, mgpFilterOptions, mgpNoData);
                 
+                // 初始更新篩選計數（基於完整數據）
+                updateFilterCounts(originalDataRows);
+                
                 // 加載保存的篩選狀態
                 loadFilterState();
                 
@@ -1587,6 +1394,15 @@
                         valueCounts[valueStr] = (valueCounts[valueStr] || 0) + 1;
                     }
                 });
+                
+                // 保存篩選選項數據
+                if (filterType === 'cpu') {
+                    cpuFilterOptionsData = Array.from(allValues).sort();
+                } else if (filterType === 'gpu') {
+                    gpuFilterOptionsData = Array.from(allValues).sort();
+                } else if (filterType === 'mgp') {
+                    mgpFilterOptionsData = Array.from(allValues).sort();
+                }
                 
                 // 渲染篩選選項
                 if (allValues.size > 0) {
@@ -1637,6 +1453,10 @@
                                 mgpFilterValues.delete(this.value);
                             }
                         }
+                        
+                        // 立即应用筛选并更新计数
+                        applyFilter();
+                        
                         // 保存篩選狀態
                         saveFilterState();
                     });
@@ -1871,46 +1691,41 @@
                     const th = document.createElement('th');
                     th.title = header || ''; // 添加title屬性以便懸停顯示完整內容
                     
-                    if (index === 0) {
-                        // 第一列不添加排序功能，文字置中
-                        th.textContent = header || '';
-                    } else {
-                        // 其他列添加排序功能（使用三角形图标，垂直排列在右侧）
-                        th.innerHTML = `
-                            <div class="sortable">
-                                <div class="header-content">
-                                    ${header || ''}
-                                    <div class="sort-icons">
-                                        <div class="sort-icon sort-up" id="sortUp-${index}"></div>
-                                        <div class="sort-icon sort-down" id="sortDown-${index}"></div>
-                                    </div>
+                    // 所有列都添加排序功能（包括第二列）
+                    th.innerHTML = `
+                        <div class="sortable">
+                            <div class="header-content">
+                                ${header || ''}
+                                <div class="sort-icons">
+                                    <div class="sort-icon sort-up" id="sortUp-${index}"></div>
+                                    <div class="sort-icon sort-down" id="sortDown-${index}"></div>
                                 </div>
                             </div>
-                        `;
+                        </div>
+                    `;
+                    
+                    // 点击表头排序
+                    th.addEventListener('click', function(e) {
+                        let sortDirection;
                         
-                        // 点击表头排序
-                        th.addEventListener('click', function(e) {
-                            let sortDirection;
-                            
-                            // 如果点击的是排序图标
-                            if (e.target.classList.contains('sort-icon')) {
-                                if (e.target.classList.contains('sort-up')) {
-                                    sortDirection = 'desc';
-                                } else if (e.target.classList.contains('sort-down')) {
-                                    sortDirection = 'asc';
-                                }
-                            } else {
-                                // 点击表头其他区域，切换排序方式
-                                if (currentSortColumn === index) {
-                                    sortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
-                                } else {
-                                    sortDirection = 'asc';
-                                }
+                        // 如果点击的是排序图标
+                        if (e.target.classList.contains('sort-icon')) {
+                            if (e.target.classList.contains('sort-up')) {
+                                sortDirection = 'desc';
+                            } else if (e.target.classList.contains('sort-down')) {
+                                sortDirection = 'asc';
                             }
-                            
-                            sortTable(index, sortDirection);
-                        });
-                    }
+                        } else {
+                            // 点击表头其他区域，切换排序方式
+                            if (currentSortColumn === index) {
+                                sortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                            } else {
+                                sortDirection = 'asc';
+                            }
+                        }
+                        
+                        sortTable(index, sortDirection);
+                    });
                     
                     headerRow.appendChild(th);
                 });
@@ -1971,9 +1786,6 @@
                 
                 // 提取欄位值並建立篩選選項
                 extractFilterValues();
-                
-                // 應用保存的欄寬設置
-                applySavedColumnWidths();
                 
                 // 强制触发重排以确保滚动条显示
                 setTimeout(() => {
@@ -2071,9 +1883,6 @@
                 
                 // 更新排序图标状态
                 updateSortIcons(columnIndex, direction);
-                
-                // 應用保存的欄寬設置
-                applySavedColumnWidths();
             }
             
             // 更新排序图标状态
@@ -2086,7 +1895,8 @@
                     });
                 });
                 
-                const currentHeader = headers[columnIndex + 1]; // +1 因为第一列是选择框
+                // 注意：这里需要+1，因为第一列是选择框列
+                const currentHeader = headers[columnIndex + 1];
                 if (currentHeader) {
                     if (direction === 'asc') {
                         currentHeader.querySelector(`.sort-down`).classList.add('active');
