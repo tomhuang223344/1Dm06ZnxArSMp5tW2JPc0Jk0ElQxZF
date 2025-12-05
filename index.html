@@ -218,7 +218,7 @@
             top: 0;
             user-select: none;
             white-space: nowrap;
-            z-index: 10;
+            z-index: 20; /* 增加表頭的 z-index */
             font-size: 0.9rem;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -230,7 +230,7 @@
         td:first-child {
             position: sticky;
             left: 0;
-            z-index: 15;
+            z-index: 25; /* 增加第一固定列的 z-index */
             background-color: #3a5ca9;
             width: 50px;
             min-width: 50px;
@@ -244,6 +244,7 @@
             background-color: white;
             border: 1px solid #e0e0e0;
             text-align: center;
+            z-index: 15; /* 数据行的第一固定列 z-index 较低 */
         }
         
         /* 第2欄固定 */
@@ -251,7 +252,7 @@
         td:nth-child(2) {
             position: sticky;
             left: 50px;
-            z-index: 14;
+            z-index: 24; /* 增加第二固定列的 z-index */
             background-color: #4b6cb7;
             width: 180px;
             min-width: 180px;
@@ -265,6 +266,7 @@
             background-color: white;
             border: 1px solid #e0e0e0;
             text-align: center;
+            z-index: 14; /* 数据行的第二固定列 z-index 较低 */
         }
         
         /* 其他欄位 */
@@ -599,6 +601,76 @@
             margin-left: 80px;
             font-size: 0.85rem;
         }
+        
+        /* Price range specific styles */
+        .price-range-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 80px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .price-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 80px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .price-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .price-input {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .price-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .price-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4b6cb7;
+            cursor: pointer;
+        }
+        
+        .price-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4b6cb7;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .price-values {
+            display: flex;
+            justify-content: space-between;
+            margin-left: 80px;
+            width: 100%;
+            max-width: 400px;
+            font-size: 0.75rem;
+            color: #666;
+        }
 
         @media (max-width: 768px) {
             h1 {
@@ -704,6 +776,27 @@
 
             .no-filter-data {
                 margin-left: 0;
+            }
+            
+            /* 移動端價格範圍樣式 */
+            .price-range-slider,
+            .price-inputs,
+            .price-values {
+                margin-left: 0;
+                max-width: 100%;
+            }
+            
+            .price-inputs {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .price-input-group {
+                width: 100%;
+            }
+            
+            .price-input {
+                width: 100%;
             }
         }
         
@@ -838,14 +931,43 @@
                 <div class="no-filter-data" id="gpuNoData" style="display: none;">找不到 GPU 欄位</div>
             </div>
             
-            <div class="filter-section" id="mgpFilterSection">
+            <!-- 新增 Brand 篩選 -->
+            <div class="filter-section" id="brandFilterSection">
                 <div class="filter-header">
-                    <div class="filter-title">MGP 篩選:</div>
+                    <div class="filter-title">品牌篩選:</div>
                 </div>
-                <div class="filter-options" id="mgpFilterOptions">
-                    <!-- MGP篩選選項將在這裡動態生成 -->
+                <div class="filter-options" id="brandFilterOptions">
+                    <!-- Brand篩選選項將在這裡動態生成 -->
                 </div>
-                <div class="no-filter-data" id="mgpNoData" style="display: none;">找不到 MGP 欄位</div>
+                <div class="no-filter-data" id="brandNoData" style="display: none;">找不到 Brand 欄位</div>
+            </div>
+            
+            <!-- 新增 Price 篩選 -->
+            <div class="filter-section" id="priceFilterSection">
+                <div class="filter-header">
+                    <div class="filter-title">價格篩選:</div>
+                </div>
+                <!-- Price 篩選使用範圍滑桿 -->
+                <div class="price-inputs" id="priceFilterInputs">
+                    <div class="price-input-group">
+                        <label for="minPrice">最低價格:</label>
+                        <input type="number" id="minPrice" class="price-input" placeholder="最小值" min="0">
+                    </div>
+                    <div class="price-input-group">
+                        <label for="maxPrice">最高價格:</label>
+                        <input type="number" id="maxPrice" class="price-input" placeholder="最大值" min="0">
+                    </div>
+                </div>
+                <!-- Price 範圍滑桿 -->
+                <div class="price-range-slider" id="priceSliderContainer" style="display: none;">
+                    <input type="range" id="priceSlider" class="price-slider" min="0" max="10000" step="100">
+                </div>
+                <!-- 顯示價格範圍 -->
+                <div class="price-values" id="priceValues" style="display: none;">
+                    <span id="minPriceValue">$0</span>
+                    <span id="maxPriceValue">$10,000</span>
+                </div>
+                <div class="no-filter-data" id="priceNoData" style="display: none;">找不到 Price 欄位</div>
             </div>
             
             <div class="filter-actions">
@@ -880,10 +1002,19 @@
             const filterPanel = document.getElementById('filterPanel');
             const cpuFilterOptions = document.getElementById('cpuFilterOptions');
             const gpuFilterOptions = document.getElementById('gpuFilterOptions');
-            const mgpFilterOptions = document.getElementById('mgpFilterOptions');
+            const brandFilterOptions = document.getElementById('brandFilterOptions');
+            const priceFilterInputs = document.getElementById('priceFilterInputs');
+            const priceSliderContainer = document.getElementById('priceSliderContainer');
+            const priceSlider = document.getElementById('priceSlider');
+            const minPriceInput = document.getElementById('minPrice');
+            const maxPriceInput = document.getElementById('maxPrice');
+            const priceValues = document.getElementById('priceValues');
+            const minPriceValue = document.getElementById('minPriceValue');
+            const maxPriceValue = document.getElementById('maxPriceValue');
             const cpuNoData = document.getElementById('cpuNoData');
             const gpuNoData = document.getElementById('gpuNoData');
-            const mgpNoData = document.getElementById('mgpNoData');
+            const brandNoData = document.getElementById('brandNoData');
+            const priceNoData = document.getElementById('priceNoData');
             const applyFilterBtn = document.getElementById('applyFilter');
             const clearFilterBtn = document.getElementById('clearFilter');
             
@@ -898,12 +1029,17 @@
             // 篩選值集合
             let cpuFilterValues = new Set();
             let gpuFilterValues = new Set();
-            let mgpFilterValues = new Set();
+            let brandFilterValues = new Set();
+            
+            // Price 篩選值
+            let minPriceFilter = null;
+            let maxPriceFilter = null;
             
             // 欄位索引
             let cpuColumnIndex = -1;
             let gpuColumnIndex = -1;
-            let mgpColumnIndex = -1;
+            let brandColumnIndex = -1;
+            let priceColumnIndex = -1;
             
             // 原始數據
             let originalDataRows = [];
@@ -914,7 +1050,11 @@
             // 篩選選項的完整數據（用於動態更新計數）
             let cpuFilterOptionsData = [];
             let gpuFilterOptionsData = [];
-            let mgpFilterOptionsData = [];
+            let brandFilterOptionsData = [];
+            
+            // Price 相關變數
+            let minPriceGlobal = 0;
+            let maxPriceGlobal = 0;
             
             // 創建快捷鍵提示元素
             const createShortcutHint = () => {
@@ -1086,6 +1226,49 @@
             applyFilterBtn.addEventListener('click', applyFilter);
             clearFilterBtn.addEventListener('click', clearFilter);
             
+            // Price 輸入框事件監聽
+            if (minPriceInput) {
+                minPriceInput.addEventListener('input', function() {
+                    const value = parseInt(this.value) || 0;
+                    minPriceFilter = value;
+                    
+                    // 更新滑桿最小值
+                    if (priceSlider) {
+                        priceSlider.min = value;
+                    }
+                });
+            }
+            
+            if (maxPriceInput) {
+                maxPriceInput.addEventListener('input', function() {
+                    const value = parseInt(this.value) || 0;
+                    maxPriceFilter = value;
+                    
+                    // 更新滑桿最大值
+                    if (priceSlider) {
+                        priceSlider.max = value;
+                    }
+                });
+            }
+            
+            // Price 滑桿事件監聽
+            if (priceSlider) {
+                priceSlider.addEventListener('input', function() {
+                    const value = parseInt(this.value);
+                    // 根據滑桿位置設置價格範圍
+                    const range = maxPriceGlobal - minPriceGlobal;
+                    const sliderValue = (value / 100) * range + minPriceGlobal;
+                    
+                    // 設置最小值為滑桿值的80%，最大值為滑桿值的120%
+                    minPriceFilter = Math.floor(sliderValue * 0.8);
+                    maxPriceFilter = Math.floor(sliderValue * 1.2);
+                    
+                    // 更新輸入框
+                    if (minPriceInput) minPriceInput.value = minPriceFilter;
+                    if (maxPriceInput) maxPriceInput.value = maxPriceFilter;
+                });
+            }
+            
             // 添加篩選區段折疊/展開功能
             document.querySelectorAll('.filter-header').forEach(header => {
                 header.addEventListener('click', function() {
@@ -1102,7 +1285,9 @@
                 const dataRows = currentSheetData.slice(1);
                 
                 // 如果沒有任何篩選值被選擇，顯示所有數據
-                if (cpuFilterValues.size === 0 && gpuFilterValues.size === 0 && mgpFilterValues.size === 0) {
+                if (cpuFilterValues.size === 0 && gpuFilterValues.size === 0 && 
+                    brandFilterValues.size === 0 && minPriceFilter === null && 
+                    maxPriceFilter === null) {
                     currentDisplayData = dataRows;
                     displayFilteredData(currentDisplayData);
                     // 更新篩選計數（基於完整數據）
@@ -1114,7 +1299,8 @@
                 currentDisplayData = dataRows.filter(row => {
                     let cpuMatch = true;
                     let gpuMatch = true;
-                    let mgpMatch = true;
+                    let brandMatch = true;
+                    let priceMatch = true;
                     
                     // CPU 篩選
                     if (cpuColumnIndex !== -1 && cpuFilterValues.size > 0) {
@@ -1128,13 +1314,26 @@
                         gpuMatch = gpuFilterValues.has(gpuValue.toString());
                     }
                     
-                    // MGP 篩選
-                    if (mgpColumnIndex !== -1 && mgpFilterValues.size > 0) {
-                        const mgpValue = row[mgpColumnIndex] || '';
-                        mgpMatch = mgpFilterValues.has(mgpValue.toString());
+                    // Brand 篩選
+                    if (brandColumnIndex !== -1 && brandFilterValues.size > 0) {
+                        const brandValue = row[brandColumnIndex] || '';
+                        brandMatch = brandFilterValues.has(brandValue.toString());
                     }
                     
-                    return cpuMatch && gpuMatch && mgpMatch;
+                    // Price 篩選
+                    if (priceColumnIndex !== -1) {
+                        const priceValue = parseFloat(row[priceColumnIndex]) || 0;
+                        
+                        if (minPriceFilter !== null) {
+                            priceMatch = priceMatch && priceValue >= minPriceFilter;
+                        }
+                        
+                        if (maxPriceFilter !== null) {
+                            priceMatch = priceMatch && priceValue <= maxPriceFilter;
+                        }
+                    }
+                    
+                    return cpuMatch && gpuMatch && brandMatch && priceMatch;
                 });
                 
                 displayFilteredData(currentDisplayData);
@@ -1204,7 +1403,13 @@
                 
                 cpuFilterValues.clear();
                 gpuFilterValues.clear();
-                mgpFilterValues.clear();
+                brandFilterValues.clear();
+                
+                // 清除價格篩選
+                minPriceFilter = null;
+                maxPriceFilter = null;
+                if (minPriceInput) minPriceInput.value = '';
+                if (maxPriceInput) maxPriceInput.value = '';
                 
                 // 顯示所有數據
                 if (currentSheetData && currentSheetData.length > 1) {
@@ -1225,7 +1430,7 @@
                 // 計算每個篩選類別在傳入數據中的計數
                 const cpuCounts = {};
                 const gpuCounts = {};
-                const mgpCounts = {};
+                const brandCounts = {};
                 
                 data.forEach(row => {
                     // CPU 計數
@@ -1246,12 +1451,12 @@
                         }
                     }
                     
-                    // MGP 計數
-                    if (mgpColumnIndex !== -1) {
-                        const mgpValue = row[mgpColumnIndex] || '';
-                        if (mgpValue) {
-                            const valueStr = mgpValue.toString();
-                            mgpCounts[valueStr] = (mgpCounts[valueStr] || 0) + 1;
+                    // Brand 計數
+                    if (brandColumnIndex !== -1) {
+                        const brandValue = row[brandColumnIndex] || '';
+                        if (brandValue) {
+                            const valueStr = brandValue.toString();
+                            brandCounts[valueStr] = (brandCounts[valueStr] || 0) + 1;
                         }
                     }
                 });
@@ -1259,7 +1464,7 @@
                 // 更新篩選選項的計數顯示
                 updateFilterSectionCounts('cpu', cpuCounts);
                 updateFilterSectionCounts('gpu', gpuCounts);
-                updateFilterSectionCounts('mgp', mgpCounts);
+                updateFilterSectionCounts('brand', brandCounts);
             }
             
             // 更新特定篩選區段的計數
@@ -1291,7 +1496,9 @@
                 const filterState = {
                     cpu: Array.from(cpuFilterValues),
                     gpu: Array.from(gpuFilterValues),
-                    mgp: Array.from(mgpFilterValues)
+                    brand: Array.from(brandFilterValues),
+                    minPrice: minPriceFilter,
+                    maxPrice: maxPriceFilter
                 };
                 localStorage.setItem('filterState', JSON.stringify(filterState));
             }
@@ -1304,10 +1511,20 @@
                         const filterState = JSON.parse(saved);
                         cpuFilterValues = new Set(filterState.cpu || []);
                         gpuFilterValues = new Set(filterState.gpu || []);
-                        mgpFilterValues = new Set(filterState.mgp || []);
+                        brandFilterValues = new Set(filterState.brand || []);
+                        minPriceFilter = filterState.minPrice || null;
+                        maxPriceFilter = filterState.maxPrice || null;
                         
-                        // 更新復選框狀態
+                        // 更新UI狀態
                         updateCheckboxStates();
+                        
+                        // 更新價格輸入框
+                        if (minPriceFilter !== null && minPriceInput) {
+                            minPriceInput.value = minPriceFilter;
+                        }
+                        if (maxPriceFilter !== null && maxPriceInput) {
+                            maxPriceInput.value = maxPriceFilter;
+                        }
                     } catch (e) {
                         console.error('加載篩選狀態失敗:', e);
                     }
@@ -1328,9 +1545,9 @@
                     if (checkbox) checkbox.checked = true;
                 });
                 
-                // MGP 復選框
-                mgpFilterValues.forEach(value => {
-                    const checkbox = document.querySelector(`.filter-checkbox[data-filter-type="mgp"][value="${value}"]`);
+                // Brand 復選框
+                brandFilterValues.forEach(value => {
+                    const checkbox = document.querySelector(`.filter-checkbox[data-filter-type="brand"][value="${value}"]`);
                     if (checkbox) checkbox.checked = true;
                 });
             }
@@ -1347,13 +1564,66 @@
                     header.toLowerCase().includes('cpu'));
                 gpuColumnIndex = headers.findIndex(header => 
                     header.toLowerCase().includes('gpu'));
-                mgpColumnIndex = headers.findIndex(header => 
-                    header.toLowerCase().includes('mgp'));
+                brandColumnIndex = headers.findIndex(header => 
+                    header.toLowerCase().includes('brand') || 
+                    header.toLowerCase().includes('廠牌') || 
+                    header.toLowerCase().includes('製造商'));
+                priceColumnIndex = headers.findIndex(header => 
+                    header.toLowerCase().includes('price') || 
+                    header.toLowerCase().includes('價錢') || 
+                    header.toLowerCase().includes('價格') || 
+                    header.toLowerCase().includes('cost'));
                 
                 // 收集各欄位的值
                 extractAndRenderFilterValues('cpu', cpuColumnIndex, cpuFilterOptions, cpuNoData);
                 extractAndRenderFilterValues('gpu', gpuColumnIndex, gpuFilterOptions, gpuNoData);
-                extractAndRenderFilterValues('mgp', mgpColumnIndex, mgpFilterOptions, mgpNoData);
+                extractAndRenderFilterValues('brand', brandColumnIndex, brandFilterOptions, brandNoData);
+                
+                // 處理 Price 欄位
+                if (priceColumnIndex !== -1 && priceNoData) {
+                    priceNoData.style.display = 'none';
+                    if (priceFilterInputs) priceFilterInputs.style.display = 'flex';
+                    
+                    // 收集所有價格值
+                    const priceValues = [];
+                    originalDataRows.forEach(row => {
+                        const priceValue = parseFloat(row[priceColumnIndex]);
+                        if (!isNaN(priceValue)) {
+                            priceValues.push(priceValue);
+                        }
+                    });
+                    
+                    if (priceValues.length > 0) {
+                        // 計算最小和最大價格
+                        minPriceGlobal = Math.min(...priceValues);
+                        maxPriceGlobal = Math.max(...priceValues);
+                        
+                        // 設置滑桿範圍
+                        if (priceSlider) {
+                            priceSlider.min = 0;
+                            priceSlider.max = 100;
+                            priceSlider.value = 50;
+                        }
+                        
+                        // 設置價格顯示
+                        if (minPriceValue) minPriceValue.textContent = `$${minPriceGlobal.toLocaleString()}`;
+                        if (maxPriceValue) maxPriceValue.textContent = `$${maxPriceGlobal.toLocaleString()}`;
+                        
+                        // 顯示滑桿和價格值
+                        if (priceSliderContainer) priceSliderContainer.style.display = 'block';
+                        if (priceValues) priceValues.style.display = 'flex';
+                        
+                        // 設置輸入框的佔位符
+                        if (minPriceInput) minPriceInput.placeholder = `最小值: ${minPriceGlobal}`;
+                        if (maxPriceInput) maxPriceInput.placeholder = `最大值: ${maxPriceGlobal}`;
+                    } else {
+                        if (priceNoData) priceNoData.style.display = 'block';
+                        if (priceFilterInputs) priceFilterInputs.style.display = 'none';
+                    }
+                } else {
+                    if (priceNoData) priceNoData.style.display = 'block';
+                    if (priceFilterInputs) priceFilterInputs.style.display = 'none';
+                }
                 
                 // 初始更新篩選計數（基於完整數據）
                 updateFilterCounts(originalDataRows);
@@ -1362,7 +1632,9 @@
                 loadFilterState();
                 
                 // 如果有篩選狀態，自動應用篩選
-                if (cpuFilterValues.size > 0 || gpuFilterValues.size > 0 || mgpFilterValues.size > 0) {
+                if (cpuFilterValues.size > 0 || gpuFilterValues.size > 0 || 
+                    brandFilterValues.size > 0 || minPriceFilter !== null || 
+                    maxPriceFilter !== null) {
                     setTimeout(() => {
                         applyFilter();
                     }, 100);
@@ -1377,8 +1649,8 @@
                 const dataRows = currentSheetData.slice(1);
                 
                 if (columnIndex === -1) {
-                    optionsContainer.style.display = 'none';
-                    noDataElement.style.display = 'block';
+                    if (optionsContainer) optionsContainer.style.display = 'none';
+                    if (noDataElement) noDataElement.style.display = 'block';
                     return;
                 }
                 
@@ -1400,18 +1672,18 @@
                     cpuFilterOptionsData = Array.from(allValues).sort();
                 } else if (filterType === 'gpu') {
                     gpuFilterOptionsData = Array.from(allValues).sort();
-                } else if (filterType === 'mgp') {
-                    mgpFilterOptionsData = Array.from(allValues).sort();
+                } else if (filterType === 'brand') {
+                    brandFilterOptionsData = Array.from(allValues).sort();
                 }
                 
                 // 渲染篩選選項
-                if (allValues.size > 0) {
+                if (allValues.size > 0 && optionsContainer) {
                     optionsContainer.style.display = 'flex';
-                    noDataElement.style.display = 'none';
+                    if (noDataElement) noDataElement.style.display = 'none';
                     renderFilterOptions(filterType, allValues, valueCounts, optionsContainer);
                 } else {
-                    optionsContainer.style.display = 'none';
-                    noDataElement.style.display = 'block';
+                    if (optionsContainer) optionsContainer.style.display = 'none';
+                    if (noDataElement) noDataElement.style.display = 'block';
                 }
             }
             
@@ -1441,16 +1713,16 @@
                                 cpuFilterValues.add(this.value);
                             } else if (filterType === 'gpu') {
                                 gpuFilterValues.add(this.value);
-                            } else if (filterType === 'mgp') {
-                                mgpFilterValues.add(this.value);
+                            } else if (filterType === 'brand') {
+                                brandFilterValues.add(this.value);
                             }
                         } else {
                             if (filterType === 'cpu') {
                                 cpuFilterValues.delete(this.value);
                             } else if (filterType === 'gpu') {
                                 gpuFilterValues.delete(this.value);
-                            } else if (filterType === 'mgp') {
-                                mgpFilterValues.delete(this.value);
+                            } else if (filterType === 'brand') {
+                                brandFilterValues.delete(this.value);
                             }
                         }
                         
@@ -1638,6 +1910,13 @@
                         }, 100);
                     });
                 }
+                
+                // 確保在顯示工作簿後初始化篩選
+                setTimeout(() => {
+                    if (currentSheetData && currentSheetData.length > 0) {
+                        extractFilterValues();
+                    }
+                }, 100);
             }
             
             // 显示工作表内容
@@ -1785,7 +2064,9 @@
                 tableContainer.appendChild(table);
                 
                 // 提取欄位值並建立篩選選項
-                extractFilterValues();
+                setTimeout(() => {
+                    extractFilterValues();
+                }, 100);
                 
                 // 强制触发重排以确保滚动条显示
                 setTimeout(() => {
