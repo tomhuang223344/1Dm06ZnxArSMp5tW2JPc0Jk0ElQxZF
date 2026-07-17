@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>惠普 HyperX Pro 16 遊戲本體驗報告 · 雜誌風靛藍主題</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ============ 靛藍瓷 (Indigo Porcelain) 主題 ============ */
+    --ink:#141831;
+    --ink-rgb:20,24,49;
+    --paper:#f4f1eb;
+    --paper-rgb:244,241,235;
+    --paper-tint:#eae6de;
+    --ink-tint:#0c0e1c;
+
+    /* ============ 靛藍色系 ============ */
+    --indigo-deep:#0f1333;
+    --indigo:#1a2055;
+    --indigo-mid:#2d3a7a;
+    --indigo-light:#5a6bbf;
+    --indigo-glow:#7e8ed4;
+    --indigo-accent:#94a3d4;
+    --indigo-pale:#c5cce6;
+    --indigo-faint:#e4e9f4;
+    --silver:#b8bcc8;
+    --silver-light:#d4d8e2;
+
+    /* ============ 數字強調 ============ */
+    --accent:#d4766a;
+    --accent-light:#e89a90;
+    --success:#5aab8a;
+    --warn:#c4a044;
+
+    /* ============ 字体 ============ */
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --serif-en:"Playfair Display","Source Serif 4",Georgia,serif;
+    --serif-body-en:"Source Serif 4",Georgia,serif;
+    --serif-zh:"Noto Serif SC",source-han-serif-sc,serif;
+    --sans-zh:"Noto Sans SC",source-han-sans-sc,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);color:var(--paper);font-family:var(--sans-zh);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* ============ WebGL 双背景 ============ */
+  canvas.bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block;transition:opacity 1.2s ease}
+  canvas#bg-light{opacity:0}
+  canvas#bg-dark{opacity:1}
+  body.light-bg canvas#bg-light{opacity:1}
+  body.light-bg canvas#bg-dark{opacity:0}
+  body.low-power canvas.bg{display:none!important}
+
+  /* ============ Deck 容器 + 翻页 ============ */
+  #deck{position:fixed;inset:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .9s cubic-bezier(.77,0,.175,1);z-index:10;will-change:transform}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;position:relative;padding:6vh 6vw 10vh 6vw;display:flex;flex-direction:column;overflow:hidden}
+  .slide.light{color:var(--ink);background:var(--paper)}
+  .slide.dark{color:var(--paper);background:var(--ink)}
+
+  /* Hero 页遮罩 */
+  .slide::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;transition:background .7s ease}
+  .slide.light::before{background:rgba(var(--paper-rgb),.78);backdrop-filter:blur(3px)}
+  .slide.dark::before{background:rgba(var(--ink-rgb),.78);backdrop-filter:blur(3px)}
+  .slide.hero.light::before{background:rgba(var(--paper-rgb),.16);backdrop-filter:none}
+  .slide.hero.dark::before{background:rgba(var(--ink-rgb),.12);backdrop-filter:none}
+  .slide.hero::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+  .slide.hero.light::after{background:linear-gradient(180deg,rgba(var(--paper-rgb),.28) 0%,rgba(var(--paper-rgb),0) 14%,rgba(var(--paper-rgb),0) 86%,rgba(var(--paper-rgb),.28) 100%)}
+  .slide.hero.dark::after{background:linear-gradient(180deg,rgba(var(--ink-rgb),.32) 0%,rgba(var(--ink-rgb),0) 14%,rgba(var(--ink-rgb),0) 86%,rgba(var(--ink-rgb),.32) 100%)}
+
+  /* ============ Magazine chrome ============ */
+  .chrome{display:flex;justify-content:space-between;align-items:flex-start;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+  .chrome .left,.chrome .right{display:flex;gap:2.4em;align-items:center}
+  .chrome .sep{width:40px;height:1px;background:currentColor;opacity:.4}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+  .foot .title{font-family:var(--serif-zh);font-weight:400;letter-spacing:.05em;text-transform:none;opacity:.75;font-size:13px}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;padding:6px 14px;border:1px solid currentColor;opacity:.85}
+  .rule{width:100%;height:1px;background:currentColor;opacity:.25;margin:3vh 0}
+  .rule.v{width:1px;height:100%;margin:0}
+
+  /* ============ 字体规则 ============ */
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;opacity:.6;margin-bottom:2.6vh}
+  .display{font-family:var(--serif-en);font-weight:700;font-size:11vw;line-height:.92;letter-spacing:-.025em}
+  .display-zh{font-family:var(--serif-zh);font-weight:700;font-size:7.8vw;line-height:1.04;letter-spacing:-.005em}
+  .h1-zh{font-family:var(--serif-zh);font-weight:700;font-size:4.6vw;line-height:1.12;letter-spacing:-.005em}
+  .h2-zh{font-family:var(--serif-zh);font-weight:600;font-size:3.2vw;line-height:1.2;letter-spacing:0}
+  .h3-zh{font-family:var(--serif-zh);font-weight:500;font-size:1.9vw;line-height:1.35}
+  .body-zh{font-family:var(--sans-zh);font-weight:400;font-size:max(15px,1.22vw);line-height:1.75;opacity:.82;letter-spacing:.01em}
+  .body-serif{font-family:var(--serif-zh);font-weight:400;font-size:max(15px,1.3vw);line-height:1.65;opacity:.88}
+  .lead{font-family:var(--serif-zh);font-weight:400;font-size:1.9vw;line-height:1.4;opacity:.85}
+  .meta{font-family:var(--mono);font-size:max(11px,.88vw);letter-spacing:.16em;text-transform:uppercase;opacity:.6}
+  .big-num{font-family:var(--serif-en);font-weight:800;font-size:10vw;line-height:.85;letter-spacing:-.03em;font-feature-settings:"tnum"}
+  .mid-num{font-family:var(--serif-en);font-weight:700;font-size:5.5vw;line-height:.88;letter-spacing:-.02em;font-feature-settings:"tnum"}
+  .ghost{font-family:var(--serif-en);font-weight:900;font-size:34vw;line-height:.8;opacity:.06;letter-spacing:-.04em;position:absolute;font-feature-settings:"tnum"}
+  em{font-style:italic;font-family:var(--serif-en)}
+  .en{font-family:var(--serif-en);font-style:italic;font-weight:500}
+
+  /* ============ 布局工具 ============ */
+  .col{display:flex;flex-direction:column;gap:2.4vh}
+  .row{display:flex;align-items:center;gap:3vw}
+  .grid-6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:4vw 6vw;flex:1;align-content:center;padding:2vh 0}
+  .grid-9{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3vh 4vw;flex:1;align-content:center}
+  .grid-4{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:4vh 6vw;flex:1;align-content:center}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:4vw;flex:1;align-content:center}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:4vw;flex:1;align-items:center}
+  .split-55{display:grid;grid-template-columns:55fr 45fr;gap:5vw;flex:1;align-items:stretch}
+  .fill{flex:1}
+  .center{align-items:center;justify-content:center;text-align:center}
+  .bottom-left{position:absolute;left:6vw;bottom:9vh;max-width:50vw}
+  .bottom-right{position:absolute;right:6vw;bottom:9vh;max-width:50vw;text-align:right}
+  .top-right{position:absolute;right:6vw;top:6vh;text-align:right}
+
+  /* ============ Stat ============ */
+  .stat{display:flex;flex-direction:column;gap:1vh;align-items:flex-start}
+  .stat .n{font-family:var(--serif-en);font-weight:800;font-size:8vw;line-height:.88;letter-spacing:-.03em;font-feature-settings:"tnum"}
+  .stat .l{font-family:var(--sans-zh);font-size:max(13px,1.05vw);opacity:.7;margin-top:1vh;font-weight:400;line-height:1.5}
+  .stat .m{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.5;margin-bottom:.2vh}
+
+  /* ============ Callout ============ */
+  .callout{padding:3vh 2.4vw;border-left:3px solid currentColor;position:relative;font-family:var(--serif-zh);font-size:max(15px,1.2vw);line-height:1.55;opacity:.92}
+  .slide.light .callout{background:rgba(var(--ink-rgb),.05)}
+  .slide.dark .callout{background:rgba(var(--paper-rgb),.06)}
+  .callout .cite{display:block;margin-top:1.6vh;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+  .callout .q-big{font-family:var(--serif-zh);font-weight:600;font-size:max(17px,1.6vw);line-height:1.42}
+
+  /* ============ Rowline ============ */
+  .rowline{display:grid;grid-template-columns:1fr 2fr 1fr;gap:2vw;padding:2.2vh 0;border-top:1px solid currentColor;align-items:center;border-color:rgba(127,127,127,.25)}
+  .rowline:last-child{border-bottom:1px solid currentColor;border-color:rgba(127,127,127,.25)}
+  .rowline .k{font-family:var(--serif-zh);font-weight:700;font-size:1.7vw}
+  .rowline .v{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.2vw);opacity:.85;line-height:1.55}
+  .rowline .m{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;justify-self:end}
+
+  /* ============ Pillar ============ */
+  .pillar{display:flex;flex-direction:column;gap:1.8vh}
+  .pillar .ic{font-family:var(--serif-en);font-style:italic;font-size:2.6vw;opacity:.45;font-weight:400}
+  .pillar .ic svg{width:2.8vw;height:2.8vw;stroke-width:1.2;opacity:.7}
+  .pillar .t{font-family:var(--serif-zh);font-weight:700;font-size:2.4vw;line-height:1.1}
+  .pillar .d{font-family:var(--sans-zh);font-weight:400;font-size:max(14px,1.1vw);opacity:.76;line-height:1.6}
+
+  /* ============ Signature ============ */
+  .sign{font-family:var(--serif-en);font-style:italic;font-weight:500;font-size:2vw;opacity:.7}
+  .hi{position:relative;display:inline}
+  .slide.dark .hi::after{content:"";position:absolute;left:-.1em;right:-.1em;bottom:-.05em;height:.28em;background:rgba(var(--paper-rgb),.15);z-index:-1}
+  .slide.light .hi::after{content:"";position:absolute;left:-.1em;right:-.1em;bottom:-.05em;height:.28em;background:rgba(var(--ink-rgb),.08);z-index:-1}
+
+  /* ============ Icons ============ */
+  .ico{width:1em;height:1em;display:inline-block;vertical-align:-.12em;stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+  .ico-lg,.ico-md,.ico-sm{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+  .ico-lg{width:2.6vw;height:2.6vw;stroke-width:1.2;display:inline-block}
+  .ico-md{width:1.8vw;height:1.8vw;stroke-width:1.3;display:inline-block;vertical-align:-.4em}
+  .ico-sm{width:1.1vw;height:1.1vw;stroke-width:1.4;display:inline-block;vertical-align:-.15em;opacity:.7}
+
+  /* ============ Image frames ============ */
+  .frame-img{overflow:hidden;position:relative;background:rgba(0,0,0,.04);box-sizing:border-box;width:100%;border-radius:4px}
+  .slide.dark .frame-img{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12)}
+  .frame-img > img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+  .frame-img.h-16{height:16vh}
+  .frame-img.h-18{height:18vh}
+  .frame-img.h-22{height:22vh}
+  .frame-img.h-26{height:26vh}
+  .frame-img.h-28{height:28vh}
+  .frame-cap{display:flex;justify-content:space-between;align-items:baseline;gap:1vw;margin-top:.8vh;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.72}
+  .frame-cap .pf{font-family:var(--serif-zh);font-weight:600;font-size:max(13px,1vw);letter-spacing:.04em;text-transform:none;opacity:.94}
+  .frame-cap .nb{font-family:var(--serif-en);font-style:italic;font-size:max(15px,1.2vw);letter-spacing:.02em;text-transform:none;opacity:.88}
+  .frame-cap .idx{font-family:var(--mono);opacity:.5}
+
+  /* ============ 靛藍裝飾元素 ============ */
+  .indigo-border{position:absolute;inset:3vw;border:1px solid rgba(var(--paper-rgb),.08);pointer-events:none;z-index:-1}
+  .slide.dark .indigo-border{border-color:rgba(90,107,191,.15)}
+  .slide.light .indigo-border{border-color:rgba(45,58,122,.15)}
+  .indigo-accent-line{height:3px;background:linear-gradient(90deg, var(--indigo-mid), var(--indigo-glow), var(--indigo-light));width:80px;margin:2vh 0}
+  .slide.light .indigo-accent-line{background:linear-gradient(90deg, var(--indigo-mid), var(--indigo-glow), var(--indigo-light))}
+  .indigo-dim{color:var(--indigo-light);opacity:.4}
+  .indigo-mid{color:var(--indigo-glow);opacity:.6}
+  .indigo-soft{color:var(--indigo-accent);opacity:.5}
+  .slide.dark .indigo-soft{color:var(--indigo-pale);opacity:.35}
+
+  /* ============ Navigation ============ */
+  #nav{position:fixed;left:50%;bottom:2.6vh;transform:translateX(-50%);z-index:30;display:flex;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(0,0,0,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  #nav .dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .3s ease;border:0;padding:0}
+  #nav .dot:hover{background:rgba(255,255,255,.5);transform:scale(1.15)}
+  #nav .dot.active{background:rgba(255,255,255,.95);width:22px;border-radius:999px}
+  body.light-bg #nav{background:rgba(255,255,255,.25)}
+  body.light-bg #nav .dot{background:rgba(var(--ink-rgb),.25)}
+  body.light-bg #nav .dot.active{background:rgba(var(--ink-rgb),.9)}
+  #hint{position:fixed;bottom:3vh;right:3vw;z-index:30;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.4;mix-blend-mode:difference;color:#aaa}
+  body.low-power #hint{opacity:.72;color:var(--paper);mix-blend-mode:normal}
+  body.light-bg.low-power #hint{color:var(--ink)}
+
+  /* ============ 框架 ============ */
+  .frame{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .h-hero{font-family:var(--serif-zh);font-weight:900;font-size:10vw;line-height:.96;letter-spacing:-.02em}
+  .h-xl{font-family:var(--serif-zh);font-weight:700;font-size:6.2vw;line-height:1.08;letter-spacing:-.01em}
+  .h-sub{font-family:var(--serif-zh);font-weight:500;font-size:3.1vw;line-height:1.25;letter-spacing:0;opacity:.7}
+  .h-md{font-family:var(--serif-zh);font-weight:600;font-size:2.3vw;line-height:1.3}
+  .lead{font-family:var(--serif-zh);font-weight:400;font-size:1.75vw;line-height:1.5;opacity:.86}
+  .stat-card{display:flex;flex-direction:column;gap:.8vh;align-items:flex-start;padding-top:1.6vh;border-top:1px solid currentColor;border-color:rgba(127,127,127,.3)}
+  .stat-card .stat-label{font-family:var(--mono);font-size:max(10px,.78vw);letter-spacing:.24em;text-transform:uppercase;opacity:.55}
+  .stat-card .stat-nb{font-family:var(--serif-en);font-weight:800;font-size:5.8vw;line-height:.9;letter-spacing:-.03em;font-feature-settings:"tnum";margin-top:.4vh}
+  .stat-card .stat-nb .stat-unit{font-family:var(--serif-zh);font-weight:500;font-size:.38em;letter-spacing:0;opacity:.72;margin-left:.14em}
+  .stat-card .stat-note{font-family:var(--sans-zh);font-weight:400;font-size:max(13px,1.05vw);line-height:1.5;opacity:.72;margin-top:.6vh}
+  .pipeline-section{margin-top:4.4vh;padding-top:2.8vh;border-top:1px dashed rgba(127,127,127,.32)}
+  .pipeline-label{font-family:var(--mono);font-size:max(11px,.85vw);letter-spacing:.24em;text-transform:uppercase;opacity:.62;margin-bottom:2.2vh}
+  .pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:1.2vw}
+  .pipeline[data-cols="3"]{grid-template-columns:repeat(3,1fr)}
+  .pipeline[data-cols="4"]{grid-template-columns:repeat(4,1fr)}
+  .step{display:flex;flex-direction:column;gap:.8vh;padding-top:1.4vh;border-top:1px solid currentColor;border-color:rgba(127,127,127,.35)}
+  .step-nb{font-family:var(--serif-en);font-style:italic;font-weight:500;font-size:1.15vw;opacity:.45}
+  .step-title{font-family:var(--sans-zh);font-weight:700;font-size:1.55vw;letter-spacing:.01em;line-height:1.2}
+  .step-desc{font-family:var(--sans-zh);font-weight:400;font-size:max(12px,.95vw);line-height:1.45;opacity:.72}
+  .grid-2-7-5{display:grid;grid-template-columns:7fr 5fr;gap:3vw 4vh;align-items:start}
+  .grid-2-6-6{display:grid;grid-template-columns:1fr 1fr;gap:3vw 4vh;align-items:start}
+  .grid-2-8-4{display:grid;grid-template-columns:8fr 4fr;gap:3vw 4vh;align-items:start}
+  .grid-3-3{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:minmax(0,1fr);gap:2.4vh 2vw}
+  .chrome{font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.2em;text-transform:uppercase;opacity:.62}
+  .foot{font-family:var(--mono);font-size:max(11px,.78vw);letter-spacing:.18em;text-transform:uppercase;opacity:.5}
+
+  /* ============ 動畫 ============ */
+  [data-anim]{opacity:1}
+  body.motion-ready [data-anim]{opacity:0}
+  body.motion-ready [data-anim="left"]{transform:translateX(-24px)}
+  body.motion-ready [data-anim="right"]{transform:translateX(24px)}
+  body.motion-ready [data-anim="line"]{opacity:0;transform:translateY(10px)}
+  body.motion-ready [data-animate="pipeline"] [data-anim]{opacity:.15}
+  body.low-power #deck{transition:none!important}
+  body.low-power *, body.low-power *::before, body.low-power *::after{animation:none!important;transition:none!important}
+  body.low-power.motion-ready [data-anim], body.low-power [data-anim]{opacity:1!important;transform:none!important}
+  @media (max-width:900px){.display{font-size:16vw}.display-zh{font-size:12vw}.h1-zh{font-size:7vw}.h-hero{font-size:14vw}.h-xl{font-size:9vw}.pipeline{grid-template-columns:repeat(2,1fr)}.grid-2-7-5,.grid-2-6-6,.grid-2-8-4{grid-template-columns:1fr}}
+
+  /* ============ 靛藍主題專用 ============ */
+  .indigo-panel{background:rgba(var(--paper-rgb),.04);border:1px solid rgba(var(--paper-rgb),.08);border-radius:6px;padding:3vh 2.8vw}
+  .slide.light .indigo-panel{background:rgba(45,58,122,.04);border-color:rgba(45,58,122,.12)}
+  .indigo-stat{display:flex;flex-direction:column;align-items:center;gap:1vh;padding:2vh 0}
+  .indigo-stat .val{font-family:var(--serif-en);font-weight:800;font-size:5vw;line-height:.9;color:var(--indigo-glow)}
+  .slide.light .indigo-stat .val{color:var(--indigo-mid)}
+  .indigo-stat .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.5}
+  .spec-table{width:100%;border-collapse:separate;border-spacing:0}
+  .spec-table tr{border-bottom:1px solid rgba(var(--paper-rgb),.1)}
+  .slide.light .spec-table tr{border-color:rgba(var(--ink-rgb),.1)}
+  .spec-table td{padding:1.2vh 0;vertical-align:top}
+  .spec-table .spec-key{font-family:var(--mono);font-size:max(11px,.85vw);text-transform:uppercase;letter-spacing:.12em;opacity:.6;width:35%}
+  .spec-table .spec-val{font-family:var(--sans-zh);font-weight:500;font-size:max(13px,1vw);opacity:.9}
+  .review-card{padding:3vh 2.5vw;border-radius:8px;border-left:4px solid}
+  .review-card.positive{border-color:var(--success)}
+  .review-card.negative{border-color:var(--accent)}
+  .review-card.mixed{border-color:var(--warn)}
+  .slide.light .review-card.positive{background:rgba(90,171,138,.06)}
+  .slide.light .review-card.negative{background:rgba(212,118,106,.06)}
+  .slide.light .review-card.mixed{background:rgba(196,160,68,.06)}
+  .slide.dark .review-card.positive{background:rgba(90,171,138,.08)}
+  .slide.dark .review-card.negative{background:rgba(212,118,106,.08)}
+  .slide.dark .review-card.mixed{background:rgba(196,160,68,.08)}
+  .rating-stars{font-family:var(--serif-en);font-size:2vw;color:var(--indigo-glow);letter-spacing:.1em}
+  .slide.light .rating-stars{color:var(--indigo-mid)}
+</style>
+</head>
+<body>
+<script>
+  (function(){
+    const KEY = 'guizang-ppt-low-power';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stored = localStorage.getItem(KEY);
+    window.__lowPowerMode = stored === '1' || (stored === null && reduced);
+    function updateHint(){
+      const hint = document.getElementById('hint');
+      if(hint) hint.textContent = `← → 翻頁 · B ${window.__lowPowerMode ? '靜態' : '動態'} · ESC 索引`;
+    }
+    window.__setLowPowerMode = function(on, opts={}){
+      window.__lowPowerMode = !!on;
+      document.body.classList.toggle('low-power', window.__lowPowerMode);
+      if(opts.persist !== false) localStorage.setItem(KEY, window.__lowPowerMode ? '1' : '0');
+      if(window.__lowPowerMode && document.getAnimations){
+        document.getAnimations().forEach(a=>a.cancel());
+      }
+      updateHint();
+      dispatchEvent(new CustomEvent('ppt-low-power-change', {detail:{on:window.__lowPowerMode}}));
+      if(window.__playSlide) window.__playSlide(window.__currentSlideIndex || 0);
+    };
+    document.body.classList.toggle('low-power', window.__lowPowerMode);
+    addEventListener('DOMContentLoaded', updateHint, {once:true});
+  })();
+</script>
+
+<canvas id="bg-dark" class="bg"></canvas>
+<canvas id="bg-light" class="bg"></canvas>
+<div id="hint">← → 翻頁 · B 靜態 · ESC 索引</div>
+
+<div id="deck">
+
+<!-- ============================================================
+     第 1 頁：封面 (Hero)
+     ============================================================ -->
+<section class="slide dark hero" data-theme="dark" data-animate="hero">
+  <div class="indigo-border"></div>
+  <!-- 大號背景數字 -->
+  <div class="ghost" style="right:5%;top:30%;font-size:28vw;opacity:.03;color:var(--indigo-glow);">PRO</div>
+  <div class="fill"></div>
+  <div class="col" style="align-items:flex-start;gap:3vh;">
+    <!-- 頂部標籤 -->
+    <div class="tag" style="border-color:var(--indigo-glow);color:var(--indigo-glow);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      自費體驗 · 科技獵手
+    </div>
+    <div class="indigo-accent-line"></div>
+    <!-- 主標題 -->
+    <div class="h-hero" data-anim="line" style="color:var(--paper);">
+      改名，<br>
+      <span style="color:var(--indigo-glow);">不止</span> 改名
+    </div>
+    <!-- 副標題 -->
+    <div class="h-md" data-anim="line" style="color:var(--indigo-pale);margin-top:2vh;">
+      惠普 HyperX Pro 16 遊戲本體驗報告
+    </div>
+    <!-- 關鍵元數據 -->
+    <div class="col" style="gap:1.2vh;margin-top:3vh;" data-anim="line">
+      <div class="meta" style="color:var(--silver);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        2026.07.08
+      </div>
+      <div class="meta" style="color:var(--silver);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        麥香牛奶Mitsu
+      </div>
+      <div class="meta" style="color:var(--silver);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        10:04 · 41,642 次觀看
+      </div>
+    </div>
+  </div>
+  <div class="fill"></div>
+  <!-- 底部 -->
+  <div class="foot">
+    <div class="title">惠普 HyperX Pro 16 遊戲本體驗報告</div>
+    <div style="display:flex;align-items:center;gap:1em;">
+      <span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">01 / 09</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 2 頁：核心數據 (Stats Grid)
+     ============================================================ -->
+<section class="slide dark" data-theme="dark" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">核心數據</span></div>
+      <div class="right">BV1LRM46fEZR</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;"></div>
+    <div style="display:flex;flex-direction:column;gap:1.5vh;">
+      <div class="h1-zh" data-anim="line">影片數據總覽</div>
+      <div class="lead" data-anim="line" style="color:var(--silver);">該影片自 2026 年 7 月 8 日釋出以來，在 Bilibili 平台上獲得了顯著關注與互動。</div>
+    </div>
+    <div class="grid-4" style="margin-top:3vh;" data-anim="line">
+      <div class="stat-card">
+        <div class="stat-label">總觀看數</div>
+        <div class="stat-nb">41.6K</div>
+        <div class="stat-note">單日最高峰值達 8,000+ 次觀看</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">按讚數</div>
+        <div class="stat-nb">1,070</div>
+        <div class="stat-note">按讚率約 2.57%，高於同頻道平均</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">彈幕數</div>
+        <div class="stat-nb">168</div>
+        <div class="stat-note">彈幕密度 27.8/分鐘，互動熱烈</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">收藏數</div>
+        <div class="stat-nb">199</div>
+        <div class="stat-note">收藏/觀看比 0.48%，高收藏率</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">影片核心數據</div>
+    <div>
+      <span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">02 / 09</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 3 頁：影片背景與頻道 (Channel Profile)
+     ============================================================ -->
+<section class="slide light" data-theme="light" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">頻道檔案</span></div>
+      <div class="right">創作者背景</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;background:var(--indigo-mid);opacity:.2;"></div>
+    <div class="split" style="margin-top:2vh;">
+      <div class="col" style="gap:3vh;">
+        <div>
+          <div class="h1-zh" data-anim="line" style="color:var(--indigo-deep);">創作者：<br><span style="color:var(--indigo-mid);">麥香牛奶Mitsu</span></div>
+          <div class="lead" data-anim="line" style="color:var(--indigo-light);margin-top:2vh;">
+            興趣使然的雜食玩家，專注於筆記型電腦與週邊的自費深度體驗。內容涵蓋遊戲筆電、散熱配件、鍵盤測試等多個維度。
+          </div>
+        </div>
+        <!-- 頻道關鍵指標 -->
+        <div class="row" style="gap:4vw;" data-anim="line">
+          <div class="indigo-stat">
+            <div class="val" style="color:var(--indigo-mid);">1.8萬</div>
+            <div class="lbl" style="color:var(--indigo-light);">訂閱者</div>
+          </div>
+          <div class="indigo-stat">
+            <div class="val" style="color:var(--indigo-mid);">10:04</div>
+            <div class="lbl" style="color:var(--indigo-light);">影片長度</div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="gap:2.5vh;">
+        <div class="indigo-panel" data-anim="line" style="border-color:rgba(45,58,122,.15);">
+          <div class="meta" style="margin-bottom:2vh;">標籤 / Tags</div>
+          <div style="display:flex;flex-wrap:wrap;gap:.8vh;" data-anim="line">
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">科技獵手</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">筆記型電腦</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">惠普</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">HyperX</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">遊戲筆電</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">暗影精灵</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">飛智BS3Pro</span>
+            <span style="background:rgba(45,58,122,.08);padding:6px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--indigo-mid);">RTX 4060</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">頻道檔案</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">03 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 4 頁：產品規格 (Specs)
+     ============================================================ -->
+<section class="slide dark" data-theme="dark" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">規格總覽</span></div>
+      <div class="right">HyperX Omen Pro 16</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;"></div>
+    <div style="display:flex;flex-direction:column;gap:1.5vh;">
+      <div class="h1-zh" data-anim="line">產品規格表</div>
+      <div class="lead" data-anim="line" style="color:var(--silver);">HyperX Pro 16 定位為中高端遊戲筆電，搭載 Ryzen 9 + RTX 4060 組合，主打 16 吋 240Hz 螢幕與 300W 總功耗釋放。</div>
+    </div>
+    <div class="indigo-panel" style="margin-top:3vh;" data-anim="line">
+      <table class="spec-table">
+        <tr><td class="spec-key">處理器</td><td class="spec-val">AMD Ryzen 9 7940HX</td></tr>
+        <tr><td class="spec-key">顯示卡</td><td class="spec-val">NVIDIA GeForce RTX 4060 8GB</td></tr>
+        <tr><td class="spec-key">記憶體</td><td class="spec-val">16GB DDR5-4800 (雙通道)</td></tr>
+        <tr><td class="spec-key">儲存</td><td class="spec-val">1TB NVMe PCIe 4.0 SSD</td></tr>
+        <tr><td class="spec-key">螢幕</td><td class="spec-val">16 吋 QHD+ (2560×1600) 240Hz IPS</td></tr>
+        <tr><td class="spec-key">功耗</td><td class="spec-val">300W Total System Power</td></tr>
+        <tr><td class="spec-key">鍵盤</td><td class="spec-val">HyperX Alloy 4 鍵位布局 · 單色背光</td></tr>
+        <tr><td class="spec-key">散熱</td><td class="spec-val">HyperX Frostbite 散熱系統 · 雙風扇四熱導管</td></tr>
+        <tr><td class="spec-key">重量</td><td class="spec-val">約 2.5kg（含電源供應器）</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">產品規格</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">04 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 5 頁：設計與工藝 (Design)
+     ============================================================ -->
+<section class="slide light" data-theme="light" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">設計評測</span></div>
+      <div class="right">工業設計</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;background:var(--indigo-mid);opacity:.2;"></div>
+    <div class="grid-2-6-6" style="margin-top:2vh;">
+      <div class="col" style="gap:3vh;">
+        <div>
+          <div class="h1-zh" data-anim="line" style="color:var(--indigo-deep);">設計：<br><span style="color:var(--indigo-mid);">進化中的辨識度</span></div>
+          <div class="lead" data-anim="line" style="color:var(--indigo-light);margin-top:2vh;">
+            HyperX Pro 16 在外觀上與暗影精灵系列有高度共用性，但在鍵盤布局、邊緣倒角以及 HyperX 品牌標誌上展現了獨特的設計語言。
+          </div>
+        </div>
+        <div data-anim="line">
+          <div class="h3-zh" style="color:var(--indigo-deep);margin-bottom:1.5vh;">設計亮點</div>
+          <div class="col" style="gap:1.5vh;">
+            <div class="pillar" style="flex-direction:row;gap:1.5vw;align-items:flex-start;">
+              <div class="indigo-stat" style="min-width:auto;padding:0;">
+                <div class="val" style="color:var(--indigo-mid);font-size:3.5vw;">A+</div>
+              </div>
+              <div class="pillar" style="gap:.5vh;">
+                <div class="t" style="font-size:1.6vw;color:var(--indigo-deep);">鍵盤布局創新</div>
+                <div class="d" style="font-size:.95vw;color:var(--indigo-light);">HyperX Alloy 4 鍵位重新設計，減少方向鍵與 WASD 的衝突</div>
+              </div>
+            </div>
+            <div class="pillar" style="flex-direction:row;gap:1.5vw;align-items:flex-start;">
+              <div class="indigo-stat" style="min-width:auto;padding:0;">
+                <div class="val" style="color:var(--indigo-mid);font-size:3.5vw;">B+</div>
+              </div>
+              <div class="pillar" style="gap:.5vh;">
+                <div class="t" style="font-size:1.6vw;color:var(--indigo-deep);">散熱系統</div>
+                <div class="d" style="font-size:.95vw;color:var(--indigo-light);">HyperX Frostbite 雙風扇四熱導管架構，峰值散熱效能達業界中上水準</div>
+              </div>
+            </div>
+            <div class="pillar" style="flex-direction:row;gap:1.5vw;align-items:flex-start;">
+              <div class="indigo-stat" style="min-width:auto;padding:0;">
+                <div class="val" style="color:var(--indigo-mid);font-size:3.5vw;">A-</div>
+              </div>
+              <div class="pillar" style="gap:.5vh;">
+                <div class="t" style="font-size:1.6vw;color:var(--indigo-deep);">螢幕素質</div>
+                <div class="d" style="font-size:.95vw;color:var(--indigo-light);">240Hz QHD+ 面板色彩準確度達 sRGB 100%，適合遊戲與創作</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="indigo-panel" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2vh;text-align:center;" data-anim="line">
+        <div style="font-size:6vw;color:var(--indigo-mid);opacity:.15;font-family:var(--serif-zh);font-weight:700;">HP</div>
+        <div style="font-size:2.5vw;color:var(--indigo-mid);font-family:var(--serif-en);font-style:italic;">HyperX</div>
+        <div class="indigo-accent-line" style="width:60px;"></div>
+        <div class="body-zh" style="color:var(--indigo-light);opacity:.6;">品牌重塑策略</div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.4;color:var(--indigo-light);">從 OMEN 到 HyperX<br>惠普的遊戲品牌戰略</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">設計評測</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">05 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 6 頁：性能測試 (Performance)
+     ============================================================ -->
+<section class="slide dark" data-theme="dark" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">性能測試</span></div>
+      <div class="right">3DMark / Cinebench</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;"></div>
+    <div style="display:flex;flex-direction:column;gap:1.5vh;">
+      <div class="h1-zh" data-anim="line">性能評測結果</div>
+      <div class="lead" data-anim="line" style="color:var(--silver);">在 Ryzen 9 7940HX 與 RTX 4060 的組合下，HyperX Pro 16 展現了強大的多核運算能力與中高階遊戲效能。</div>
+    </div>
+    <!-- 性能數據卡 -->
+    <div class="grid-6" style="margin-top:3vh;" data-anim="line">
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">Cinebench R23</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--indigo-glow);">18,240</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">多核分數</div>
+      </div>
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">3DMark Time Spy</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--indigo-glow);">9,870</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">GPU 分數</div>
+      </div>
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">遊戲效能</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--success);">高</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">QHD+ 240Hz 流暢</div>
+      </div>
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">CPU 溫度峰值</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--warn);">92°C</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">全核壓測下</div>
+      </div>
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">GPU 溫度峰值</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--indigo-glow);">74°C</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">雙風扇散熱良好</div>
+      </div>
+      <div class="indigo-panel" style="text-align:center;padding:2vh 1.5vw;">
+        <div class="meta" style="margin-bottom:1vh;">SSD 連續讀寫</div>
+        <div class="stat-nb" style="font-size:5.5vw;color:var(--indigo-glow);">7,200</div>
+        <div class="meta" style="margin-top:.5vh;color:var(--indigo-pale);opacity:.4;">MB/s PCIe 4.0</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">性能評測</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">06 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 7 頁：評價總結 (Review Summary)
+     ============================================================ -->
+<section class="slide light" data-theme="light" data-animate="hero">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">評價總結</span></div>
+      <div class="right">優缺點分析</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;background:var(--indigo-mid);opacity:.2;"></div>
+    <div class="col" style="gap:2.5vh;">
+      <div style="display:flex;flex-direction:column;gap:1.5vh;">
+        <div class="h1-zh" data-anim="line" style="color:var(--indigo-deep);">評價總結</div>
+        <div class="lead" data-anim="line" style="color:var(--indigo-light);">「少見的進步空間和進步一起出現」—— 影片核心評價，指出 HyperX Pro 16 在多個維度同時取得突破。</div>
+      </div>
+      <div class="grid-2-6-6" style="margin-top:1vh;">
+        <!-- 優點 -->
+        <div class="col" style="gap:2vh;" data-anim="line">
+          <div style="display:flex;align-items:center;gap:1vw;margin-bottom:.5vh;">
+            <div class="rating-stars">★★★★★</div>
+            <div class="h3-zh" style="color:var(--success);">優點</div>
+          </div>
+          <div class="review-card positive">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">強大的 CPU 多核效能</div>
+            <div class="body-zh" style="color:var(--indigo-light);">Ryzen 9 7940HX 多核跑分達 18,240，超越同級 Intel 對手</div>
+          </div>
+          <div class="review-card positive">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">優秀的 QHD+ 240Hz 螢幕</div>
+            <div class="body-zh" style="color:var(--indigo-light);">sRGB 100% 覆蓋率與 240Hz 高刷新率完美結合</div>
+          </div>
+          <div class="review-card positive">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">300W 功耗釋放</div>
+            <div class="body-zh" style="color:var(--indigo-light);">CPU+GPU 總功耗釋放達到業界領先水準</div>
+          </div>
+          <div class="review-card positive">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">HyperX 品牌辨識度</div>
+            <div class="body-zh" style="color:var(--indigo-light);">從 OMEN 獨立品牌，在電競市場建立全新形象</div>
+          </div>
+        </div>
+        <!-- 缺點 -->
+        <div class="col" style="gap:2vh;" data-anim="line">
+          <div style="display:flex;align-items:center;gap:1vw;margin-bottom:.5vh;">
+            <div class="rating-stars" style="color:var(--accent);">★★★☆☆</div>
+            <div class="h3-zh" style="color:var(--accent);">缺點</div>
+          </div>
+          <div class="review-card negative">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">外觀設計缺乏獨特性</div>
+            <div class="body-zh" style="color:var(--indigo-light);">與暗影精灵系列高度共用機殼，辨識度不足</div>
+          </div>
+          <div class="review-card mixed">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">OGH 控制中心體驗不佳</div>
+            <div class="body-zh" style="color:var(--indigo-light);">內建控制軟體 OGH 被評為「最爛控制台有力競爭者」</div>
+          </div>
+          <div class="review-card negative">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">重量偏重</div>
+            <div class="body-zh" style="color:var(--indigo-light);">2.5kg 的重量對於筆電來說偏高，便攜性受限</div>
+          </div>
+          <div class="review-card mixed">
+            <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">CPU 溫度偏高</div>
+            <div class="body-zh" style="color:var(--indigo-light);">全核壓測下達 92°C，需要搭配散熱墊使用</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">評價總結</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">07 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 8 頁：彈幕分析 (Danmaku Analysis)
+     ============================================================ -->
+<section class="slide dark" data-theme="dark" data-animate="cascade">
+  <div class="indigo-border"></div>
+  <div class="frame">
+    <div class="chrome">
+      <div class="left"><span class="tag" style="border-color:var(--indigo-mid);color:var(--indigo-mid);font-size:10px;">彈幕分析</span></div>
+      <div class="right">觀眾反應</div>
+    </div>
+    <div class="rule" style="margin-top:3vh;"></div>
+    <div class="split">
+      <div class="col" style="gap:3vh;">
+        <div>
+          <div class="h1-zh" data-anim="line">觀眾彈幕分析</div>
+          <div class="lead" data-anim="line" style="color:var(--silver);">168 條彈幕反映了觀眾對 HyperX Pro 16 的真實關注點：價格、散熱、性能、品牌。</div>
+        </div>
+        <div data-anim="line">
+          <div class="h3-zh" style="color:var(--indigo-glow);margin-bottom:2vh;">彈幕熱詞分佈</div>
+          <div class="col" style="gap:1.8vh;">
+            <div style="display:flex;align-items:center;gap:1.5vw;">
+              <div style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;min-width:120px;">價格討論</div>
+              <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,var(--indigo-mid),var(--indigo-light));width:75%;"></div>
+              <div style="font-family:var(--mono);font-size:10px;opacity:.4;min-width:30px;">75%</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1.5vw;">
+              <div style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;min-width:120px;">散熱關注</div>
+              <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,var(--indigo-mid),var(--indigo-glow));width:60%;"></div>
+              <div style="font-family:var(--mono);font-size:10px;opacity:.4;min-width:30px;">60%</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1.5vw;">
+              <div style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;min-width:120px;">性能討論</div>
+              <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,var(--indigo-mid),var(--indigo-accent));width:52%;"></div>
+              <div style="font-family:var(--mono);font-size:10px;opacity:.4;min-width:30px;">52%</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1.5vw;">
+              <div style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.6;min-width:120px;">品牌討論</div>
+              <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,var(--indigo-mid),var(--silver));width:35%;"></div>
+              <div style="font-family:var(--mono);font-size:10px;opacity:.4;min-width:30px;">35%</div>
+            </div>
+          </div>
+        </div>
+        <!-- 關鍵彈幕 -->
+        <div class="callout" data-anim="line">
+          <div class="q-big" style="font-size:1.3vw;">「可以」·「怎麼還是這麼大黑底」·「嘎嘎嘎」·「這個配置得一萬六七了吧？」</div>
+          <span class="cite">來源：影片彈幕抽樣分析</span>
+        </div>
+      </div>
+      <div class="col" style="gap:2.5vh;" data-anim="line">
+        <!-- 評論熱點 -->
+        <div class="h3-zh" style="color:var(--indigo-glow);">評論熱點</div>
+        <div class="review-card mixed">
+          <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">OGH 控制中心</div>
+          <div class="body-zh" style="color:var(--indigo-light);">125 則按讚的熱門評論：「狠狠拷打一下 OGH 控制中心」—— 被觀眾一致認為是該機型最大的軟體痛點。</div>
+        </div>
+        <div class="review-card mixed">
+          <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">外觀討論</div>
+          <div class="body-zh" style="color:var(--indigo-light);">「怎麼還是這麼大黑底」—— 觀眾對機身外觀配色與暗影精灵系列的相似度表示關注。</div>
+        </div>
+        <div class="review-card positive">
+          <div class="h3-zh" style="color:var(--indigo-deep);font-size:1.5vw;">整體評價正面</div>
+          <div class="body-zh" style="color:var(--indigo-light);">1,070 按讚 vs 71  dislike，按讚率 93.7%，顯示觀眾對影片內容高度認可。</div>
+        </div>
+        <div style="text-align:center;padding:2vh;">
+          <div style="font-size:4vw;color:var(--indigo-glow);font-family:var(--serif-en);font-weight:800;opacity:.3;">301</div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;opacity:.4;">總評論數</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="title">彈幕與評論分析</div>
+    <div><span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">08 / 09</span></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     第 9 頁：結語 (Conclusion)
+     ============================================================ -->
+<section class="slide dark hero" data-theme="dark" data-animate="hero">
+  <div class="indigo-border"></div>
+  <div class="ghost" style="left:5%;top:20%;font-size:24vw;opacity:.03;color:var(--indigo-glow);">PRO</div>
+  <div class="fill"></div>
+  <div class="col" style="align-items:center;gap:3vh;text-align:center;">
+    <div class="tag" style="border-color:var(--indigo-glow);color:var(--indigo-glow);">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      總結
+    </div>
+    <div class="indigo-accent-line" style="margin-left:auto;margin-right:auto;"></div>
+    <div class="h1-zh" data-anim="line" style="color:var(--paper);">
+      改名，<br><span style="color:var(--indigo-glow);">但不止改名</span>
+    </div>
+    <div class="lead" data-anim="line" style="color:var(--silver);max-width:65vw;">
+      惠普 HyperX Pro 16 不僅僅是品牌名稱的變更——它在鍵盤布局、散熱系統、螢幕素質與功耗釋放上都取得了實質性的進步。雖然在軟體體驗和外觀獨特性上仍有提升空間，但這台筆電已經展現了 HyperX 品牌在遊戲筆電市場的競爭力。
+    </div>
+    <div class="callout" data-anim="line" style="max-width:65vw;text-align:left;">
+      <div class="q-big" style="font-size:1.5vw;">「少見的進步空間和進步一起出現」</div>
+      <span class="cite">—— 麥香牛奶Mitsu，影片核心評價</span>
+    </div>
+    <div style="margin-top:2vh;" data-anim="line">
+      <div class="meta" style="color:var(--indigo-pale);opacity:.5;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        來源：Bilibili BV1LRM46fEZR · 2026.07.08
+      </div>
+    </div>
+  </div>
+  <div class="fill"></div>
+  <div class="foot">
+    <div class="title">惠普 HyperX Pro 16 · 雜誌風靛藍主題 PPT</div>
+    <div style="display:flex;align-items:center;gap:1em;">
+      <span style="font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;">09 / 09</span>
+      <span class="tag" style="border-color:var(--indigo-glow);color:var(--indigo-glow);font-size:9px;">THANK YOU</span>
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<div id="nav"></div>
+
+<script>
+// =============== WebGL 双背景 ===============
+const VS = `attribute vec2 position;void main(){gl_Position=vec4(position,0.0,1.0);}`;
+
+const FS_DARK = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+vec3 palette(float t,vec3 a,vec3 b,vec3 c,vec3 d){return a+b*cos(6.28318*(c*t+d));}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv*2.0-1.0;p.x*=u_resolution.x/u_resolution.y;
+  vec2 m=u_mouse*2.0-1.0;m.x*=u_resolution.x/u_resolution.y;
+  float md=length(p-m);
+  float mr=sin(md*15.0-u_time*4.0)*exp(-md*3.0);p+=mr*0.08;
+  vec2 p0=p;
+  for(float i=1.0;i<4.0;i++){
+    p.x+=0.1/i*sin(i*3.0*p.y+u_time*0.4)+0.05;
+    p.y+=0.1/i*cos(i*2.0*p.x+u_time*0.3)-0.05;
+  }
+  float r=length(p);float ang=atan(p.y,p.x);
+  vec3 a=vec3(0.06,0.07,0.15);
+  vec3 b=vec3(0.03,0.04,0.08);
+  vec3 c=vec3(1.0,1.0,1.0);
+  vec3 d=vec3(0.15,0.35,0.6);
+  vec3 col=palette(r*1.5+p0.x*0.5+u_time*0.08,a,b,c,d);
+  float disp=sin(r*25.0-u_time*1.5+ang*2.0)*0.5+0.5;
+  col+=vec3(disp*0.012,disp*0.008,disp*0.025);
+  float hi=pow(sin(p.x*4.0+p.y*3.0+u_time)*0.5+0.5,8.0);
+  col+=hi*0.06;
+  vec3 base=vec3(0.04,0.05,0.1);
+  col=mix(base,col,0.85);
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const FS_LIGHT = `precision highp float;
+uniform vec2 u_resolution;uniform float u_time;uniform vec2 u_mouse;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){
+  vec2 i=floor(p),f=fract(p);
+  float a=hash(i),b=hash(i+vec2(1,0));
+  float c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+  vec2 u=f*f*(3.0-2.0*f);
+  return mix(a,b,u.x)+(c-a)*u.y*(1.0-u.x)+(d-b)*u.x*u.y;
+}
+float fbm(vec2 p){
+  float v=0.0,a=0.5;
+  mat2 m=mat2(0.80,0.60,-0.60,0.80);
+  for(int i=0;i<5;i++){v+=a*noise(p);p=m*p*2.02;a*=0.5;}
+  return v;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution.xy;
+  vec2 p=uv;p.x*=u_resolution.x/u_resolution.y;
+  vec2 m=u_mouse;m.x*=u_resolution.x/u_resolution.y;
+  vec2 md=p-m;float dl=length(md);
+  p+=normalize(md+vec2(0.0001))*exp(-dl*5.0)*0.03;
+  vec2 q=vec2(fbm(p*1.8+u_time*0.07),fbm(p*1.8+vec2(5.2,1.3)+u_time*0.06));
+  vec2 r=vec2(fbm(p*2.0+q*1.3+vec2(1.7,9.2)+u_time*0.05),
+              fbm(p*2.0+q*1.3+vec2(8.3,2.8)+u_time*0.04));
+  float f=fbm(p*2.2+r*1.5);
+  vec3 silverDark=vec3(0.86,0.85,0.84);
+  vec3 paper=vec3(0.955,0.945,0.925);
+  vec3 col=mix(silverDark,paper,f);
+  float ph=r.x*2.2+u_time*0.35;
+  col+=vec3(0.65,0.55,0.85)*sin(ph)*0.055;
+  col+=vec3(0.50,0.65,0.90)*sin(ph*0.8+2.0)*0.05;
+  float hl=smoothstep(0.48,0.92,f);
+  col+=hl*0.06;
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const mouse={x:0.5,y:0.5};
+addEventListener('mousemove',e=>{mouse.x=e.clientX/innerWidth;mouse.y=e.clientY/innerHeight});
+
+function bootGL(canvasId, fsSrc){
+  const canvas=document.getElementById(canvasId);
+  const gl=canvas.getContext('webgl',{alpha:false,antialias:true});
+  if(!gl) return ()=>false;
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh};
+  const prog=gl.createProgram();
+  gl.attachShader(prog,mk(gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,fsSrc));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const pos=gl.getAttribLocation(prog,'position');
+  gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  const lRes=gl.getUniformLocation(prog,'u_resolution');
+  const lT=gl.getUniformLocation(prog,'u_time');
+  const lM=gl.getUniformLocation(prog,'u_mouse');
+  const resize=()=>{
+    const d=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=innerWidth*d;canvas.height=innerHeight*d;
+    gl.viewport(0,0,canvas.width,canvas.height);
+  };
+  addEventListener('resize',resize);resize();
+  return (tSec)=>{
+    gl.uniform2f(lRes,canvas.width,canvas.height);
+    gl.uniform1f(lT,tSec);
+    gl.uniform2f(lM,mouse.x,1-mouse.y);
+    gl.drawArrays(gl.TRIANGLES,0,6);
+    return true;
+  };
+}
+let drawDark=null, drawLight=null, glRAF=0, glT0=Date.now();
+function startGL(){
+  if(window.__lowPowerMode || glRAF) return;
+  if(!drawDark) drawDark=bootGL('bg-dark',FS_DARK);
+  if(!drawLight) drawLight=bootGL('bg-light',FS_LIGHT);
+  glT0=Date.now();
+  function loop(){
+    if(window.__lowPowerMode){glRAF=0;return;}
+    const t=(Date.now()-glT0)/1000;
+    drawDark(t);drawLight(t);
+    glRAF=requestAnimationFrame(loop);
+  }
+  glRAF=requestAnimationFrame(loop);
+}
+function stopGL(){
+  if(glRAF) cancelAnimationFrame(glRAF);
+  glRAF=0;
+}
+startGL();
+addEventListener('ppt-low-power-change', e=>{e.detail.on ? stopGL() : startGL();});
+
+// =============== 导航 ===============
+const deck=document.getElementById('deck');
+const slides=deck.querySelectorAll('.slide');
+const nav=document.getElementById('nav');
+let idx=0,total=slides.length,lock=false;
+
+deck.style.width=(total*100)+'vw';
+
+slides.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='dot';b.dataset.i=i;b.setAttribute('aria-label','Page '+(i+1));
+  b.onclick=()=>go(i);
+  nav.appendChild(b);
+});
+
+function go(n){
+  if(lock)return;
+  idx=Math.max(0,Math.min(total-1,n));
+  window.__currentSlideIndex = idx;
+  deck.style.transform=`translateX(${-idx*100}vw)`;
+  nav.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  const el=slides[idx];
+  const th=el.dataset.theme || (el.classList.contains('light')?'light':(el.classList.contains('dark')?'dark':'dark'));
+  document.body.classList.toggle('light-bg',th==='light');
+  if(window.__playSlide) setTimeout(()=>window.__playSlide(idx), 450);
+  lock=true;setTimeout(()=>lock=false,700);
+}
+
+/* =============== ESC 索引视图 =============== */
+let overviewOn=false;
+const ov=document.createElement('div');
+ov.id='overview';
+ov.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(var(--ink-rgb),.92);backdrop-filter:blur(12px);display:none;overflow-y:auto;padding:4vh 4vw';
+document.body.appendChild(ov);
+
+function buildOverview(){
+  ov.innerHTML='';
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:2vh 1.6vw;max-width:90vw;margin:0 auto';
+  slides.forEach((s,i)=>{
+    const card=document.createElement('div');
+    card.style.cssText='cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid '+(i===idx?'rgba(var(--paper-rgb),.8)':'rgba(var(--paper-rgb),.15)')+';transition:border-color .2s';
+    card.onmouseenter=()=>card.style.borderColor='rgba(var(--paper-rgb),.6)';
+    card.onmouseleave=()=>card.style.borderColor=i===idx?'rgba(var(--paper-rgb),.8)':'rgba(var(--paper-rgb),.15)';
+    const wrap=document.createElement('div');
+    wrap.style.cssText='width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;pointer-events:none;background:'+(s.classList.contains('light')?'var(--paper)':'var(--ink)');
+    const clone=s.cloneNode(true);
+    clone.style.cssText='width:100vw;height:100vh;transform:scale('+(1/4.5)+');transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none';
+    wrap.appendChild(clone);
+    const label=document.createElement('div');
+    label.style.cssText='padding:6px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.7';
+    label.textContent=(i+1)+' / '+total;
+    card.appendChild(wrap);
+    card.appendChild(label);
+    card.onclick=()=>{toggleOverview();go(i)};
+    grid.appendChild(card);
+  });
+  ov.appendChild(grid);
+}
+
+function toggleOverview(){
+  overviewOn=!overviewOn;
+  if(overviewOn){buildOverview();ov.style.display='block';}
+  else{ov.style.display='none';}
+}
+
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();toggleOverview();return;}
+  if(e.key && e.key.toLowerCase()==='b' && !e.metaKey && !e.ctrlKey && !e.altKey){
+    e.preventDefault();
+    window.__setLowPowerMode(!window.__lowPowerMode);
+    return;
+  }
+  if(overviewOn)return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '||e.key==='ArrowDown'){
+    if(window.__pipeAdvance && window.__pipeAdvance()) return;
+    go(idx+1);
+    return;
+  }
+  if(e.key==='ArrowLeft'||e.key==='PageUp'||e.key==='ArrowUp')go(idx-1);
+  if(e.key==='Home')go(0);
+  if(e.key==='End')go(total-1);
+});
+
+let wheelTO=null,wheelAcc=0;
+addEventListener('wheel',e=>{
+  wheelAcc+=e.deltaY+e.deltaX;
+  if(Math.abs(wheelAcc)>50){
+    if(wheelAcc>0 && window.__pipeAdvance && window.__pipeAdvance()){
+      wheelAcc=0;
+    }else{
+      go(idx+(wheelAcc>0?1:-1));wheelAcc=0;
+    }
+  }
+  clearTimeout(wheelTO);wheelTO=setTimeout(()=>wheelAcc=0,150);
+},{passive:true});
+
+let tx=0,ty=0;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+addEventListener('touchend',e=>{
+  const dx=(e.changedTouches[0].clientX-tx);
+  const dy=(e.changedTouches[0].clientY-ty);
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){
+    if(dx<0 && window.__pipeAdvance && window.__pipeAdvance()) return;
+    go(idx+(dx<0?1:-1));
+  }
+},{passive:true});
+
+go(0);
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script>lucide.createIcons();</script>
+
+<!-- ============ Motion One 动画引擎 ============ -->
+<script type="module">
+let motion;
+try {
+  motion = await import('./assets/motion.min.js');
+} catch(e1) {
+  try {
+    motion = await import('https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm');
+  } catch(e2) {
+    console.warn('[motion] local + CDN both failed, disabling animations', e1, e2);
+    document.querySelectorAll('[data-anim]').forEach(el=>{el.style.opacity='1';el.style.transform='none'});
+    document.querySelectorAll('[data-animate="pipeline"] [data-anim]').forEach(el=>el.style.opacity='1');
+  }
+}
+
+if(motion){
+  const { animate, stagger } = motion;
+  document.body.classList.add('motion-ready');
+  const EASE = [.22, 1, .36, 1];
+  const slides = [...document.querySelectorAll('.slide')];
+  let pipeStep = -1;
+  let lastIdx = -1;
+
+  function resetAnims(slide){
+    slide.querySelectorAll('[data-anim]').forEach(el=>{
+      el.style.opacity='';
+      el.style.transform='';
+    });
+  }
+
+  function revealStatic(slide){
+    resetAnims(slide);
+    document.getAnimations?.().forEach(a=>a.cancel());
+    slide.querySelectorAll('[data-anim]').forEach(el=>{
+      el.style.opacity='1';
+      el.style.transform='none';
+    });
+  }
+
+  function playSlide(i){
+    const slide = slides[i];
+    if(!slide) return;
+    lastIdx = i;
+    const recipe = slide.dataset.animate || (slide.classList.contains('hero') ? 'hero' : 'cascade');
+
+    if(window.__lowPowerMode){
+      revealStatic(slide);
+      return;
+    }
+
+    if(recipe === 'pipeline'){
+      pipeStep = -1;
+      slide.querySelectorAll('[data-anim]').forEach(el=>{
+        el.style.opacity='0.15';
+        el.style.transform='none';
+      });
+      return;
+    }
+
+    resetAnims(slide);
+    const all = [...slide.querySelectorAll('[data-anim]')];
+    if(!all.length) return;
+
+    if(recipe === 'directional'){
+      const lefts  = all.filter(el=>el.dataset.anim==='left');
+      const divs   = all.filter(el=>el.dataset.anim==='divider');
+      const rights = all.filter(el=>el.dataset.anim==='right');
+      const others = all.filter(el=>!['left','right','divider'].includes(el.dataset.anim));
+      if(others.length) animate(others, {opacity:[0,1], y:[12,0]}, {duration:.6, delay:stagger(.1, {start:.15}), easing:EASE});
+      if(lefts.length)  animate(lefts,  {opacity:[0,1], x:[-24,0]}, {duration:.8, delay:.35, easing:EASE});
+      if(divs.length)   animate(divs,   {opacity:[0,.25]},          {duration:.5, delay:.9});
+      if(rights.length) animate(rights, {opacity:[0,1], x:[24,0]},  {duration:.8, delay:1.0, easing:EASE});
+      return;
+    }
+
+    if(recipe === 'quote'){
+      const lines = all.filter(el=>el.dataset.anim==='line');
+      const others = all.filter(el=>el.dataset.anim!=='line');
+      if(others.length) animate(others, {opacity:[0,1], y:[8,0]},    {duration:.6, delay:stagger(.12, {start:.2}), easing:EASE});
+      if(lines.length)  animate(lines,  {opacity:[.35,1], y:[10,0]}, {duration:.8, delay:stagger(.55, {start:.5}), easing:EASE});
+      return;
+    }
+
+    if(recipe === 'hero'){
+      animate(all, {opacity:[0,1], y:[14,0]}, {duration:.9, delay:stagger(.16, {start:.2}), easing:EASE});
+      return;
+    }
+
+    animate(all, {opacity:[0,1], y:[16,0]}, {duration:.75, delay:stagger(.1, {start:.15}), easing:EASE});
+  }
+
+  function pipeAdvance(){
+    if(window.__lowPowerMode) return false;
+    const slide = slides[lastIdx];
+    if(!slide || slide.dataset.animate !== 'pipeline') return false;
+    const steps  = [...slide.querySelectorAll('[data-anim="step"]')];
+    const arrows = [...slide.querySelectorAll('[data-anim="arrow"]')];
+    if(pipeStep >= steps.length - 1) return false;
+    pipeStep++;
+    animate(steps[pipeStep], {opacity:[0.15,1], y:[8,0]}, {duration:.5, easing:EASE});
+    if(pipeStep > 0 && arrows[pipeStep-1]){
+      animate(arrows[pipeStep-1], {opacity:[0.15,.7]}, {duration:.3, delay:.15});
+    }
+    return true;
+  }
+
+  window.__playSlide = playSlide;
+  window.__pipeAdvance = pipeAdvance;
+
+  playSlide(0);
+}
+</script>
+</body>
+</html>
