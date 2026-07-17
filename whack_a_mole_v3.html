@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打地鼠遊戲</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','Microsoft JhengHei',sans-serif;background:linear-gradient(135deg,#1a0a2e 0%,#16213e 40%,#0f3460 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;padding-bottom:40px}
+h1{color:#fff;font-size:38px;margin:20px 0 4px;text-shadow:0 0 30px rgba(255,200,0,.5);letter-spacing:4px}
+.subtitle{color:#aaa;font-size:13px;margin-bottom:16px;letter-spacing:2px}
+.scoreboard{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
+.stat-box{background:rgba(255,255,255,.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:10px 20px;text-align:center;min-width:100px}
+.stat-box .label{color:#999;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px}
+.stat-box .value{color:#fff;font-size:28px;font-weight:bold}
+.stat-box .value.score{color:#ffd700}
+.stat-box .value.combo{color:#ff6b6b}
+.stat-box .value.time-left{color:#4fc3f7}
+.difficulty-bar{display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;justify-content:center;position:relative;z-index:200}
+.diff-btn{padding:8px 22px;border:2px solid rgba(255,255,255,.2);border-radius:20px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer;transition:all .2s;letter-spacing:1px;font-family:inherit;font-weight:normal}
+.diff-btn:hover{border-color:#ffd700;color:#ffd700;background:rgba(255,215,0,.12);transform:scale(1.05)}
+.diff-btn.active{background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a0a2e;border-color:#ffd700;font-weight:bold;transform:scale(1.08);box-shadow:0 0 20px rgba(255,200,0,.4)}
+.diff-btn:disabled{opacity:.4;cursor:not-allowed;transform:none !important}
+.diff-label{color:#aaa;font-size:12px;margin-bottom:4px;text-align:center;letter-spacing:1px}
+.diff-current{color:#ffd700;font-size:16px;margin-bottom:12px;text-align:center;letter-spacing:2px;font-weight:bold;min-height:24px;position:relative;z-index:200}
+.game-board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:10px 0 24px;padding:16px;background:rgba(0,0,0,.3);border-radius:20px;border:1px solid rgba(255,255,255,.08);max-width:460px;width:100%}
+.hole-container{position:relative;width:120px;height:120px}
+.hole{width:120px;height:120px;border-radius:50%;background:radial-gradient(ellipse at center,#2d1b00 0%,#1a0f00 60%,#0d0800 100%);border:3px solid #3d2b00;box-shadow:inset 0 8px 20px rgba(0,0,0,.8),0 4px 8px rgba(0,0,0,.3);position:relative;overflow:hidden;cursor:pointer;transition:transform .1s}
+.hole:active{transform:scale(.96)}
+.hole::before{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:100px;height:24px;background:radial-gradient(ellipse at center,#5a3d00 0%,#3d2b00 100%);border-radius:50%;z-index:5;box-shadow:0 4px 8px rgba(0,0,0,.5)}
+.mole{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:100px;height:100px;transition:bottom .15s ease-out;z-index:2;pointer-events:none}
+.mole.active{bottom:10px}
+.mole.hit{animation:moleHit .3s ease-out forwards}
+@keyframes moleHit{0%{transform:translateX(-50%) scale(1)}30%{transform:translateX(-50%) scale(1.2) rotate(10deg)}100%{transform:translateX(-50%) scale(0) rotate(30deg);bottom:-60px;opacity:0}}
+.mole-body{width:80px;height:70px;background:linear-gradient(180deg,#8B4513 0%,#6B3410 100%);border-radius:50% 50% 40% 40%;position:absolute;bottom:0;left:50%;transform:translateX(-50%);box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.mole-head{width:60px;height:50px;background:linear-gradient(180deg,#a0522d 0%,#8B4513 100%);border-radius:50%;position:absolute;top:8px;left:50%;transform:translateX(-50%)}
+.mole-eye{width:10px;height:12px;background:#111;border-radius:50%;position:absolute;top:18px;box-shadow:0 0 4px rgba(255,0,0,.6)}
+.mole-eye.left{left:18px}.mole-eye.right{right:18px}
+.mole-nose{width:16px;height:12px;background:#ff9999;border-radius:50%;position:absolute;top:30px;left:50%;transform:translateX(-50%)}
+.mouth{width:24px;height:8px;border-bottom:3px solid #333;border-radius:0 0 50% 50%;position:absolute;top:38px;left:50%;transform:translateX(-50%)}
+.mole-tooth{width:6px;height:8px;background:#fff;border-radius:0 0 2px 2px;position:absolute;top:36px;box-shadow:1px 0 0 #ccc}
+.mole-tooth.left{left:38px}.mole-tooth.right{right:38px}
+.mole-ear{width:16px;height:14px;background:#8B4513;border-radius:50%;position:absolute;top:4px}
+.mole-ear.left{left:6px}.mole-ear.right{right:6px}
+.mole-crown{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:30px;height:18px;background:linear-gradient(180deg,#ffd700,#ff8c00);clip-path:polygon(0% 100%,15% 0%,30% 60%,50% 0%,70% 60%,85% 0%,100% 100%);z-index:10}
+.mole-bomb .mole-body{background:linear-gradient(180deg,#333 0%,#111 100%)}
+.mole-bomb .mole-eye{background:#ff0000;animation:blinkEye .3s infinite}
+@keyframes blinkEye{0%,50%,100%{opacity:1}25%,75%{opacity:.3}}
+.hit-effect{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:32px;font-weight:bold;pointer-events:none;z-index:20;animation:hitFloat .8s ease-out forwards;text-shadow:0 0 10px rgba(255,255,255,.8)}
+@keyframes hitFloat{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}50%{opacity:1;transform:translate(-50%,-80%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
+.miss-effect{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:24px;font-weight:bold;pointer-events:none;z-index:20;animation:hitFloat .6s ease-out forwards;color:#ff4444}
+.combo-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:64px;font-weight:bold;color:#ff6b6b;text-shadow:0 0 40px rgba(255,107,107,.8);z-index:50;pointer-events:none;opacity:0}
+.combo-popup.show{animation:comboAnim .6s ease-out forwards}
+@keyframes comboAnim{0%{transform:translate(-50%,-50%) scale(0);opacity:0}40%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+.particle{position:fixed;width:6px;height:6px;border-radius:50%;pointer-events:none;z-index:25;animation:particleBurst .6s ease-out forwards}
+@keyframes particleBurst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+.overlay.hidden{display:none !important}
+.overlay h2{color:#ffd700;font-size:44px;margin-bottom:12px;text-shadow:0 0 30px rgba(255,200,0,.5)}
+.overlay p{color:#ccc;font-size:16px;margin-bottom:6px;line-height:1.6}
+.overlay .final-score{font-size:56px;color:#ffd700;font-weight:bold;margin:16px 0}
+.overlay .stats-summary{display:flex;gap:20px;margin:16px 0;flex-wrap:wrap;justify-content:center}
+.overlay .stats-summary .stat{text-align:center}
+.overlay .stats-summary .stat .num{font-size:28px;color:#ffd700;font-weight:bold}
+.overlay .stats-summary .stat .desc{color:#999;font-size:12px}
+.start-btn{margin-top:20px;padding:14px 50px;font-size:20px;font-weight:bold;border:none;border-radius:50px;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#1a0a2e;cursor:pointer;letter-spacing:3px;transition:all .3s;box-shadow:0 8px 30px rgba(255,200,0,.3);font-family:inherit}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(255,200,0,.5)}
+@media(max-width:500px){h1{font-size:28px}.game-board{grid-template-columns:repeat(3,1fr);gap:10px;padding:10px;max-width:340px}.hole-container,.hole{width:90px;height:90px}.mole-body{width:64px;height:56px}.mole-head{width:48px;height:40px}.stat-box .value{font-size:22px}.stat-box{padding:6px 12px;min-width:70px}.scoreboard{gap:8px}}
+</style>
+</head>
+<body>
+<h1>&#x1F528; 打地鼠 &#x1F439;</h1>
+<p class="subtitle">點擊冒出來的地鼠！小心炸彈！</p>
+<div class="difficulty-bar">
+  <button class="diff-btn" data-diff="easy">&#x1F331; 簡單</button>
+  <button class="diff-btn" data-diff="medium">&#x1F525; 普通</button>
+  <button class="diff-btn" data-diff="hard">&#x1F480; 困難</button>
+</div>
+<div class="diff-current" id="diffCurrent">當前難度：普通</div>
+<div class="scoreboard">
+  <div class="stat-box"><div class="label">分數</div><div class="value score" id="score">0</div></div>
+  <div class="stat-box"><div class="label">連擊</div><div class="value combo" id="combo">0</div></div>
+  <div class="stat-box"><div class="label">最高連擊</div><div class="value" id="maxCombo" style="color:#ff9800">0</div></div>
+  <div class="stat-box"><div class="label">時間</div><div class="value time-left" id="timer">30</div></div>
+</div>
+<div class="game-board" id="gameBoard"></div>
+<div class="combo-popup" id="comboPopup"></div>
+<div class="overlay" id="startOverlay">
+  <h2>&#x1F528; 打地鼠</h2>
+  <p>地鼠會從洞裡冒出來，點擊它們來得分！</p>
+  <p>連續命中會累積連擊加成</p>
+  <p>&#x1F534; 黑色地鼠是炸彈，點到會扣分</p>
+  <p>&#x1F451; 金色皇冠是特殊地鼠，分值更高</p>
+  <button class="start-btn" id="startBtn">開始遊戲</button>
+</div>
+<div class="overlay hidden" id="endOverlay">
+  <h2>&#x23F0; 時間到！</h2>
+  <div class="final-score" id="finalScore">0</div>
+  <div class="stats-summary" id="statsSummary"></div>
+  <button class="start-btn" id="restartBtn">再來一局</button>
+</div>
+<script>
+var DIFFICULTIES={
+  easy:{moleInterval:[1200,2200],showTime:[1500,2500],maxMoles:2,bombChance:.08,goldChance:.05,gameDuration:30},
+  medium:{moleInterval:[800,1600],showTime:[1000,1800],maxMoles:3,bombChance:.15,goldChance:.08,gameDuration:30},
+  hard:{moleInterval:[500,1100],showTime:[700,1300],maxMoles:4,bombChance:.20,goldChance:.10,gameDuration:30}
+};
+var difficulty='medium';
+var score=0,combo=0,maxCombo=0,timeLeft=30,gameActive=false;
+var moleTimers=[];
+var moleSlots=[];
+var totalMolesSpawned=0,totalMolesHit=0,totalBombsHit=0,totalMisses=0;
+var moleCountdownTimer=null;
+var board=document.getElementById('gameBoard');
+var diffCurrentEl=document.getElementById('diffCurrent');
+var diffLabelMap={'easy':'簡單','medium':'普通','hard':'困難'};
+function randomBetween(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+for(var i=0;i<9;i++){
+  (function(idx){
+    var container=document.createElement('div');
+    container.className='hole-container';
+    var hole=document.createElement('div');
+    hole.className='hole';
+    hole.addEventListener('mousedown',function(e){onHoleClick(e,idx)});
+    hole.addEventListener('touchstart',function(e){e.preventDefault();onHoleClick(e,idx)});
+    container.appendChild(hole);
+    board.appendChild(container);
+  })(i);
+}
+function buildMoleHTML(type){
+  var crown=type==='gold'?'<div class="mole-crown"></div>':'';
+  var bombClass=type==='bomb'?'mole-bomb':'';
+  return '<div class="mole '+bombClass+'">'+crown+
+    '<div class="mole-ear left"></div><div class="mole-ear right"></div>'+
+    '<div class="mole-head"><div class="mole-eye left"></div><div class="mole-eye right"></div>'+
+    '<div class="mole-nose"></div><div class="mouth"></div>'+
+    '<div class="mole-tooth left"></div><div class="mole-tooth right"></div></div>'+
+    '<div class="mole-body"></div></div>';
+}
+function updateDiffUI(){
+  var labels={'easy':'簡單','medium':'普通','hard':'困難'};
+  var btns=document.querySelectorAll('.diff-btn');
+  for(var i=0;i<btns.length;i++){
+    var b=btns[i];
+    if(b.dataset.diff===difficulty){
+      b.classList.add('active');
+    }else{
+      b.classList.remove('active');
+    }
+  }
+  if(diffCurrentEl){
+    diffCurrentEl.textContent='\u7576\u524d\u96e3\u5ea6\uff1a'+labels[difficulty];
+  }
+}
+updateDiffUI();
+var diffBtns=document.querySelectorAll('.diff-btn');
+for(var i=0;i<diffBtns.length;i++){
+  (function(btn){
+    btn.addEventListener('click',function(){
+      if(gameActive){
+        return;
+      }
+      difficulty=btn.dataset.diff;
+      updateDiffUI();
+    });
+  })(diffBtns[i]);
+}
+document.getElementById('startBtn').addEventListener('click',startGame);
+document.getElementById('restartBtn').addEventListener('click',startGame);
+function startGame(){
+  score=0;combo=0;maxCombo=0;
+  timeLeft=30;
+  gameActive=true;
+  totalMolesSpawned=0;totalMolesHit=0;totalBombsHit=0;totalMisses=0;
+  moleSlots=[];
+  document.getElementById('score').textContent='0';
+  document.getElementById('combo').textContent='0';
+  document.getElementById('maxCombo').textContent='0';
+  document.getElementById('timer').textContent='30';
+  document.getElementById('timer').style.color='#4fc3f7';
+  document.getElementById('startOverlay').classList.add('hidden');
+  document.getElementById('endOverlay').classList.add('hidden');
+  updateDiffUI();
+  moleTimers.forEach(function(t){clearTimeout(t)});
+  moleTimers=[];
+  if(moleCountdownTimer)clearInterval(moleCountdownTimer);
+  document.querySelectorAll('.mole').forEach(function(m){m.remove()});
+  moleCountdownTimer=setInterval(function(){
+    timeLeft--;
+    document.getElementById('timer').textContent=timeLeft;
+    if(timeLeft<=5)document.getElementById('timer').style.color='#ff4444';
+    else document.getElementById('timer').style.color='#4fc3f7';
+    if(timeLeft<=0)endGame();
+  },1000);
+  scheduleNextMole();
+}
+function scheduleNextMole(){
+  if(!gameActive)return;
+  var cfg=DIFFICULTIES[difficulty];
+  var delay=randomBetween(cfg.moleInterval[0],cfg.moleInterval[1]);
+  moleTimers.push(setTimeout(function(){
+    spawnMole();
+    scheduleNextMole();
+  },delay));
+}
+function spawnMole(){
+  if(!gameActive)return;
+  var cfg=DIFFICULTIES[difficulty];
+  var availableHoles=[];
+  for(var i=0;i<9;i++){
+    if(!moleSlots.includes(i))availableHoles.push(i);
+  }
+  if(availableHoles.length===0)return;
+  var holeIndex=availableHoles[Math.floor(Math.random()*availableHoles.length)];
+  var hole=board.children[holeIndex].querySelector('.hole');
+  var type='normal';
+  var rand=Math.random();
+  if(rand<cfg.bombChance)type='bomb';
+  else if(rand<cfg.bombChance+cfg.goldChance)type='gold';
+  hole.innerHTML=buildMoleHTML(type);
+  var mole=hole.querySelector('.mole');
+  mole.classList.add('active');
+  var points=type==='gold'?50:type==='bomb'?-30:10;
+  mole.dataset.points=points;
+  mole.dataset.type=type;
+  mole.dataset.hit='false';
+  moleSlots.push(holeIndex);
+  totalMolesSpawned++;
+  var showTime=randomBetween(cfg.showTime[0],cfg.showTime[1]);
+  var hideTimer=setTimeout(function(){
+    var mole2=hole.querySelector('.mole');
+    if(mole2&&mole2.classList.contains('active')&&mole2.dataset.hit==='false'){
+      mole2.classList.remove('active');
+      moleSlots=moleSlots.filter(function(i){return i!==holeIndex});
+      combo=0;totalMisses++;updateCombo();
+    }
+  },showTime);
+  moleTimers.push(hideTimer);
+}
+function onHoleClick(e,index){
+  if(!gameActive)return;
+  var hole=board.children[index].querySelector('.hole');
+  var mole=hole.querySelector('.mole');
+  if(!mole||!mole.classList.contains('active')){
+    totalMisses++;combo=0;updateCombo();
+    showEffect(hole,'X','miss-effect');
+    return;
+  }
+  if(mole.dataset.hit==='true')return;
+  mole.dataset.hit='true';
+  var type=mole.dataset.type;
+  var basePoints=parseInt(mole.dataset.points);
+  if(type==='bomb'){
+    combo=0;totalBombsHit++;
+    score=Math.max(0,score+basePoints);
+    updateScore();updateCombo();
+    showEffect(hole,'BOMB','hit-effect');
+    mole.classList.add('hit');
+    spawnParticles(hole,'#ff4444',8);
+    setTimeout(function(){
+      mole.classList.remove('active','hit');
+      moleSlots=moleSlots.filter(function(i){return i!==index});
+    },300);
+  }else{
+    combo++;totalMolesHit++;
+    if(combo>maxCombo)maxCombo=combo;
+    var multiplier=Math.min(1+(combo-1)*.2,3);
+    var pts=Math.round(basePoints*multiplier);
+    score+=pts;
+    updateScore();updateCombo();
+    showEffect(hole,'+'+pts,'hit-effect');
+    if(type==='gold')showComboPopup('\ud83d\udc51 COMBO!');
+    mole.classList.add('hit');
+    spawnParticles(hole,'#ffd700',12);
+    setTimeout(function(){
+      mole.classList.remove('active','hit');
+      moleSlots=moleSlots.filter(function(i){return i!==index});
+    },300);
+  }
+}
+function updateScore(){document.getElementById('score').textContent=score}
+function updateCombo(){
+  document.getElementById('combo').textContent=combo;
+  document.getElementById('maxCombo').textContent=maxCombo;
+  if(combo>=3)showComboPopup(combo+' \u9023\u64ca\u26a1');
+}
+function showEffect(container,text,className){
+  var effect=document.createElement('div');
+  effect.className=className;effect.textContent=text;
+  container.appendChild(effect);
+  setTimeout(function(){if(effect.parentNode)effect.remove()},800);
+}
+function showComboPopup(text){
+  var popup=document.getElementById('comboPopup');
+  popup.textContent=text;
+  popup.classList.remove('show');
+  void popup.offsetWidth;
+  popup.classList.add('show');
+  setTimeout(function(){popup.classList.remove('show')},700);
+}
+function spawnParticles(container,color,count){
+  var rect=container.getBoundingClientRect();
+  var cx=rect.left+rect.width/2;
+  var cy=rect.top+rect.height/2;
+  for(var i=0;i<count;i++){
+    var particle=document.createElement('div');
+    particle.className='particle';
+    particle.style.background=color;
+    particle.style.left=cx+'px';
+    particle.style.top=cy+'px';
+    var angle=Math.PI*2*i/count;
+    var distance=30+Math.random()*50;
+    particle.style.setProperty('--tx',Math.cos(angle)*distance+'px');
+    particle.style.setProperty('--ty',Math.sin(angle)*distance+'px');
+    document.body.appendChild(particle);
+    (function(p){setTimeout(function(){p.remove()},600)})(particle);
+  }
+}
+function endGame(){
+  gameActive=false;
+  if(moleCountdownTimer)clearInterval(moleCountdownTimer);
+  moleTimers.forEach(function(t){clearTimeout(t)});
+  moleTimers=[];
+  document.querySelectorAll('.mole').forEach(function(m){m.classList.remove('active')});
+  document.getElementById('timer').style.color='#4fc3f7';
+  updateDiffUI();
+  document.getElementById('finalScore').textContent=score;
+  var accuracy=totalMolesSpawned>0?Math.round((totalMolesHit/totalMolesSpawned)*100):0;
+  document.getElementById('statsSummary').innerHTML=
+    '<div class="stat"><div class="num">'+totalMolesSpawned+'</div><div class="desc">\u5730\u9f20\u7e3d\u6578</div></div>'+
+    '<div class="stat"><div class="num">'+totalMolesHit+'</div><div class="desc">\u547d\u4e2d\u6b21\u6578</div></div>'+
+    '<div class="stat"><div class="num">'+totalBombsHit+'</div><div class="desc">\u8ef8\u5f48\u6b21\u6578</div></div>'+
+    '<div class="stat"><div class="num">'+accuracy+'%</div><div class="desc">\u547d\u4e2d\u7387</div></div>'+
+    '<div class="stat"><div class="num">'+maxCombo+'</div><div class="desc">\u6700\u9ad8\u9023\u64ca</div></div>';
+  document.getElementById('endOverlay').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

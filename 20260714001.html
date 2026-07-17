@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台北到高雄三天兩夜旅遊行程</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<style>
+  :root {
+    --primary: #1a5276;
+    --secondary: #2980b9;
+    --accent: #e67e22;
+    --bg: #f0f4f8;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-light: #7f8c8d;
+    --success: #27ae60;
+    --day1-color: #e74c3c;
+    --day2-color: #2ecc71;
+    --day3-color: #9b59b6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Noto Sans TC", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.8;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #1a5276 0%, #2980b9 50%, #3498db 100%);
+    color: white;
+    text-align: center;
+    padding: 60px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: heroFloat 15s ease-in-out infinite;
+  }
+  @keyframes heroFloat {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(30px, -30px) rotate(120deg); }
+    66% { transform: translate(-20px, 20px) rotate(240deg); }
+  }
+  .hero h1 {
+    font-size: 2.8em;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  .hero p {
+    font-size: 1.2em;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .route-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Overview Cards */
+  .overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+  }
+  .overview-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  .overview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  }
+  .overview-card .icon { font-size: 2.5em; margin-bottom: 10px; }
+  .overview-card h3 { color: var(--primary); margin-bottom: 5px; font-size: 1.1em; }
+  .overview-card p { color: var(--text-light); font-size: 0.95em; }
+
+  /* Day Sections */
+  .day-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin: 30px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .day-header {
+    padding: 25px 30px;
+    color: white;
+    position: relative;
+  }
+  .day-header h2 {
+    font-size: 1.6em;
+    margin-bottom: 5px;
+  }
+  .day-header .day-subtitle {
+    opacity: 0.9;
+    font-size: 1em;
+  }
+  #day1 .day-header { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+  #day2 .day-header { background: linear-gradient(135deg, #1e8449, #27ae60); }
+  #day3 .day-header { background: linear-gradient(135deg, #7d3c98, #9b59b6); }
+
+  .timeline {
+    padding: 25px 30px;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 45px;
+    top: 25px;
+    bottom: 25px;
+    width: 3px;
+    background: #ddd;
+    border-radius: 3px;
+  }
+  .timeline-item {
+    display: flex;
+    margin: 20px 0;
+    position: relative;
+    align-items: flex-start;
+  }
+  .timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    flex-shrink: 0;
+    margin-right: 20px;
+    color: white;
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .timeline-item:nth-child(odd) .timeline-icon { background: var(--secondary); }
+  .timeline-item:nth-child(even) .timeline-icon { background: var(--accent); }
+  .timeline-content {
+    flex: 1;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-right: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .timeline-content h4 {
+    color: var(--primary);
+    margin-bottom: 6px;
+    font-size: 1.05em;
+  }
+  .timeline-content .time-badge {
+    display: inline-block;
+    background: #e8f4fd;
+    color: var(--secondary);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .timeline-content p {
+    color: var(--text);
+    font-size: 0.93em;
+    line-height: 1.7;
+  }
+  .timeline-content .tip {
+    background: #fff3cd;
+    border-left: 4px solid var(--accent);
+    padding: 8px 14px;
+    margin-top: 10px;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.88em;
+    color: #856404;
+  }
+
+  /* Hotel Section */
+  .hotel-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin: 30px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .hotel-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #8e44ad, #9b59b6);
+    color: white;
+  }
+  .hotel-header h2 { font-size: 1.6em; margin-bottom: 5px; }
+  .hotel-header .day-subtitle { opacity: 0.9; }
+
+  .hotel-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 30px;
+  }
+  .hotel-info h3 {
+    font-size: 1.3em;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hotel-info table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .hotel-info table th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f0f4f8;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.9em;
+  }
+  .hotel-info table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+    color: var(--text);
+  }
+  .hotel-info table tr:last-child td { border-bottom: none; }
+  .hotel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  .hotel-tags span {
+    background: #e8f8f0;
+    color: var(--success);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82em;
+    font-weight: 600;
+  }
+
+  /* Map Section */
+  .map-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin: 30px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .map-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #1a5276, #2980b9);
+    color: white;
+  }
+  .map-header h2 { font-size: 1.6em; margin-bottom: 5px; }
+
+  #map {
+    height: 500px;
+    width: 100%;
+  }
+
+  .map-legend {
+    padding: 20px 30px;
+    background: #f8f9fa;
+  }
+  .map-legend h4 { margin-bottom: 12px; color: var(--primary); }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 20px;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Budget Section */
+  .budget-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin: 30px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .budget-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #d35400, #e67e22);
+    color: white;
+  }
+  .budget-header h2 { font-size: 1.6em; }
+
+  .budget-table {
+    width: 100%;
+    border-collapse: collapse;
+    padding: 25px;
+  }
+  .budget-table th {
+    background: #fef9e7;
+    color: var(--primary);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .budget-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+  }
+  .budget-table tr:last-child td {
+    background: #fef9e7;
+    font-weight: 700;
+    font-size: 1.05em;
+    color: var(--primary);
+    border-bottom: none;
+  }
+
+  /* Tips Section */
+  .tips-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    margin: 30px 0 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .tips-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #f39c12, #f1c40f);
+    color: white;
+  }
+  .tips-header h2 { font-size: 1.6em; }
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 25px;
+  }
+  .tip-card {
+    background: #fef9e7;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #f39c12;
+  }
+  .tip-card h4 {
+    color: #d68910;
+    margin-bottom: 8px;
+  }
+  .tip-card p {
+    font-size: 0.92em;
+    color: #6c6c6c;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.8em; }
+    .hotel-card { grid-template-columns: 1fr; }
+    .timeline::before { left: 20px; }
+    .timeline-icon { margin-right: 12px; width: 34px; height: 34px; font-size: 1em; }
+    .timeline-content { padding: 12px 16px; }
+    #map { height: 350px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="route-icon">🚄 ✈️ 🏔️ 🏖️</span>
+  <h1>台北 → 高雄 三天兩夜深度旅遊</h1>
+  <p>探索南部古都風情 · 美食、文化、美景一次收錄</p>
+</div>
+
+<div class="container">
+
+  <!-- Overview -->
+  <div class="overview">
+    <div class="overview-card">
+      <div class="icon">📅</div>
+      <h3>行程天數</h3>
+      <p>3 天 2 夜</p>
+    </div>
+    <div class="overview-card">
+      <div class="icon">🚄</div>
+      <h3>交通方式</h3>
+      <p>高鐵（台北↔高雄）約 1.5 小時</p>
+    </div>
+    <div class="overview-card">
+      <div class="icon">🏨</div>
+      <h3>住宿地點</h3>
+      <p>高雄苓雅區 / 前金區</p>
+    </div>
+    <div class="overview-card">
+      <div class="icon">💰</div>
+      <h3>預估預算</h3>
+      <p>每人約 NT$ 8,000 ~ 15,000</p>
+    </div>
+  </div>
+
+  <!-- Day 1 -->
+  <div class="day-section" id="day1">
+    <div class="day-header">
+      <h2>📍 第一天：高雄古城風華</h2>
+      <div class="day-subtitle">抵達高雄 → 愛河沿岸 → 西子灣日落</div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon">🚄</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕘 09:00 - 10:30</span>
+          <h4>台北車站 → 高雄左營站</h4>
+          <p>搭乘台灣高鐵前往高雄左營站，車程約 1.5 小時。建議預早購票可享優惠票價。抵達後使用高雄捷運紅線前往飯店。</p>
+          <div class="tip">💡 建議使用悠遊卡或一卡通搭乘捷運，也可購買一日券。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🏨</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕚 10:30 - 11:30</span>
+          <h4>飯店 Check-in / 放置行李</h4>
+          <p>抵達飯店办理入住手續，放置行李後輕鬆出發。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🏛️</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕚 11:30 - 13:00</span>
+          <h4>打狗英國領事館（旗津）</h4>
+          <p>前往旗津，搭乘渡輪從哈瑪星碼頭前往旗津。參觀打狗英國領事館舊址，欣賞港灣美景，感受百年歷史建築魅力。</p>
+          <div class="tip">💡 旗津沙灘、旗津海岸線非常適合拍照，記得帶太陽眼鏡！</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🍜</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕛 13:00 - 14:00</span>
+          <h4>午餐：旗津海鮮 / 高雄麵食</h4>
+          <p>在旗津享用新鮮海鮮，或返回市區品嚐高雄在地美食：阿宗麵線、劉綜合煎餅、潘豆花等。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🌊</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕐 14:00 - 16:30</span>
+          <h4>愛河遊船 & 愛河沿岸散步</h4>
+          <p>搭乘愛河遊船沿河欣賞高雄港灣風光，途經愛河之心、蓮池潭等景點。下船後沿愛河步道散步，感受南部慢活氛圍。</p>
+          <div class="tip">💡 愛河之心有彩虹噴泉，傍晚時分非常浪漫適合拍照。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🌅</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕓 16:30 - 18:30</span>
+          <h4>西子灣夕陽</h4>
+          <p>前往西子灣台灣大學文學院旁，欣賞台灣最美的夕陽之一。可順遊壽山動物園（若開放）或蓮池潭五里亭。</p>
+          <div class="tip">💡 西子灣夕陽是高雄經典景點，建議提前找好觀景位置。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🌙</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕕 18:30 - 20:30</span>
+          <h4>晚餐：六合觀光夜市</h4>
+          <p>前往六合夜市品嚐道地台灣夜市美食：大骨湯、生炒魷魚、芒果冰、蚵仔煎、雞蛋糕等。夜市逛到盡興！</p>
+          <div class="tip">💡 夜市消費以現金為主，建議帶足夠零錢。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 2 -->
+  <div class="day-section" id="day2">
+    <div class="day-header">
+      <h2>📍 第二天：文化探索 & 城市地標</h2>
+      <div class="day-subtitle">國家電影城 → 駁二藝術區 → 85大樓夜景</div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon">🍳</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕗 08:00 - 09:00</span>
+          <h4>早餐：在地早餐體驗</h4>
+          <p>嘗試高雄在地早餐：菜頭粿、碗粿、燒肉粽、豆漿油條等南部特色早餐。</p>
+          <div class="tip">💡 苓雅區、前金區有許多百年早餐店，值得探索。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🎬</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕙 09:30 - 11:30</span>
+          <h4>國家電影城（原高雄市立圖書館）</h4>
+          <p>參觀修復後的日治時期歷史建築，體驗沉浸式電影環境。這棟建築本身即是文化資產。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🍽️</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕛 12:00 - 13:30</span>
+          <h4>午餐：三多商圈美食街</h4>
+          <p>前往三多商圈用餐，有多樣選擇：鼎泰豐、漢神百貨美食街、或尋找在地隱藏版美食。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🎨</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕐 14:00 - 16:30</span>
+          <h4>駁二藝術特區（大義園區 / 蓬萊園區）</h4>
+          <p>由舊倉庫改造的藝術園區，展出當代藝術、裝置藝術、攝影展等。非常適合拍照打卡，感受高雄文青氣息。</p>
+          <div class="tip">💡 駁二有許多免費展覽，建議預留 2-3 小時慢慢欣賞。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">☕</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕓 16:30 - 17:30</span>
+          <h4>駁二咖啡時光</h4>
+          <p>在駁二園區內的特色咖啡館享用下午茶，欣賞臨港景觀。推薦園區內的手沖咖啡館。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🏙️</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕕 18:00 - 19:30</span>
+          <h4>晚餐：漢神百貨 / 巨蛋商圈</h4>
+          <p>前往漢神巨蛋商圈享用晚餐，選擇豐富：日式料理、台式海鮮、異國料理等應有盡有。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🌃</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕗 19:30 - 21:00</span>
+          <h4>85大樓觀景台 夜景</h4>
+          <p>登上 85大楼 68 樓觀景台，360 度飽覽高雄夜景。這是南台灣最高建築之一，夜景壯觀。</p>
+          <div class="tip">💡 85大樓觀景台票價約 NT$150，建議傍晚時段前往，可同時欣賞日落與夜景。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day 3 -->
+  <div class="day-section" id="day3">
+    <div class="day-header">
+      <h2>📍 第三天：左營文化 & 返程</h2>
+      <div class="day-subtitle">蓮池潭 → 左營孔廟 → 高鐵返程</div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-icon">🍳</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕗 08:00 - 09:00</span>
+          <h4>飯店早餐 & Check-out</h4>
+          <p>享用飯店早餐，辦理退房，將行李寄放。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🏮</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕘 09:30 - 11:00</span>
+          <h4>蓮池潭風景區</h4>
+          <p>參觀蓮池潭，台灣最美湖泊之一。必遊：龍虎塔（拍照必訪）、五里亭、春秋閣、元帝廟。沿湖步道散步非常愜意。</p>
+          <div class="tip">💡 龍虎塔可入內參觀，兩塔之間有通道相通，非常有趣！</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">📚</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕚 11:00 - 12:00</span>
+          <h4>台北孔子廟（左營孔廟）</h4>
+          <p>參觀台灣規模最大的孔廟，建築壯觀，庭園優美。了解儒家文化在台灣的傳承。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🍜</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕛 12:00 - 13:00</span>
+          <h4>午餐：左營眷村美食</h4>
+          <p>品嚐左營眷村美食：陳記擔仔麵、左營特製鵝肉、眷村菜飯。這些是左營在地幾十年的老味道。</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🛍️</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕐 13:00 - 14:00</span>
+          <h4>購買伴手禮</h4>
+          <p>在左營或高雄車站周邊購買伴手禮：旗山香蕉餅、美濃油紙傘、鳳鼻茶、蒜頭橄欖等高雄特產。</p>
+          <div class="tip">💡 高雄車站地下街有許多伴手禮店，價格合理選擇多。</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-icon">🚄</div>
+        <div class="timeline-content">
+          <span class="time-badge">🕐 14:30 - 16:00</span>
+          <h4>高雄左營站 → 台北</h4>
+          <p>搭乘高鐵返回台北，結束愉快的三天兩夜高雄之旅。</p>
+          <div class="tip">💡 建議預留足夠時間前往車站，高鐵票建議預先訂購。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hotel Section -->
+  <div class="hotel-section">
+    <div class="hotel-header">
+      <h2>🏨 推薦住宿</h2>
+      <div class="day-subtitle">交通便利、位置優越的飯店推薦</div>
+    </div>
+    <div class="hotel-card">
+      <div class="hotel-info">
+        <h3>🏨 高雄大遠百喜來登大飯店</h3>
+        <table>
+          <tr><th>項目</th><th>詳細資訊</th></tr>
+          <tr><td>⭐ 等級</td><td>五星級</td></tr>
+          <tr><td>📍 位置</td><td>前金區，近高雄捷運紅線</td></tr>
+          <tr><td>💰 房價</td><td>約 NT$3,500 ~ 5,500 / 夜</td></tr>
+          <tr><td>🏠 房型</td><td>豪華客房、行政套房</td></tr>
+          <tr><td>🏋️ 設施</td><td>健身房、室內泳池、SPA、餐廳</td></tr>
+          <tr><td>📶 優點</td><td>位於大遠百旁，購物美食超方便</td></tr>
+        </table>
+        <div class="hotel-tags">
+          <span>📍 交通便利</span>
+          <span>🛍️ 購物方便</span>
+          <span>⭐ 五星品質</span>
+          <span>🏊 泳池健身房</span>
+        </div>
+      </div>
+      <div class="hotel-info">
+        <h3>🏨 高雄福華大飯店</h3>
+        <table>
+          <tr><th>項目</th><th>詳細資訊</th></tr>
+          <tr><td>⭐ 等級</td><td>四星級</td></tr>
+          <tr><td>📍 位置</td><td>前金區，近高雄公園</td></tr>
+          <tr><td>💰 房價</td><td>約 NT$2,500 ~ 4,000 / 夜</td></tr>
+          <tr><td>🏠 房型</td><td>標準客房、豪華套房</td></tr>
+          <tr><td>🏋️ 設施</td><td>健身房、商務中心、餐廳</td></tr>
+          <tr><td>📶 優點</td><td>地理位置優越，步行可達愛河</td></tr>
+        </table>
+        <div class="hotel-tags">
+          <span>📍 市中心</span>
+          <span>🚶 步行到愛河</span>
+          <span>💰 CP值高</span>
+          <span>🌿 鄰公園</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Section -->
+  <div class="map-section">
+    <div class="map-header">
+      <h2>🗺️ 景點地圖</h2>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend">
+      <h4>📌 圖例說明</h4>
+      <div class="legend-item"><span class="legend-dot" style="background:#e74c3c"></span> 第一天行程</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#27ae60"></span> 第二天行程</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#9b59b6"></span> 第三天行程</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f39c12"></span> 住宿地點</div>
+    </div>
+  </div>
+
+  <!-- Budget -->
+  <div class="budget-section">
+    <div class="budget-header">
+      <h2>💰 預估預算（每人）</h2>
+    </div>
+    <table class="budget-table">
+      <tr><th>項目</th><th>預估費用</th><th>備註</th></tr>
+      <tr><td>🚄 高鐵票（來回）</td><td>NT$1,600 ~ 2,000</td><td>依票種不同有差異</td></tr>
+      <tr><td>🏨 住宿（2 夜）</td><td>NT$5,000 ~ 8,000</td><td>兩人共用一房，每人折半</td></tr>
+      <tr><td>🍜 餐飲（3 天）</td><td>NT$2,000 ~ 3,500</td><td>含夜市、餐廳、咖啡</td></tr>
+      <tr><td>🚌 當地交通</td><td>NT$300 ~ 500</td><td>捷運、渡輪、公車</td></tr>
+      <tr><td>🎫 景點門票</td><td>NT$200 ~ 500</td><td>85大樓、龍虎塔等</td></tr>
+      <tr style="background:#fef9e7"><td><strong>💵 合計</strong></td><td><strong>NT$9,100 ~ 14,500</strong></td><td>依個人消費習慣有所不同</td></tr>
+    </table>
+  </div>
+
+  <!-- Tips -->
+  <div class="tips-section">
+    <div class="tips-header">
+      <h2>💡 旅遊小貼士</h2>
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <h4>🌤️ 天氣注意事項</h4>
+        <p>高雄屬於熱帶季風氣候，全年炎熱。建議攜帶防曬用品、雨傘。夏季（5-9月）易有午後雷陣雨，請隨身攜帶雨具。</p>
+      </div>
+      <div class="tip-card">
+        <h4>🚇 交通卡</h4>
+        <p>建議購買「一卡通」或「悠遊卡」，高雄捷運、公車、渡輪皆可搭乘。部分景點有聯票優惠。</p>
+      </div>
+      <div class="tip-card">
+        <h4>📱 實用 APP</h4>
+        <p>下載「高雄地圖」、「台灣好行」、「Eat Street 愛吃街」等 APP，方便查詢路線與美食資訊。</p>
+      </div>
+      <div class="tip-card">
+        <h4>💳 支付便利性</h4>
+        <p>大部分商店接受現金，部分接受悠遊卡/一卡通。建議攜帶足夠現金以備夜市及傳統市場使用。</p>
+      </div>
+      <div class="tip-card">
+        <h4>📸 最佳拍照時段</h4>
+        <p>西子灣夕陽（約 17:00-18:00）、85大樓夜景（20:00後）、駁二白天藝術裝置都非常適合拍照。</p>
+      </div>
+      <div class="tip-card">
+        <h4>🎫 票券優惠</h4>
+        <p>台北轉乘高雄高鐵票可享優惠（需符合條件）。觀光局常推出旅遊補助，出發前可先查詢。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Initialize map centered on Kaohsiung
+var map = L.map('map').setView([22.6278, 120.3018], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Custom icon factory
+function createIcon(color) {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: '<div style="background:' + color + ';width:28px;height:28px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:bold;">📍</div>',
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  });
+}
+
+var day1Color = '#e74c3c';
+var day2Color = '#27ae60';
+var day3Color = '#9b59b6';
+var hotelColor = '#f39c12';
+
+// ===== Day 1 Points =====
+L.marker([22.6243, 120.2717], {icon: createIcon(day1Color)})
+  .addTo(map).bindPopup('<b>旗津</b><br>打狗英國領事館、旗津海岸<br><em>第一天</em>');
+
+L.marker([22.6516, 120.3008], {icon: createIcon(day1Color)})
+  .addTo(map).bindPopup('<b>愛河</b><br>愛河遊船、愛河之心<br><em>第一天</em>');
+
+L.marker([22.6203, 120.2683], {icon: createIcon(day1Color)})
+  .addTo(map).bindPopup('<b>西子灣</b><br>最美夕陽、蓮池潭<br><em>第一天</em>');
+
+L.marker([22.6394, 120.3040], {icon: createIcon(day1Color)})
+  .addTo(map).bindPopup('<b>六合夜市</b><br>高雄最大夜市<br><em>第一天</em>');
+
+// ===== Day 2 Points =====
+L.marker([22.6236, 120.2830], {icon: createIcon(day2Color)})
+  .addTo(map).bindPopup('<b>國家電影城</b><br>歷史建築、沉浸式電影體驗<br><em>第二天</em>');
+
+L.marker([22.6203, 120.2783], {icon: createIcon(day2Color)})
+  .addTo(map).bindPopup('<b>駁二藝術特區</b><br>大義園區、蓬萊園區<br><em>第二天</em>');
+
+L.marker([22.6116, 120.3002], {icon: createIcon(day2Color)})
+  .addTo(map).bindPopup('<b>85大樓觀景台</b><br>68樓觀景台，360度夜景<br><em>第二天</em>');
+
+L.marker([22.6130, 120.3030], {icon: createIcon(day2Color)})
+  .addTo(map).bindPopup('<b>漢神巨蛋商圈</b><br>購物美食中心<br><em>第二天</em>');
+
+// ===== Day 3 Points =====
+L.marker([22.6604, 120.2945], {icon: createIcon(day3Color)})
+  .addTo(map).bindPopup('<b>蓮池潭</b><br>龍虎塔、春秋閣、五里亭<br><em>第三天</em>');
+
+L.marker([22.6740, 120.2950], {icon: createIcon(day3Color)})
+  .addTo(map).bindPopup('<b>左營孔廟</b><br>台灣規模最大孔廟<br><em>第三天</em>');
+
+// ===== Hotel Points =====
+L.marker([22.6170, 120.3020], {icon: createIcon(hotelColor)})
+  .addTo(map).bindPopup('<b>🏨 住宿地點</b><br>高雄大遠百喜來登 / 福華大飯店<br><em>前金區</em>');
+
+L.marker([22.7014, 120.5420], {icon: createIcon('#3498db')})
+  .addTo(map).bindPopup('<b>🚄 台北車站</b><br>高鐵起點<br><em>出發地</em>');
+
+// ===== Route Lines =====
+// Day 1 route
+L.polyline([
+  [22.6394, 120.3040], // 六合夜市
+  [22.6516, 120.3008], // 愛河
+  [22.6203, 120.2683], // 西子灣
+  [22.6243, 120.2717], // 旗津
+], {color: day1Color, weight: 3, opacity: 0.6, dashArray: '10,8'}).addTo(map);
+
+// Day 2 route
+L.polyline([
+  [22.6236, 120.2830], // 國家電影城
+  [22.6203, 120.2783], // 駁二
+  [22.6116, 120.3002], // 85大樓
+  [22.6130, 120.3030], // 漢神巨蛋
+], {color: day2Color, weight: 3, opacity: 0.6, dashArray: '10,8'}).addTo(map);
+
+// Day 3 route
+L.polyline([
+  [22.6604, 120.2945], // 蓮池潭
+  [22.6740, 120.2950], // 孔廟
+], {color: day3Color, weight: 3, opacity: 0.6, dashArray: '10,8'}).addTo(map);
+
+// High speed rail connection
+L.polyline([
+  [22.7014, 120.5420], // 台北
+  [22.6394, 120.3040]  // 左營
+], {color: '#3498db', weight: 3, opacity: 0.4, dashArray: '5,10'}).addTo(map);
+
+L.marker([22.6394, 120.3040], {icon: createIcon('#3498db')})
+  .addTo(map).bindPopup('<b>🚄 左營高鐵站</b><br>抵達/出發站');
+
+// Fit map to show all
+map.fitBounds([[22.61, 120.26], [22.71, 120.55]], {padding: [30, 30]});
+</script>
+
+</body>
+</html>
