@@ -90,51 +90,135 @@
       font-family: "JetBrains Mono", monospace;
       text-align: center;
     }
+    #loading {
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+      font-family: "JetBrains Mono", monospace;
+      letter-spacing: 0.1em;
+      padding: 40px 0;
+    }
+    #error {
+      text-align: center;
+      color: #ff6b6b;
+      font-family: "JetBrains Mono", monospace;
+      padding: 40px 0;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>檔案目錄</h1>
     <p class="subtitle">FILES LISTING</p>
-    <ul class="file-list" id="fileList"></ul>
+    <div id="loading">LOADING...</div>
+    <ul class="file-list" id="fileList" style="display:none"></ul>
+    <div id="error" style="display:none"></div>
     <div class="footer">根目錄所有檔案</div>
   </div>
 
   <script>
-    const files = [
-      {
-        name: "fukuoka-pptxgen.html",
-        desc: "日本福岡 5天4夜 PPT風格行程攻略",
-        icon: "🗺️",
-        url: "fukuoka-pptxgen.html",
-        size: "58.8 KB"
-      },
-      {
-        name: "index.html",
-        desc: "檔案目錄首頁",
-        icon: "📋",
-        url: "index.html",
-        size: "3.3 KB"
-      }
-    ];
+    const REPO = 'tomhuang223344/1Dm06ZnxArSMp5tW2JPc0Jk0ElQxZF';
 
-    const listEl = document.getElementById('fileList');
-    files.forEach(f => {
-      const li = document.createElement('li');
-      li.className = 'file-item';
-      li.innerHTML = `
-        <span class="file-icon">${f.icon}</span>
-        <div class="file-info">
-          <div class="file-name">${f.name}</div>
-          <div class="file-meta">${f.desc} · ${f.size}</div>
-        </div>
-        <span class="file-arrow">→</span>
-      `;
-      li.addEventListener('click', () => {
-        window.location.href = f.url;
+    function getIcon(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      const icons = {
+        html: '🌐',
+        css: '🎨',
+        js: '⚙️',
+        json: '📦',
+        md: '📄',
+        png: '🖼️',
+        jpg: '🖼️',
+        jpeg: '🖼️',
+        gif: '🖼️',
+        svg: '🖼️',
+        pdf: '📑',
+        xlsx: '📊',
+        xls: '📊',
+        csv: '📊',
+        txt: '📝',
+        zip: '📁',
+      };
+      return icons[ext] || '📎';
+    }
+
+    function isWebFile(name) {
+      const webExts = ['html', 'htm', 'php', 'asp', 'aspx', 'jsp', 'xml', 'svg', 'css', 'js'];
+      const ext = name.split('.').pop().toLowerCase();
+      return webExts.includes(ext);
+    }
+
+    function isImageFile(name) {
+      const imgExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'];
+      const ext = name.split('.').pop().toLowerCase();
+      return imgExts.includes(ext);
+    }
+
+    function buildUrl(item) {
+      const ext = item.name.split('.').pop().toLowerCase();
+      if (isWebFile(item.name)) {
+        return item.download_url.replace('/contents/', '/').replace('/raw/', '/');
+      }
+      if (isImageFile(item.name)) {
+        return item.download_url;
+      }
+      return item.download_url;
+    }
+
+    fetch(`https://api.github.com/repos/${REPO}/contents/`)
+      .then(r => r.json())
+      .then(data => {
+        const listEl = document.getElementById('fileList');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+
+        if (Array.isArray(data)) {
+          // 優先顯示網頁檔
+          const webFiles = data.filter(f => !f.type || f.type === 'file');
+          webFiles.sort((a, b) => {
+            if (a.name === 'index.html') return -1;
+            if (b.name === 'index.html') return 1;
+            return a.name.localeCompare(b.name);
+          });
+
+          webFiles.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            const icon = getIcon(item.name);
+            const url = isWebFile(item.name) ? item.name : item.download_url;
+
+            li.innerHTML = `
+              <span class="file-icon">${icon}</span>
+              <div class="file-info">
+                <div class="file-name">${item.name}</div>
+                <div class="file-meta">${isWebFile(item.name) ? '🌐 網頁檔案' : isImageFile(item.name) ? '🖼️ 圖片檔' : '📎 其他檔案'}</div>
+              </div>
+              <span class="file-arrow">→</span>
+            `;
+            li.addEventListener('click', () => {
+              window.location.href = url;
+            });
+            listEl.appendChild(li);
+          });
+
+          loadingEl.style.display = 'none';
+          listEl.style.display = 'flex';
+        } else if (data.message && data.message.startsWith('API rate limit')) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = 'Rate limit exceeded. Please wait a moment.';
+          loadingEl.style.display = 'none';
+        } else {
+          errorEl.style.display = 'block';
+          errorEl.textContent = '無法讀取檔案目錄';
+          loadingEl.style.display = 'none';
+        }
+      })
+      .catch(err => {
+        const errorEl = document.getElementById('error');
+        const loadingEl = document.getElementById('loading');
+        errorEl.style.display = 'block';
+        errorEl.textContent = '錯誤：' + err.message;
+        loadingEl.style.display = 'none';
       });
-      listEl.appendChild(li);
-    });
   </script>
 </body>
 </html>
