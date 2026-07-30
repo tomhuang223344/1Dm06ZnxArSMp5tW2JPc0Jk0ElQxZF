@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>幸運吃角子老虎機 (滾動版)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* 主機台外殼 */
+    .machine {
+      background: linear-gradient(145deg, #2c3e50, #000000);
+      border: 6px solid #f39c12;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 0 30px rgba(243, 156, 18, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.1);
+      width: 400px; /* 稍微加寬 */
+      text-align: center;
+    }
+
+    h1 {
+      color: #f1c40f;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #f1c40f, 0 0 20px #e67e22;
+      font-size: 28px;
+      letter-spacing: 2px;
+    }
+
+    /* 籌碼資訊列 */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      background: #111;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #444;
+      font-size: 16px;
+    }
+
+    .status-bar span {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    /* 轉輪視窗區域 */
+    .reels-container {
+      display: flex;
+      justify-content: space-between;
+      background: #fff;
+      border: 5px solid #d35400;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 20px;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+      overflow: hidden; /* 關鍵：隱藏視窗外的圖案 */
+      height: 120px; /* 固定視窗高度 */
+    }
+
+    /* 單個轉輪視窗 */
+    .reel-window {
+      width: 100px;
+      height: 100px; /* 與圖案高度一致 */
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+      overflow: hidden; /* 隱藏滾動長條 */
+      position: relative;
+    }
+
+    /* 實際滾動的圖案長條 */
+    .reel-strip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      /* 初始狀態停在第一個圖案 */
+      transform: translateY(0); 
+    }
+
+    /* 長條內的單個圖案 */
+    .symbol {
+      width: 100%;
+      height: 100px; /* 必須與視窗高度一致，確保一次只顯示一個 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 60px;
+      user-select: none;
+    }
+
+    /* ========================================= */
+    /* 滾動動畫定義 */
+    /* ========================================= */
+    
+    /* 滾動中的模糊與速度效果 */
+    .reel-strip.spinning {
+      /* 1. 垂直無限滾動動畫 */
+      animation: scrollReel 0.3s infinite linear;
+      /* 2. 動態模糊 (增強速度感) */
+      filter: blur(3px);
+    }
+
+    /* 無限垂直滾動動畫：從 0 移動到 -300px (剛好是一個重複週期的長度) */
+    @keyframes scrollReel {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-300px); } /* 滾動 3 個圖案的高度後瞬間重置 */
+    }
+
+    /* 當動畫停止，且未找到目標時，確保圖案垂直居中 */
+    .reel-strip:not(.spinning) {
+        transition: transform 0.5s ease-out; /* 停止時的緩衝 */
+    }
+
+    /* ========================================= */
+
+    /* 訊息指示面板 */
+    .message {
+      height: 24px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #e74c3c;
+    }
+
+    .message.win {
+      color: #f1c40f;
+      animation: pulse 0.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    /* 拉桿按鈕 */
+    .spin-btn {
+      width: 100%;
+      padding: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(180deg, #e74c3c, #c0392b);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #962d22, 0 8px 10px rgba(0,0,0,0.5);
+      transition: all 0.1s ease;
+    }
+
+    .spin-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #962d22, 0 4px 5px rgba(0,0,0,0.5);
+    }
+
+    .spin-btn:disabled {
+      background: #7f8c8d;
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="machine">
+    <h1>SLOT MACHINE</h1>
+
+    <div class="status-bar">
+      <div>籌碼: $<span id="balance">100</span></div>
+      <div>下注: $<span id="bet">10</span></div>
+    </div>
+
+    <div class="reels-container">
+      <!-- 轉輪 1 -->
+      <div class="reel-window">
+        <div class="reel-strip" id="strip1">
+          <!-- 這些是初始顯示和轉動時的重複圖案 -->
+          <div class="symbol">🎰</div> <!-- 初始顯示 -->
+          <div class="symbol">🍒</div>
+          <div class="symbol">🍋</div>
+          <div class="symbol">🎰</div> <!-- 重複，用於無限滾動過渡 -->
+          <div class="symbol">🍒</div>
+          <div class="symbol">🍋</div>
+        </div>
+      </div>
+      
+      <!-- 轉輪 2 -->
+      <div class="reel-window">
+        <div class="reel-strip" id="strip2">
+          <div class="symbol">🎰</div>
+          <div class="symbol">⭐</div>
+          <div class="symbol">🔔</div>
+          <div class="symbol">🎰</div>
+          <div class="symbol">⭐</div>
+          <div class="symbol">🔔</div>
+        </div>
+      </div>
+      
+      <!-- 轉輪 3 -->
+      <div class="reel-window">
+        <div class="reel-strip" id="strip3">
+          <div class="symbol">🎰</div>
+          <div class="symbol">🍉</div>
+          <div class="symbol">7️⃣</div>
+          <div class="symbol">🎰</div>
+          <div class="symbol">🍉</div>
+          <div class="symbol">7️⃣</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="message" id="message">準備好試試手氣了嗎？</div>
+
+    <button class="spin-btn" id="spinBtn" onclick="spin()">開始旋轉</button>
+  </div>
+
+  <script>
+    // 定義所有可能的符號及其對應的 CSS translateY 偏移量 (以 100px 為單位)
+    const SYMBOLS = {
+      '🎰': 0,
+      '🍒': -100,
+      '🍋': -200,
+      '🍉': -300,
+      '🔔': -400,
+      '⭐': -500,
+      '7️⃣': -600
+    };
+    const SYMBOL_LIST = Object.keys(SYMBOLS);
+    
+    let balance = 100;
+    const betAmount = 10;
+    let isSpinning = false;
+
+    function spin() {
+      if (isSpinning) return;
+
+      const balanceEl = document.getElementById('balance');
+      const messageEl = document.getElementById('message');
+      const spinBtn = document.getElementById('spinBtn');
+      const strips = [
+        document.getElementById('strip1'),
+        document.getElementById('strip2'),
+        document.getElementById('strip3')
+      ];
+
+      // 1. 檢查籌碼
+      if (balance < betAmount) {
+        messageEl.innerText = "籌碼不足！重新整理頁面恢復代幣。";
+        return;
+      }
+
+      // 2. 扣除下注金
+      balance -= betAmount;
+      balanceEl.innerText = balance;
+      messageEl.className = "message";
+      messageEl.innerText = "祝你好運...";
+      
+      isSpinning = true;
+      spinBtn.disabled = true;
+
+      // 3. 決定最終結果
+      const results = [
+        getRandomSymbol(),
+        getRandomSymbol(),
+        getRandomSymbol()
+      ];
+
+      // 4. 啟動轉輪滾動動畫
+      strips.forEach(strip => {
+        // 先重置位置，防止上次停止的位置影響
+        strip.style.transition = 'none'; 
+        strip.style.transform = 'translateY(0)';
+        // 強制瀏覽器重流 (reflow) 確保重置生效
+        void strip.offsetWidth; 
+        // 啟動 CSS 無限滾動動畫
+        strip.classList.add('spinning');
+      });
+
+      // 5. 依序「停下」轉輪 (使用不同時間差)
+      strips.forEach((strip, index) => {
+        const delay = 1000 + (index * 600); // 1.0s, 1.6s, 2.2s 後停止
+
+        setTimeout(() => {
+          // 停止 CSS 動畫
+          strip.classList.remove('spinning');
+          
+          // 計算目標符號的偏移量
+          const targetSymbol = results[index];
+          const targetOffset = SYMBOLS[targetSymbol];
+
+          // 啟用緩衝過渡，並瞬間移動到正確位置
+          // (為了讓停止看起來更自然，我們讓它從滾動狀態「滑」到目標位置)
+          // 這裡我們稍微耍個花招：讓它滑動到目標圖案在重複週期後的位置，看起來像在滑行
+          strip.style.transition = 'transform 0.5s ease-out';
+          strip.style.transform = `translateY(${targetOffset}px)`;
+          
+          // 在最後一個轉輪停止後計算結果
+          if (index === strips.length - 1) {
+            setTimeout(() => {
+                checkWin(results[0], results[1], results[2]);
+                isSpinning = false;
+                spinBtn.disabled = false;
+            }, 500); // 等待最後一個緩衝動畫完成
+          }
+        }, delay);
+      });
+    }
+
+    function getRandomSymbol() {
+      return SYMBOL_LIST[Math.floor(Math.random() * SYMBOL_LIST.length)];
+    }
+
+    function checkWin(s1, s2, s3) {
+      const balanceEl = document.getElementById('balance');
+      const messageEl = document.getElementById('message');
+
+      // 中大獎：三個符號相同
+      if (s1 === s2 && s2 === s3) {
+        let winAmount = 100;
+        if (s1 === '7️⃣') winAmount = 500; // 幸運 7 大獎
+
+        balance += winAmount;
+        messageEl.className = "message win";
+        messageEl.innerText = `恭喜中大獎！獲得 $${winAmount}！`;
+      } 
+      // 小獎：任意兩個符號相同
+      else if (s1 === s2 || s2 === s3 || s1 === s3) {
+        const winAmount = 20;
+        balance += winAmount;
+        messageEl.className = "message win";
+        messageEl.innerText = `連線成功！贏得 $${winAmount}`;
+      } 
+      // 沒中獎
+      else {
+        messageEl.innerText = "可惜沒中，再試一次吧！";
+      }
+
+      balanceEl.innerText = balance;
+    }
+  </script>
+</body>
+</html>
