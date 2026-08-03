@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>幸運 777 · 吃角子老虎機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Noto+Sans+TC:wght@400;500;700;900&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ========== 基礎 ========== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --cell:clamp(54px,17vw,84px);
+  --gold:#f2c14e; --gold-2:#ffd76a; --gold-3:#a06b12;
+  --brass:#d9a83f; --brass-d:#7a4d0d;
+  --led-green:#7cff6b; --led-amber:#ffb84d; --led-red:#ff5c5c;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif; color:#e8dcc0; min-height:100vh;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #4a1515 0%, transparent 60%),
+    radial-gradient(900px 520px at 85% 110%, #3a2008 0%, transparent 55%),
+    linear-gradient(#200c0c,#120606);
+  overflow-x:hidden;
+}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(45deg, rgba(255,255,255,.014) 0 2px, transparent 2px 14px);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.55));}
+
+/* 環境光暈 */
+.orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orbs i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 16s ease-in-out infinite alternate}
+.orbs i:nth-child(1){width:420px;height:420px;background:#7c1414;top:-120px;left:-100px}
+.orbs i:nth-child(2){width:360px;height:360px;background:#a06b12;bottom:-140px;right:-80px;animation-delay:-5s}
+.orbs i:nth-child(3){width:260px;height:260px;background:#c0392b;top:40%;left:10%;opacity:.28;animation-delay:-9s}
+.orbs i:nth-child(4){width:220px;height:220px;background:#f2c14e;top:12%;right:16%;opacity:.16;animation-delay:-3s}
+@keyframes drift{to{transform:translate(60px,-40px) scale(1.12)}}
+
+/* ========== 版面 ========== */
+.scene{position:relative;z-index:1;display:flex;gap:34px;align-items:center;justify-content:center;flex-wrap:wrap;padding:44px 20px 40px}
+footer{position:relative;z-index:1;text-align:center;font-size:12px;color:#8a6a4a;padding:0 16px 28px;line-height:1.9}
+footer a{color:#caa64d;text-decoration:underline dotted;margin-left:8px}
+
+/* ========== 賠率表 ========== */
+.paytable{width:254px;flex-shrink:0;position:relative;
+  background:linear-gradient(180deg,#153d27,#0d2818);
+  border:3px solid var(--brass);border-radius:16px;padding:18px 18px 16px;
+  box-shadow:0 20px 50px rgba(0,0,0,.5), inset 0 0 46px rgba(0,0,0,.4);}
+.paytable h2{font-family:'Bungee','Noto Sans TC';color:var(--gold);letter-spacing:2px;font-size:22px;text-align:center}
+.pt-sub{font-size:11px;color:#9fbf9f;text-align:center;margin-top:2px;letter-spacing:1px}
+.paytable ul{list-style:none;margin-top:10px}
+.paytable li{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-bottom:1px dashed rgba(217,168,63,.25);font-size:15px;transition:.15s}
+.paytable li:hover{background:rgba(247,201,72,.09);transform:translateX(4px)}
+.paytable li b{font-family:'VT323';font-size:20px;color:var(--gold-2)}
+.paytable li b.jp{color:var(--led-red);text-shadow:0 0 8px rgba(255,92,92,.7)}
+.pt-note{margin-top:10px;font-size:12.5px;color:#ffd98a;background:rgba(0,0,0,.28);border-radius:8px;padding:7px 10px}
+.paytable h3{color:var(--gold-2);font-size:13px;letter-spacing:2px;margin-top:14px}
+.paytable h3 span{color:#9fbf9f;font-weight:400;font-size:11px;margin-left:6px}
+.pt-lines{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pl-grid{display:grid;grid-template-columns:repeat(3,10px);gap:3px;padding:5px;background:rgba(0,0,0,.35);border-radius:6px;transition:.15s}
+.pl-grid:hover{transform:scale(1.12)}
+.pl-grid i{width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.14)}
+.pl-grid i.on{background:var(--gold);box-shadow:0 0 6px rgba(247,201,72,.9)}
+.pt-legend{font-size:10.5px;color:#9fbf9f;margin-top:6px;letter-spacing:1px}
+.pt-jackpot{margin-top:12px;font-size:12.5px;text-align:center;color:#ffb3b3;background:rgba(124,20,20,.4);border:1px solid rgba(255,92,92,.4);border-radius:8px;padding:8px}
+.pt-jackpot b{color:var(--led-red);font-family:'VT323';font-size:16px;letter-spacing:1px}
+.pt-best{margin-top:12px;padding-top:10px;border-top:1px dashed rgba(217,168,63,.3);font-size:12px;color:#caa64d;text-align:center}
+.pt-best b{font-family:'VT323';font-size:18px;color:var(--gold-2);margin-left:4px}
+.pt-close{display:none;position:absolute;top:8px;right:10px;background:none;border:none;color:#ffd76a;font-size:18px;cursor:pointer}
+
+/* ========== 機台 ========== */
+.stage{position:relative;margin-right:58px}
+.trim{background:linear-gradient(180deg,#f9e29c,#a06b12 30%,#e3b95a 60%,#7a4d0d);padding:5px;border-radius:30px;
+  box-shadow:0 34px 70px rgba(0,0,0,.65), 0 6px 0 #5b3a08;}
+.machine{position:relative;padding:24px 22px 24px;border-radius:26px;user-select:none;
+  background:linear-gradient(180deg,#a41e1e,#7c1414 55%,#4a0c0c);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -16px 34px rgba(0,0,0,.55), inset 0 0 60px rgba(0,0,0,.25);}
+.machine.winflash{animation:mflash .4s ease-in-out 3}
+.machine.shake{animation:mshake .5s ease-in-out 4}
+@keyframes mflash{50%{filter:brightness(1.2)}}
+@keyframes mshake{25%{transform:translateX(-5px) rotate(-.4deg)}75%{transform:translateX(5px) rotate(.4deg)}}
+.screw{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f4dd9a,#8a5a13 70%);box-shadow:inset 0 -1px 2px rgba(0,0,0,.6)}
+.screw::after{content:'';position:absolute;left:2px;right:2px;top:5px;height:2px;background:#5b3a08;transform:rotate(35deg)}
+.screw.tl{top:9px;left:9px}.screw.tr{top:9px;right:9px}.screw.bl{bottom:9px;left:9px}.screw.br{bottom:9px;right:9px}
+
+/* 跑馬燈招牌 */
+.marquee{position:relative;border:2px solid var(--brass);border-radius:16px;padding:10px 16px 12px;
+  background:radial-gradient(130% 150% at 50% 0,#3d0d0d,#1c0505 72%);
+  box-shadow:inset 0 0 30px rgba(0,0,0,.85);}
+.bulbs{display:flex;justify-content:space-between;padding:2px 4px}
+.bulb{width:9px;height:9px;border-radius:50%;background:#ffd77a;box-shadow:0 0 8px 2px rgba(255,200,90,.85);animation:blink 1.2s linear infinite}
+.bulbs.party .bulb{animation-duration:.32s}
+@keyframes blink{0%,45%{opacity:1}55%,100%{opacity:.2;box-shadow:none}}
+.m-title{font-family:'Bungee','Noto Sans TC',sans-serif;font-size:clamp(30px,7vw,46px);line-height:1;text-align:center;margin-top:8px;
+  color:var(--gold);letter-spacing:3px;text-shadow:0 0 20px rgba(247,201,72,.55),0 3px 0 var(--brass-d);}
+.m-title span{color:var(--led-red);text-shadow:0 0 20px rgba(255,60,60,.8),0 3px 0 #5b0d0d}
+.m-sub{text-align:center;font-size:12px;font-weight:700;color:#ffd98a;letter-spacing:9px;margin-top:6px;opacity:.9}
+.jackpot{margin:10px auto 8px;width:fit-content;padding:4px 20px 5px;text-align:center;
+  background:#1a0505;border:2px solid #7c1414;border-radius:999px;box-shadow:inset 0 0 16px rgba(255,60,60,.25);}
+.jackpot small{display:block;font-size:10px;letter-spacing:4px;color:#ff9d9d;font-weight:700}
+.jackpot b{font-family:'VT323';font-size:30px;font-weight:400;color:var(--led-red);text-shadow:0 0 14px rgba(255,92,92,.9);animation:jpulse 1.6s ease-in-out infinite}
+@keyframes jpulse{50%{opacity:.72}}
+
+/* 轉軸窗框 */
+.window{margin-top:16px;padding:11px;border-radius:14px;
+  background:linear-gradient(180deg,#f4dd9a,#a97a15 25%,#f0cf74 55%,#8a5a13);
+  box-shadow:0 4px 0 #5b3a08, inset 0 1px 2px rgba(255,255,255,.6);}
+.reels{position:relative;display:flex;gap:10px;padding:10px;border-radius:8px;
+  background:linear-gradient(180deg,#0e0a08,#1c1410 50%,#0e0a08);
+  box-shadow:inset 0 10px 20px rgba(0,0,0,.9), inset 0 -10px 20px rgba(0,0,0,.9);}
+.reels::after{content:'';position:absolute;inset:0;z-index:4;pointer-events:none;border-radius:8px;
+  background:linear-gradient(115deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.03) 24%, transparent 42%);}
+.reel{width:var(--cell);height:calc(var(--cell)*3);overflow:hidden;position:relative;border-radius:6px;
+  background:linear-gradient(180deg, rgba(0,0,0,.8), rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,.8)),
+             linear-gradient(90deg,#241a12,#33261a 50%,#241a12);}
+.reel.land{animation:land .26s ease-out}
+@keyframes land{0%{transform:translateY(-5px)}60%{transform:translateY(2px)}100%{transform:translateY(0)}}
+.strip{display:flex;flex-direction:column;will-change:transform}
+.strip.blur{filter:blur(2.5px)}
+.sym{height:var(--cell);display:grid;place-items:center;font-size:calc(var(--cell)*.6);text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.sym.win{animation:cellPulse .45s ease-in-out infinite alternate}
+@keyframes cellPulse{to{transform:scale(1.2);filter:drop-shadow(0 0 10px #ffd76a)}}
+#linesSvg{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none}
+.wline{fill:none;stroke:var(--gold-2);stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;stroke-dasharray:14 10;
+  filter:drop-shadow(0 0 6px rgba(255,215,106,.95));animation:dash .9s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-48}}
+
+/* 訊息燈箱 */
+.ticker{margin-top:14px;min-height:42px;display:grid;place-items:center;padding:6px 12px;white-space:nowrap;overflow:hidden;
+  background:#140b04;border:2px solid #6b4a10;border-radius:10px;
+  font-family:'VT323';font-size:clamp(17px,4.4vw,23px);letter-spacing:2px;color:var(--led-amber);
+  text-shadow:0 0 10px rgba(255,184,77,.7);}
+.ticker.bad{color:#ff6b6b;text-shadow:0 0 10px rgba(255,107,107,.7)}
+.ticker.good{color:#8dff7a;text-shadow:0 0 10px rgba(124,255,107,.7)}
+.ticker.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.92);opacity:.2}100%{transform:scale(1);opacity:1}}
+
+/* 控制面板 */
+.panel{margin-top:14px;padding:14px;border-radius:14px;border:2px solid #8a5a13;
+  background:linear-gradient(180deg,#241713,#150d0a);box-shadow:inset 0 2px 10px rgba(0,0,0,.6);}
+.leds{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.led{background:#0a0f0a;border:2px solid #3a2a12;border-radius:8px;padding:5px 8px 3px;text-align:center;box-shadow:inset 0 3px 9px rgba(0,0,0,.9)}
+.led small{display:block;font-size:10px;font-weight:700;letter-spacing:3px;color:#caa64d}
+.led b{font-family:'VT323';font-weight:400;font-size:clamp(21px,5vw,29px);color:var(--led-green);text-shadow:0 0 12px currentColor}
+.led.bet b{color:var(--led-amber)}
+.led.won b{color:var(--led-red)}
+.controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.btn{font-family:'Noto Sans TC';font-weight:900;font-size:15px;color:#3a2404;cursor:pointer;touch-action:manipulation;
+  padding:9px 14px;border-radius:10px;border:1px solid #8a5a13;
+  background:linear-gradient(180deg,#ffe9a8,#f2c14e 45%,#c98f1b);
+  box-shadow:0 3px 0 var(--brass-d), inset 0 1px 0 rgba(255,255,255,.55);transition:.15s;}
+.btn:hover{filter:brightness(1.09);transform:translateY(-1px)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--brass-d)}
+.btn.ghost{background:linear-gradient(180deg,#4a3a2a,#2c2015);color:#ffd98a;border-color:#6b4a10;box-shadow:0 3px 0 #1a120a}
+.spin{margin-top:14px;width:100%;padding:14px;border-radius:999px;cursor:pointer;touch-action:manipulation;
+  font-family:'Bungee','Noto Sans TC';font-size:clamp(22px,5vw,27px);letter-spacing:8px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.5);
+  border:3px solid var(--gold);
+  background:radial-gradient(120% 170% at 50% 0%, #ff7a5c, #d21f1f 45%, #8f0f0f);
+  box-shadow:0 6px 0 #6d0a0a, 0 10px 24px rgba(210,31,31,.35), inset 0 2px 6px rgba(255,255,255,.35);
+  transition:.15s;animation:invite 2.4s ease-in-out infinite;}
+.spin:hover{filter:brightness(1.12)}
+.spin:active{transform:translateY(4px);box-shadow:0 2px 0 #6d0a0a, inset 0 2px 6px rgba(255,255,255,.2)}
+.spin:disabled{animation:none;filter:grayscale(.45) brightness(.65);cursor:not-allowed}
+@keyframes invite{50%{box-shadow:0 6px 0 #6d0a0a, 0 12px 40px rgba(255,90,60,.7), inset 0 2px 6px rgba(255,255,255,.35)}}
+.hint{margin-top:10px;text-align:center;font-size:11px;letter-spacing:1px;color:rgba(255,217,138,.55)}
+
+/* ========== 拉桿 ========== */
+.lever{position:absolute;top:23%;right:-50px;width:46px;height:220px;cursor:pointer;z-index:5}
+.lever.off{pointer-events:none;filter:grayscale(.45) brightness(.7)}
+.lever .rod{position:absolute;bottom:18px;left:50%;width:10px;height:150px;transform:translateX(-50%);border-radius:6px;
+  background:linear-gradient(90deg,#6f6f6f,#ececec 45%,#6f6f6f);box-shadow:2px 3px 6px rgba(0,0,0,.45)}
+.lever .base{position:absolute;bottom:0;left:6px;width:34px;height:46px;border-radius:9px;z-index:2;
+  background:linear-gradient(90deg,#6b4a10,#e3b95a 45%,#6b4a10);box-shadow:0 4px 8px rgba(0,0,0,.5)}
+.lever .knob{position:absolute;top:0;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;z-index:3;
+  background:radial-gradient(circle at 32% 28%, #ff8f7a, #d21f1f 55%, #7c0f0f);
+  box-shadow:0 4px 10px rgba(0,0,0,.55), inset 0 -5px 9px rgba(0,0,0,.4);transition:filter .15s}
+.lever:hover .knob{filter:brightness(1.15) drop-shadow(0 0 10px rgba(255,90,60,.7))}
+.lever.pulled .knob{animation:pull .65s cubic-bezier(.3,.7,.4,1)}
+@keyframes pull{0%{top:0}40%{top:132px}68%{top:132px}100%{top:0}}
+
+/* ========== 金幣雨 ========== */
+.coins{position:absolute;inset:0;pointer-events:none;z-index:40}
+.coin{position:absolute;top:-50px;width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #fff2b8, #f2c14e 45%, #a06b12);
+  box-shadow:inset 0 0 0 3px rgba(122,77,13,.5), 0 2px 6px rgba(0,0,0,.4);
+  animation:fall 1.2s linear forwards;}
+.coin::after{content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(122,77,13,.45)}
+@keyframes fall{
+  0%{transform:translate(0,-60px) rotate(0);opacity:1}
+  80%{opacity:1}
+  100%{transform:translate(var(--dx,0px),640px) rotate(var(--spin,540deg));opacity:0}}
+
+/* ========== 賠率表開關（手機） ========== */
+.pt-toggle{display:none;position:fixed;right:16px;bottom:16px;z-index:60;cursor:pointer;
+  font-family:'Noto Sans TC';font-weight:900;font-size:15px;color:#3a2404;
+  padding:11px 18px;border-radius:999px;border:2px solid var(--brass-d);
+  background:linear-gradient(180deg,#ffe9a8,#f2c14e 45%,#c98f1b);
+  box-shadow:0 4px 0 var(--brass-d), 0 10px 24px rgba(0,0,0,.5);}
+
+/* ========== 響應式 ========== */
+@media (max-width:920px){
+  .paytable{position:fixed;left:14px;right:14px;bottom:14px;margin:auto;max-width:440px;width:auto;z-index:70;
+    max-height:72vh;overflow:auto;transform:translateY(135%);transition:transform .45s cubic-bezier(.2,.8,.25,1);
+    box-shadow:0 -10px 60px rgba(0,0,0,.7);}
+  .paytable.open{transform:none}
+  .pt-toggle{display:block}
+  .pt-close{display:block}
+}
+@media (max-width:560px){
+  .stage{margin-right:46px}
+  .lever{transform:scale(.82);transform-origin:top right;right:-42px}
+}
+@media (prefers-reduced-motion:reduce){
+  .orbs i,.bulb,.spin,.jackpot b,.coin{animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="orbs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<main class="scene">
+
+  <!-- 賠率表 -->
+  <aside class="paytable" id="paytable" aria-label="賠率表">
+    <button class="pt-close" id="ptClose" aria-label="關閉">✕</button>
+    <h2>賠率表</h2>
+    <p class="pt-sub">同一線三格連線 · 賠率以「押注」計</p>
+    <ul id="payRows"></ul>
+    <div class="pt-note">🍒 ×2（任一線）→ ×1 小獎</div>
+    <h3>中獎線<span>共 5 條</span></h3>
+    <div class="pt-lines" id="ptLines"></div>
+    <p class="pt-legend">上排｜中排｜下排｜↘ 對角｜↗ 對角</p>
+    <div class="pt-jackpot">7️⃣ ×3 任一線 → 獨得 <b>JACKPOT</b> 彩池！</div>
+    <div class="pt-best">🏆 個人最佳贏得<b id="best">0</b></div>
+  </aside>
+
+  <!-- 機台 -->
+  <div class="stage">
+    <div class="trim">
+      <div class="machine" id="machine">
+        <i class="screw tl"></i><i class="screw tr"></i><i class="screw bl"></i><i class="screw br"></i>
+
+        <div class="marquee">
+          <div class="bulbs" id="bulbsTop"></div>
+          <h1 class="m-title">LUCKY <span>777</span></h1>
+          <p class="m-sub">幸 運 吃 角 子 老 虎</p>
+          <div class="jackpot"><small>JACKPOT 彩池</small><b id="pool">500</b></div>
+          <div class="bulbs" id="bulbsBottom"></div>
+        </div>
+
+        <div class="window">
+          <div class="reels" id="reels">
+            <div class="reel"><div class="strip"></div></div>
+            <div class="reel"><div class="strip"></div></div>
+            <div class="reel"><div class="strip"></div></div>
+            <svg id="linesSvg" viewBox="0 0 300 300" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+        </div>
+
+        <div class="ticker" id="ticker">歡迎光臨！</div>
+
+        <div class="panel">
+          <div class="leds">
+            <div class="led"><small>餘額</small><b id="balance">0</b></div>
+            <div class="led bet"><small>押注</small><b id="betLed">0</b></div>
+            <div class="led won"><small>贏得</small><b id="winLed">0</b></div>
+          </div>
+          <div class="controls">
+            <button class="btn" id="betMinus" aria-label="減少押注">−</button>
+            <button class="btn" id="betPlus" aria-label="增加押注">＋</button>
+            <button class="btn" id="betMax">MAX</button>
+            <button class="btn ghost" id="addBtn">加值 +1000</button>
+            <button class="btn ghost" id="sndBtn" aria-label="音效開關">🔊</button>
+          </div>
+          <button class="spin" id="spinBtn">SPIN</button>
+          <p class="hint">快捷鍵：Space 旋轉 ｜ ← → 調整押注</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lever" id="lever" role="button" tabindex="0" aria-label="拉桿">
+      <div class="rod"></div><div class="base"></div><div class="knob"></div>
+    </div>
+    <div class="coins" id="coins" aria-hidden="true"></div>
+  </div>
+</main>
+
+<button class="pt-toggle" id="ptToggle">📋 賠率表</button>
+
+<footer>
+  純前端技術展示 · 虛擬點數、無真實貨幣 · 博彩有風險，未滿十八歲請勿接觸
+  <a href="#" id="resetBtn">重設紀錄</a>
+</footer>
+
+<script>
+(() => {
+'use strict';
+
+/* ===== 設定 ===== */
+const SYMBOLS = [
+  {ch:'🍒', w:18, pay:2},
+  {ch:'🍋', w:20, pay:3},
+  {ch:'🍊', w:16, pay:4},
+  {ch:'🍇', w:13, pay:6},
+  {ch:'🔔', w:9,  pay:10},
+  {ch:'⭐', w:6,  pay:15},
+  {ch:'💎', w:3,  pay:30},
+  {ch:'7️⃣', w:2,  jackpot:true},
+];
+const DEF = Object.fromEntries(SYMBOLS.map(s => [s.ch, s]));
+const TOTAL_W = SYMBOLS.reduce((a, s) => a + s.w, 0);
+const CHERRY = '🍒';
+const LINES = [
+  {name:'上排', cells:[[0,0],[1,0],[2,0]]},
+  {name:'中排', cells:[[0,1],[1,1],[2,1]]},
+  {name:'下排', cells:[[0,2],[1,2],[2,2]]},
+  {name:'對角↘', cells:[[0,0],[1,1],[2,2]]},
+  {name:'對角↗', cells:[[0,2],[1,1],[2,0]]},
+];
+const BETS = [10, 25, 50, 100, 250, 500];
+const DURS = [1150, 1650, 2150];
+const POOL_BASE = 500;
+const LOSE_MSGS = ['差一點點！再拉一次 🔥','運氣正在路上…','下一把就是大獎！','手氣回暖中，繼續！','別氣餒，轉軸聽你的！'];
+
+/* ===== 儲存 ===== */
+const store = {
+  get:(k,d)=>{try{const v=localStorage.getItem('slot777.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set:(k,v)=>{try{localStorage.setItem('slot777.'+k,JSON.stringify(v))}catch(e){}}
+};
+
+/* ===== 狀態 ===== */
+let balance = store.get('balance', 1000);
+let betIdx  = Math.min(BETS.length-1, store.get('betIdx', 2));
+let bet     = BETS[betIdx];
+let pool    = Math.max(POOL_BASE, store.get('pool', POOL_BASE));
+let muted   = store.get('muted', false);
+let bestWin = store.get('best', 0);
+let grid    = [[],[],[]], target = [[],[],[]];
+let spinning = false, tickTimer = null, cuRAF = null;
+
+/* ===== 元素 ===== */
+const $ = id => document.getElementById(id);
+const reelsEl = $('reels'), ticker = $('ticker'), machine = $('machine'),
+      lever = $('lever'), spinBtn = $('spinBtn'), linesSvg = $('linesSvg'),
+      balanceEl = $('balance'), betEl = $('betLed'), winLed = $('winLed'),
+      poolEl = $('pool'), bestEl = $('best'), sndBtn = $('sndBtn');
+const reelEls = [...reelsEl.querySelectorAll('.reel')];
+const stripOf = reel => reel.querySelector('.strip');
+const fmt = n => n.toLocaleString('en-US');
+const rs = () => { let r = Math.random()*TOTAL_W; for (const s of SYMBOLS){ if((r-=s.w)<0) return s.ch; } return SYMBOLS[0].ch; };
+
+/* ===== 音效（Web Audio 合成） ===== */
+let AC = null, NB = null;
+const ctx = () => { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if (AC.state==='suspended') AC.resume(); return AC; };
+function tone(f,{d=.12,type='sine',v=.2,at=0,glide}={}){
+  if (muted) return; const c=ctx(), t=c.currentTime+at, o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if (glide) o.frequency.exponentialRampToValueAtTime(glide,t+d);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.012); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+d+.05);
+}
+function clickN({d=.06,v=.12,at=0,f=2500}={}){
+  if (muted) return; const c=ctx();
+  if (!NB){ NB=c.createBuffer(1,c.sampleRate*.3,c.sampleRate); const ch=NB.getChannelData(0); for(let i=0;i<ch.length;i++) ch[i]=Math.random()*2-1; }
+  const t=c.currentTime+at, s=c.createBufferSource(), g=c.createGain(), bp=c.createBiquadFilter();
+  s.buffer=NB; bp.type='highpass'; bp.frequency.value=f;
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(bp); bp.connect(g); g.connect(c.destination); s.start(t); s.stop(t+d+.02);
+}
+const S = {
+  ui:()=>tone(880,{d:.05,type:'square',v:.05}),
+  lever:()=>{clickN({d:.08,v:.2,f:900}); tone(130,{d:.18,type:'triangle',v:.25,glide:70});},
+  tick:()=>clickN({d:.02,v:.045,f:3200}),
+  stop:()=>{clickN({d:.05,v:.18,f:700}); tone(160,{d:.1,type:'square',v:.12,glide:90});},
+  coin:(at=0)=>{tone(988,{d:.09,type:'square',v:.12,at}); tone(1319,{d:.22,type:'square',v:.12,at:at+.07});},
+  win:(big)=>{ (big?[523,659,784,1047,1319,1568]:[523,659,784,1047]).forEach((f,i)=>tone(f,{d:.16,type:'triangle',v:.16,at:i*.09})); if(big) S.coin(.6); },
+  jackpot:()=>{ [523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,{d:.2,type:'square',v:.14,at:i*.18})); [1.1,1.25,1.4].forEach(at=>S.coin(at)); },
+  add:()=>{tone(1245,{d:.07,type:'square',v:.1}); tone(1661,{d:.12,type:'square',v:.1,at:.08});},
+  deny:()=>tone(160,{d:.2,type:'sawtooth',v:.12,glide:110}),
+};
+
+/* ===== 介面 ===== */
+function msg(t, kind){
+  ticker.textContent = t;
+  ticker.classList.remove('pop','bad','good'); void ticker.offsetWidth;
+  ticker.classList.add('pop'); if (kind) ticker.classList.add(kind);
+}
+function persist(){
+  store.set('balance',balance); store.set('betIdx',betIdx);
+  store.set('pool',pool); store.set('muted',muted); store.set('best',bestWin);
+}
+function updateLeds(){
+  balanceEl.textContent = fmt(balance);
+  betEl.textContent = fmt(bet);
+  poolEl.textContent = fmt(pool);
+  bestEl.textContent = fmt(bestWin);
+  const dis = spinning || balance < bet;
+  spinBtn.disabled = dis;
+  lever.classList.toggle('off', dis);
+}
+function countUp(to){
+  cancelAnimationFrame(cuRAF);
+  const t0 = performance.now(), D = 900;
+  const step = t => {
+    const k = Math.min(1,(t-t0)/D);
+    winLed.textContent = fmt(Math.round(to*(1-Math.pow(1-k,3))));
+    if (k<1) cuRAF = requestAnimationFrame(step);
+  };
+  cuRAF = requestAnimationFrame(step);
+}
+function coins(n){
+  const host = $('coins');
+  for (let i=0;i<n;i++){
+    const c = document.createElement('div'); c.className='coin';
+    c.style.left = (4+Math.random()*92)+'%';
+    c.style.animationDelay = (Math.random()*.45)+'s';
+    c.style.animationDuration = (.9+Math.random()*.9)+'s';
+    c.style.setProperty('--spin', (Math.random()*720-360)+'deg');
+    c.style.setProperty('--dx', (Math.random()*120-60)+'px');
+    host.appendChild(c); setTimeout(()=>c.remove(), 2400);
+  }
+}
+function pullLever(){
+  lever.classList.remove('pulled'); void lever.offsetWidth; lever.classList.add('pulled');
+  setTimeout(()=>lever.classList.remove('pulled'), 700);
+}
+
+/* ===== 遊戲核心 ===== */
+function spin(){
+  if (spinning) return;
+  if (balance < bet){ msg('✖ 餘額不足，請先加值','bad'); S.deny(); return; }
+  spinning = true; clearWinFx();
+  winLed.textContent = '0';
+  balance -= bet;
+  pool += Math.max(1, Math.round(bet*.15));
+  persist(); updateLeds();
+  pullLever(); S.lever();
+  msg('🎰 轉動中…');
+  target = [0,1,2].map(()=>[rs(),rs(),rs()]);
+  reelEls.forEach((reel,i)=>{
+    const strip = stripOf(reel);
+    const fill = 14 + i*5 + ((Math.random()*4)|0);
+    const seq = [...grid[i], ...Array.from({length:fill}, rs), ...target[i], rs(), rs()];
+    strip.classList.remove('blur');
+    strip.style.transition = 'none';
+    strip.style.transform = 'translateY(0)';
+    strip.innerHTML = seq.map(s=>`<div class="sym">${s}</div>`).join('');
+  });
+  void reelsEl.offsetHeight;               /* 強制重排 */
+  tickTimer = setInterval(S.tick, 72);
+  reelEls.forEach((reel,i)=>{
+    const strip = stripOf(reel), n = strip.children.length, dur = DURS[i];
+    strip.classList.add('blur');
+    requestAnimationFrame(()=>{
+      strip.style.transition = `transform ${dur}ms cubic-bezier(.22,.68,.31,1.06)`;
+      strip.style.transform = `translateY(${-((n-5)/n*100)}%)`;
+    });
+    setTimeout(()=>strip.classList.remove('blur'), Math.max(0,dur-300));
+    setTimeout(()=>land(i), dur+30);
+  });
+}
+function land(i){
+  const reel = reelEls[i];
+  reel.classList.add('land'); setTimeout(()=>reel.classList.remove('land'), 280);
+  S.stop();
+  if (i === 2){
+    clearInterval(tickTimer);
+    grid = target; spinning = false;
+    evaluate(); updateLeds(); persist();
+  }
+}
+function evaluate(){
+  const poolAt = pool;
+  let total = 0, jp = false; const wins = [];
+  for (const L of LINES){
+    const s = L.cells.map(([r,c]) => grid[r][c]);
+    let pay = 0;
+    if (s[0]===s[1] && s[1]===s[2]){
+      const def = DEF[s[0]];
+      if (def.jackpot){ pay = poolAt; jp = true; }
+      else pay = bet * def.pay;
+    } else if (s.filter(x=>x===CHERRY).length >= 2){
+      pay = bet;
+    }
+    if (pay){ total += pay; wins.push({L, pay}); }
+  }
+  if (jp) pool = POOL_BASE;
+  if (total > 0){
+    balance += total;
+    if (total > bestWin) bestWin = total;
+    drawWins(wins);
+    countUp(total);
+    msg(jp ? `🎊 JACKPOT！！獨得彩池 ${fmt(total)} 點！` : `✨ 贏得 ${fmt(total)} 點！`, 'good');
+    jp ? S.jackpot() : S.win(total >= bet*10);
+    coins(Math.min(60, 10 + Math.round(total/bet*3) + (jp?30:0)));
+    machine.classList.add(jp?'shake':'winflash');
+    $('bulbsTop').classList.add('party'); $('bulbsBottom').classList.add('party');
+    setTimeout(()=>{
+      machine.classList.remove('shake','winflash');
+      $('bulbsTop').classList.remove('party'); $('bulbsBottom').classList.remove('party');
+    }, jp?3200:1800);
+  } else {
+    msg(LOSE_MSGS[(Math.random()*LOSE_MSGS.length)|0]);
+  }
+}
+function drawWins(wins){
+  const rb = reelsEl.getBoundingClientRect();
+  const xs = reelEls.map(e=>{const b=e.getBoundingClientRect(); return (b.left-rb.left+b.width/2)/rb.width*300;});
+  const ys = row => {const b=reelEls[0].getBoundingClientRect(); const h=b.height/3; return (b.top-rb.top+(row+.5)*h)/rb.height*300;};
+  linesSvg.innerHTML = wins.map((w,i)=>{
+    const pts = w.L.cells.map(([r,c])=>`${xs[r].toFixed(1)},${ys(c).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" class="wline" style="animation-delay:${i*120}ms"/>`;
+  }).join('');
+  wins.forEach(w => w.L.cells.forEach(([r,c])=>{
+    const strip = stripOf(reelEls[r]);
+    const el = strip.children[strip.children.length-5+c];
+    if (el) el.classList.add('win');
+  }));
+}
+function clearWinFx(){
+  linesSvg.innerHTML = '';
+  reelsEl.querySelectorAll('.sym.win').forEach(e=>e.classList.remove('win'));
+}
+function setBet(i){
+  if (spinning) return;
+  betIdx = Math.max(0, Math.min(BETS.length-1, i));
+  bet = BETS[betIdx];
+  S.ui(); persist(); updateLeds();
+}
+
+/* ===== 建置畫面 ===== */
+[['bulbsTop',16],['bulbsBottom',16]].forEach(([id,n])=>{
+  $(id).innerHTML = Array.from({length:n},(_,i)=>`<i class="bulb" style="animation-delay:${(i%2)*0.6+i*0.03}s"></i>`).join('');
+});
+$('payRows').innerHTML = [...SYMBOLS].reverse().map(s=>
+  `<li><span>${s.ch} ${s.ch} ${s.ch}</span>${s.jackpot?'<b class="jp">JACKPOT</b>':`<b>×${s.pay}</b>`}</li>`).join('');
+$('ptLines').innerHTML = LINES.map(L=>{
+  const set = new Set(L.cells.map(([r,c])=>r+','+c));
+  let g = `<div class="pl-grid" title="${L.name}">`;
+  for (let row=0;row<3;row++) for (let col=0;col<3;col++)
+    g += `<i class="${set.has(col+','+row)?'on':''}"></i>`;
+  return g+'</div>';
+}).join('');
+grid = [0,1,2].map(()=>[rs(),rs(),rs()]);
+reelEls.forEach((reel,i)=>{ stripOf(reel).innerHTML = grid[i].map(s=>`<div class="sym">${s}</div>`).join(''); });
+
+/* ===== 事件 ===== */
+spinBtn.addEventListener('click', spin);
+lever.addEventListener('click', spin);
+lever.addEventListener('keydown', e=>{ if(e.key==='Enter') spin(); });
+$('betMinus').addEventListener('click', ()=>setBet(betIdx-1));
+$('betPlus').addEventListener('click', ()=>setBet(betIdx+1));
+$('betMax').addEventListener('click', ()=>setBet(BETS.length-1));
+$('addBtn').addEventListener('click', ()=>{
+  if (spinning) return;
+  balance += 1000; S.add(); msg('💰 已加值 1,000 點','good'); persist(); updateLeds();
+});
+sndBtn.addEventListener('click', ()=>{
+  muted = !muted; sndBtn.textContent = muted?'🔇':'🔊';
+  persist(); if (!muted) S.ui();
+});
+$('ptToggle').addEventListener('click', ()=>$('paytable').classList.add('open'));
+$('ptClose').addEventListener('click', ()=>$('paytable').classList.remove('open'));
+$('resetBtn').addEventListener('click', e=>{
+  e.preventDefault();
+  if (confirm('確定要重設所有紀錄嗎？')){
+    ['balance','betIdx','pool','muted','best'].forEach(k=>localStorage.removeItem('slot777.'+k));
+    location.reload();
+  }
+});
+addEventListener('keydown', e=>{
+  if (e.code==='Space'){ e.preventDefault(); if(!e.repeat) spinBtn.click(); }
+  else if (e.key==='ArrowRight'||e.key==='ArrowUp') setBet(betIdx+1);
+  else if (e.key==='ArrowLeft'||e.key==='ArrowDown') setBet(betIdx-1);
+});
+
+sndBtn.textContent = muted?'🔇':'🔊';
+updateLeds();
+msg('🎰 歡迎光臨！按 SPIN 或拉下右側拉桿');
+})();
+</script>
+</body>
+</html>
