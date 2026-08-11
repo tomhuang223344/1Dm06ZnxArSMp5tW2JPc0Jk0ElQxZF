@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel 分析儀表板 (含篩選排序+橫條圖)</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --primary: #4CAF50; --danger: #e74c3c; --bg: #f5f7fa; --card: #fff; --border: #e0e0e0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: #333; padding: 20px; font-size: 14px; }
+        
+        .container { max-width: 1400px; margin: 0 auto; display: grid; gap: 20px; }
+        header { text-align: center; margin-bottom: 10px; }
+        .upload-area { 
+            border: 2px dashed #ccc; border-radius: 12px; padding: 30px; 
+            text-align: center; cursor: pointer; transition: 0.3s; background: var(--card);
+        }
+        .upload-area:hover { border-color: var(--primary); background: #f9fff9; }
+        input[type="file"] { display: none; }
+        
+        /* Layout */
+        .workspace { display: grid; grid-template-columns: 320px 1fr; gap: 20px; align-items: start; }
+        @media (max-width: 960px) { .workspace { grid-template-columns: 1fr; } }
+
+        /* Panels */
+        .panel { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .panel h3 { font-size: 15px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Form Elements */
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #555; }
+        select, input[type="text"], input[type="number"] { 
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border); 
+            border-radius: 6px; font-size: 13px; margin-bottom: 10px; 
+        }
+        select:focus, input:focus { outline: none; border-color: var(--primary); }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); width: 100%; margin-top: 8px; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; width: auto; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-add { background: #2196F3; color: white; width: 100%; margin-bottom: 10px; }
+
+        /* Filter Rules */
+        .filter-rule { 
+            background: #fafafa; border: 1px solid var(--border); border-radius: 8px; 
+            padding: 10px; margin-bottom: 8px; position: relative; 
+        }
+        .filter-rule .remove-filter { 
+            position: absolute; top: 8px; right: 8px; background: none; border: none; 
+            color: #999; cursor: pointer; font-size: 16px; line-height: 1; 
+        }
+        .filter-rule .remove-filter:hover { color: var(--danger); }
+
+        /* Sort Rules */
+        .sort-rule { display: flex; gap: 8px; align-items: end; margin-bottom: 8px; }
+        .sort-rule select:first-child { flex: 1; margin-bottom: 0; }
+        .sort-rule select:last-child { width: 90px; margin-bottom: 0; }
+
+        /* Status Bar */
+        .status-bar { 
+            display: flex; gap: 15px; flex-wrap: wrap; font-size: 12px; color: #666; 
+            padding: 10px 15px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px; 
+        }
+        .status-bar.has-filter { background: #fff3e0; }
+        .badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        .badge.warn { background: #FF9800; }
+
+        /* Chart & Table */
+        .chart-container { position: relative; min-height: 400px; display: flex; justify-content: center; align-items: center; }
+        canvas { max-height: 60vh; }
+        
+        .table-wrapper { overflow-x: auto; background: var(--card); border-radius: 12px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #eee; padding: 8px 12px; text-align: left; white-space: nowrap; }
+        th { background: #fafafa; position: sticky; top: 0; font-weight: 600; cursor: pointer; user-select: none; }
+        th:hover { background: #f0f0f0; }
+        th .sort-icon { font-size: 10px; margin-left: 4px; opacity: 0.4; }
+        th.sorted .sort-icon { opacity: 1; color: var(--primary); }
+        tr:hover { background: #fcfcfc; }
+
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tab { padding: 6px 16px; background: #eee; border-radius: 20px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .tab.active { background: var(--primary); color: white; }
+
+        #status { text-align: center; font-size: 13px; color: #888; min-height: 20px; margin: 5px 0; }
+        .hidden { display: none !important; }
+        
+        .sidebar-scroll { max-height: calc(100vh - 40px); overflow-y: auto; position: sticky; top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📊 Excel 分析儀表板</h1>
+        <div class="upload-area" onclick="document.getElementById('excelFile').click()">
+            <p style="font-size: 18px;">📁 點擊上傳 Excel 檔案 (.xlsx / .xls)</p>
+            <p style="color:#999; font-size:12px; margin-top:5px;">本地運算・資料不外洩・支援篩選排序・橫條圖</p>
+            <input type="file" id="excelFile" accept=".xlsx,.xls" />
+        </div>
+        <div id="status"></div>
+    </header>
+
+    <div id="workspace" class="workspace hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar-scroll">
+            <!-- Sheet Selector -->
+            <div class="panel">
+                <h3>📋 工作表</h3>
+                <select id="sheetSelect"></select>
+            </div>
+
+            <!-- Filter Panel -->
+            <div class="panel">
+                <h3>🔍 資料篩選 <span id="filterCount" class="badge hidden">0</span></h3>
+                <div id="filterRules"></div>
+                <button class="btn btn-add btn-sm" onclick="addFilterRule()">＋ 新增篩選條件</button>
+                <button class="btn btn-sm btn-danger" onclick="clearFilters()" style="width:100%;margin-top:5px;">清除所有篩選</button>
+            </div>
+
+            <!-- Sort Panel -->
+            <div class="panel">
+                <h3>↕️ 資料排序</h3>
+                <div id="sortRules"></div>
+                <button class="btn btn-add btn-sm" onclick="addSortRule()">＋ 新增排序條件</button>
+                <button class="btn btn-sm btn-danger" onclick="clearSorts()" style="width:100%;margin-top:5px;">清除排序</button>
+            </div>
+
+            <!-- Chart Config -->
+            <div class="panel">
+                <h3>📈 圖表設定</h3>
+                <div class="form-group">
+                    <label>圖表類型</label>
+                    <select id="chartType">
+                        <option value="bar">📊 直條圖 (Vertical Bar)</option>
+                        <option value="bar_h">📏 橫條圖 (Horizontal Bar)</option>
+                        <option value="line">📈 折線圖 (Line)</option>
+                        <option value="pie">🥧 圓餅圖 (Pie)</option>
+                        <option value="doughnut">🍩 環形圖 (Doughnut)</option>
+                        <option value="radar">🕸️ 雷達圖 (Radar)</option>
+                        <option value="scatter">✨ 散佈圖 (Scatter)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>X 軸 / 標籤</label>
+                    <select id="xAxis"></select>
+                </div>
+                <div class="form-group">
+                    <label>Y 軸 / 數值</label>
+                    <select id="yAxis"></select>
+                </div>
+                <button class="btn btn-primary" onclick="applyAll()">🔄 套用並更新圖表</button>
+                <button class="btn btn-outline" onclick="downloadChart()">💾 下載圖表 PNG</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Status Bar -->
+            <div id="dataStatusBar" class="status-bar hidden">
+                <span>原始資料: <b id="statTotal">0</b> 筆</span>
+                <span>篩選後: <b id="statFiltered">0</b> 筆</span>
+                <span id="statFilterInfo" class="hidden">作用中篩選: <span id="statActiveFilters" class="badge warn">0</span> 個</span>
+            </div>
+
+            <!-- Chart -->
+            <div class="panel">
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Table Preview -->
+            <div class="table-wrapper">
+                <div id="sheetTabs" class="tabs"></div>
+                <div id="excelData"></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+// ==================== GLOBAL STATE ====================
+let workbook = null;
+let rawSheetData = {};      
+let filteredSortedData = []; 
+let currentSheetName = '';
+let chartInstance = null;
+let columns = [];
+
+const FILTER_OPS = [
+    { value: 'contains', label: '包含' },
+    { value: 'equals', label: '等於' },
+    { value: 'not_equals', label: '不等於' },
+    { value: 'gt', label: '大於 (>)' },
+    { value: 'gte', label: '大於等於 (>=)' },
+    { value: 'lt', label: '小於 (<)' },
+    { value: 'lte', label: '小於等於 (<=)' },
+    { value: 'starts_with', label: '開頭是' },
+    { value: 'ends_with', label: '結尾是' },
+];
+
+// ==================== FILE HANDLING ====================
+document.getElementById('excelFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('status').textContent = '⏳ 解析中...';
+    
+    try {
+        const buffer = await file.arrayBuffer();
+        workbook = XLSX.read(buffer, { type: 'array' });
+        
+        rawSheetData = {};
+        workbook.SheetNames.forEach(name => {
+            rawSheetData[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: '' });
+        });
+
+        initUI();
+        document.getElementById('status').textContent = `✅ 已載入 "${file.name}" (${workbook.SheetNames.length} 個工作表)`;
+    } catch (err) {
+        console.error(err);
+        document.getElementById('status').textContent = '❌ 解析失敗，請檢查檔案格式';
+    }
+});
+
+// ==================== UI INITIALIZATION ====================
+function initUI() {
+    document.getElementById('workspace').classList.remove('hidden');
+    document.getElementById('dataStatusBar').classList.remove('hidden');
+
+    const sheetSel = document.getElementById('sheetSelect');
+    sheetSel.innerHTML = workbook.SheetNames.map(n => `<option value="${n}">${n}</option>`).join('');
+    sheetSel.onchange = () => switchSheet(sheetSel.value);
+
+    switchSheet(workbook.SheetNames[0]);
+}
+
+function switchSheet(name) {
+    currentSheetName = name;
+    document.getElementById('sheetSelect').value = name;
+    
+    const data = rawSheetData[name];
+    columns = data.length > 0 ? Object.keys(data[0]) : [];
+    
+    updateColumnSelectors();
+    clearFilters(false);
+    clearSorts(false);
+    
+    if (columns.length > 0) addSortRule(columns[0], 'asc');
+    
+    applyAll();
+}
+
+function updateColumnSelectors() {
+    const opts = columns.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('xAxis').innerHTML = opts;
+    document.getElementById('yAxis').innerHTML = opts;
+    
+    const data = rawSheetData[currentSheetName];
+    if (data.length > 0 && columns.length >= 2) {
+        const numIdx = columns.findIndex((c, i) => i > 0 && typeof data[0][c] === 'number');
+        document.getElementById('yAxis').selectedIndex = numIdx !== -1 ? numIdx : Math.min(1, columns.length - 1);
+    }
+}
+
+// ==================== FILTER SYSTEM ====================
+function addFilterRule(col, op, val) {
+    const container = document.getElementById('filterRules');
+    const rule = document.createElement('div');
+    rule.className = 'filter-rule';
+    
+    const colOpts = columns.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('');
+    const opOpts = FILTER_OPS.map(o => `<option value="${o.value}" ${o.value === (op||'contains') ? 'selected' : ''}>${o.label}</option>`).join('');
+    
+    rule.innerHTML = `
+        <button class="remove-filter" onclick="this.parentElement.remove(); updateFilterBadge();" title="移除">×</button>
+        <label>欄位</label>
+        <select class="f-col">${colOpts}</select>
+        <label>條件</label>
+        <select class="f-op">${opOpts}</select>
+        <label>值</label>
+        <input type="text" class="f-val" placeholder="輸入篩選值..." value="${val || ''}" onkeydown="if(event.key==='Enter') applyAll()">
+    `;
+    container.appendChild(rule);
+    updateFilterBadge();
+}
+
+function getFilterRules() {
+    const rules = [];
+    document.querySelectorAll('.filter-rule').forEach(el => {
+        const col = el.querySelector('.f-col').value;
+        const op = el.querySelector('.f-op').value;
+        const val = el.querySelector('.f-val').value;
+        if (col && val !== '') rules.push({ col, op, val });
+    });
+    return rules;
+}
+
+function clearFilters(apply = true) {
+    document.getElementById('filterRules').innerHTML = '';
+    updateFilterBadge();
+    if (apply) applyAll();
+}
+
+function updateFilterBadge() {
+    const count = document.querySelectorAll('.filter-rule').length;
+    const badge = document.getElementById('filterCount');
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+}
+
+function applyFilters(data) {
+    const rules = getFilterRules();
+    if (rules.length === 0) return data;
+    
+    return data.filter(row => {
+        return rules.every(({ col, op, val }) => {
+            const cell = String(row[col] ?? '').toLowerCase();
+            const v = val.toLowerCase();
+            const numCell = parseFloat(String(row[col]).replace(/,/g, ''));
+            const numVal = parseFloat(val.replace(/,/g, ''));
+            
+            switch (op) {
+                case 'contains': return cell.includes(v);
+                case 'equals': return cell === v;
+                case 'not_equals': return cell !== v;
+                case 'starts_with': return cell.startsWith(v);
+                case 'ends_with': return cell.endsWith(v);
+                case 'gt': return !isNaN(numCell) && !isNaN(numVal) && numCell > numVal;
+                case 'gte': return !isNaN(numCell) && !isNaN(numVal) && numCell >= numVal;
+                case 'lt': return !isNaN(numCell) && !isNaN(numVal) && numCell < numVal;
+                case 'lte': return !isNaN(numCell) && !isNaN(numVal) && numCell <= numVal;
+                default: return true;
+            }
+        });
+    });
+}
+
+// ==================== SORT SYSTEM ====================
+function addSortRule(col, dir) {
+    const container = document.getElementById('sortRules');
+    const rule = document.createElement('div');
+    rule.className = 'sort-rule';
+    
+    const colOpts = columns.map(c => `<option value="${c}" ${c === col ? 'selected' : ''}>${c}</option>`).join('');
+    
+    rule.innerHTML = `
+        <select class="s-col">${colOpts}</select>
+        <select class="s-dir">
+            <option value="asc" ${dir !== 'desc' ? 'selected' : ''}>↑ 升冪</option>
+            <option value="desc" ${dir === 'desc' ? 'selected' : ''}>↓ 降冪</option>
+        </select>
+        <button class="btn btn-sm btn-danger" onclick="this.parentElement.remove()" style="width:auto;padding:8px 10px;">×</button>
+    `;
+    container.appendChild(rule);
+}
+
+function getSortRules() {
+    const rules = [];
+    document.querySelectorAll('.sort-rule').forEach(el => {
+        rules.push({
+            col: el.querySelector('.s-col').value,
+            dir: el.querySelector('.s-dir').value
+        });
+    });
+    return rules;
+}
+
+function clearSorts(apply = true) {
+    document.getElementById('sortRules').innerHTML = '';
+    if (apply) applyAll();
+}
+
+function applySorting(data) {
+    const rules = getSortRules();
+    if (rules.length === 0) return data;
+    
+    return [...data].sort((a, b) => {
+        for (const { col, dir } of rules) {
+            let va = a[col], vb = b[col];
+            const na = parseFloat(String(va).replace(/,/g, ''));
+            const nb = parseFloat(String(vb).replace(/,/g, ''));
+            
+            let cmp = 0;
+            if (!isNaN(na) && !isNaN(nb)) {
+                cmp = na - nb;
+            } else {
+                cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'zh-TW');
+            }
+            
+            if (cmp !== 0) return dir === 'desc' ? -cmp : cmp;
+        }
+        return 0;
+    });
+}
+
+// ==================== MASTER APPLY ====================
+function applyAll() {
+    const raw = rawSheetData[currentSheetName] || [];
+    
+    let processed = applyFilters(raw);
+    processed = applySorting(processed);
+    filteredSortedData = processed;
+    
+    const filterCount = getFilterRules().length;
+    document.getElementById('statTotal').textContent = raw.length.toLocaleString();
+    document.getElementById('statFiltered').textContent = processed.length.toLocaleString();
+    document.getElementById('statFilterInfo').classList.toggle('hidden', filterCount === 0);
+    document.getElementById('statActiveFilters').textContent = filterCount;
+    document.getElementById('dataStatusBar').classList.toggle('has-filter', filterCount > 0);
+    
+    renderTablePreview();
+    generateChart();
+}
+
+// ==================== CHART (UPDATED WITH HORIZONTAL BAR) ====================
+function generateChart() {
+    const data = filteredSortedData;
+    if (!data || data.length === 0) {
+        if (chartInstance) chartInstance.destroy();
+        return;
+    }
+
+    const xCol = document.getElementById('xAxis').value;
+    const yCol = document.getElementById('yAxis').value;
+    const rawType = document.getElementById('chartType').value;
+    if (!xCol || !yCol) return;
+
+    // Determine actual Chart.js type and indexAxis
+    let chartType = rawType;
+    let indexAxis = 'x'; // default vertical
+    
+    if (rawType === 'bar_h') {
+        chartType = 'bar';
+        indexAxis = 'y'; // horizontal bar
+    }
+
+    const labels = [], values = [];
+    data.forEach(row => {
+        const label = String(row[xCol] ?? '');
+        const val = parseFloat(String(row[yCol]).replace(/,/g, ''));
+        if (label && !isNaN(val)) { labels.push(label); values.push(val); }
+    });
+
+    if (labels.length === 0) return;
+    if (chartInstance) chartInstance.destroy();
+
+    const colors = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#795548','#607D8B','#CDDC39'];
+    const isMultiColor = ['pie','doughnut','radar'].includes(chartType);
+    const isCartesian = ['bar','line','scatter'].includes(chartType);
+
+    // For horizontal bar: swap axis titles
+    const xAxisTitle = indexAxis === 'y' ? yCol : xCol;
+    const yAxisTitle = indexAxis === 'y' ? xCol : yCol;
+
+    chartInstance = new Chart(document.getElementById('mainChart'), {
+        type: chartType,
+        data: {
+            labels,
+            datasets: [{
+                label: yCol,
+                data: values,
+                backgroundColor: isMultiColor ? colors.slice(0, labels.length) : 'rgba(76,175,80,0.7)',
+                borderColor: isMultiColor ? '#fff' : 'rgba(76,175,80,1)',
+                borderWidth: chartType === 'line' ? 2 : 1,
+                tension: 0.3,
+                fill: chartType === 'line' ? { target: 'origin', above: 'rgba(76,175,80,0.1)' } : false
+            }]
+        },
+        options: {
+            indexAxis: indexAxis,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: isMultiColor, position: 'bottom' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: isCartesian ? {
+                x: { 
+                    title: { display: true, text: xAxisTitle },
+                    beginAtZero: indexAxis === 'y' // horizontal bar: value axis is X
+                },
+                y: { 
+                    title: { display: true, text: yAxisTitle },
+                    beginAtZero: indexAxis === 'x' // vertical bar: value axis is Y
+                }
+            } : {}
+        }
+    });
+}
+
+function downloadChart() {
+    if (!chartInstance) return alert('請先生成圖表');
+    const a = document.createElement('a');
+    a.download = `${currentSheetName}_chart.png`;
+    a.href = chartInstance.toBase64Image();
+    a.click();
+}
+
+// ==================== TABLE RENDERING ====================
+function renderTablePreview() {
+    const container = document.getElementById('excelData');
+    const tabs = document.getElementById('sheetTabs');
+    
+    tabs.innerHTML = workbook.SheetNames.map(n => 
+        `<div class="tab ${n === currentSheetName ? 'active' : ''}" onclick="switchSheet('${n}')">${n}</div>`
+    ).join('');
+
+    const displayData = filteredSortedData.slice(0, 200);
+    if (displayData.length === 0) {
+        container.innerHTML = '<p style="padding:30px;text-align:center;color:#999;">無符合條件的資料</p>';
+        return;
+    }
+
+    const sortRules = getSortRules();
+    const sortedCols = new Set(sortRules.map(r => r.col));
+    
+    let html = '<table><thead><tr>';
+    columns.forEach(c => {
+        const isSorted = sortedCols.has(c);
+        const sortDir = sortRules.find(r => r.col === c)?.dir;
+        const icon = isSorted ? (sortDir === 'desc' ? '▼' : '▲') : '⇅';
+        html += `<th class="${isSorted ? 'sorted' : ''}" onclick="quickSort('${c}')">${c} <span class="sort-icon">${icon}</span></th>`;
+    });
+    html += '</tr></thead><tbody>';
+    
+    displayData.forEach(row => {
+        html += '<tr>' + columns.map(c => `<td>${row[c] ?? ''}</td>`).join('') + '</tr>';
+    });
+    html += '</tbody></table>';
+    
+    if (filteredSortedData.length > 200) {
+        html += `<p style="text-align:center;padding:10px;color:#999;font-size:12px;">表格僅顯示前 200 筆（共 ${filteredSortedData.length.toLocaleString()} 筆符合）</p>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function quickSort(col) {
+    const existing = getSortRules().find(r => r.col === col);
+    document.getElementById('sortRules').innerHTML = '';
+    const newDir = existing && existing.dir === 'asc' ? 'desc' : 'asc';
+    addSortRule(col, newDir);
+    applyAll();
+}
+</script>
+
+</body>
+</html>
