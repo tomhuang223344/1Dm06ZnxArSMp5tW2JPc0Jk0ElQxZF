@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今天吃什麼？午餐轉盤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2b2320; --paper:#fff6e9; --red:#e6432d; --yellow:#ffb703; --teal:#2a9d8f;
+  --card:#fffdf7;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans TC',sans-serif; color:var(--ink); min-height:100vh;
+  background:
+    radial-gradient(#00000012 1.2px, transparent 1.3px) 0 0/22px 22px,
+    linear-gradient(#fff8ec,#ffefd6);
+  overflow-x:hidden;
+}
+
+/* ===== 店面遮陽棚 ===== */
+.awning{position:relative;z-index:3;height:36px;
+  background:repeating-linear-gradient(90deg,var(--red) 0 44px,#fff 44px 88px);
+  box-shadow:0 3px 0 #00000022;}
+.awning::after{content:"";position:absolute;top:100%;left:0;right:0;height:16px;background:inherit;
+  -webkit-mask:radial-gradient(circle 22px at 22px 0,#000 97%,#0000) 0 0/44px 100% repeat-x;
+          mask:radial-gradient(circle 22px at 22px 0,#000 97%,#0000) 0 0/44px 100% repeat-x;
+  filter:drop-shadow(0 3px 2px #00000022);}
+
+/* ===== 漂浮食物 ===== */
+.floaters span{position:fixed;z-index:0;opacity:.14;pointer-events:none;animation:floaty 9s ease-in-out infinite alternate}
+@keyframes floaty{to{transform:translateY(-26px) rotate(8deg)}}
+
+/* ===== 標頭 ===== */
+header{position:relative;z-index:2;text-align:center;padding:34px 16px 6px}
+h1{font-family:'LXGW WenKai TC';font-weight:700;font-size:clamp(38px,7vw,62px);line-height:1.1;letter-spacing:2px}
+h1 em{font-style:normal;color:var(--red);position:relative}
+h1 em::after{content:"";position:absolute;left:-4px;right:-4px;bottom:6px;height:14px;background:var(--yellow);z-index:-1;transform:skewX(-12deg)}
+.tag{margin-top:6px;font-size:15px;font-weight:700;letter-spacing:4px;color:#7a6c5c}
+.icon-btn{position:absolute;right:18px;top:38px;font-size:20px;background:var(--card);border:2px solid var(--ink);border-radius:12px;padding:6px 10px;cursor:pointer;box-shadow:0 3px 0 var(--ink);transition:.12s}
+.icon-btn:active{transform:translateY(3px);box-shadow:none}
+
+/* ===== 版面 ===== */
+.layout{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:28px;max-width:1060px;margin:18px auto 60px;padding:0 18px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* ===== 轉盤 ===== */
+.wheel-zone{user-select:none}
+.wheel-wrap{position:relative;width:min(92vw,470px);aspect-ratio:1;margin:6px auto 0}
+canvas{position:absolute;inset:0}
+.pointer{position:absolute;top:-6px;left:50%;translate:-50% 0;width:34px;height:42px;z-index:5;transform-origin:50% 8%;filter:drop-shadow(0 3px 2px #00000040)}
+.pointer::before{content:"";position:absolute;inset:0;background:var(--red);clip-path:polygon(0 0,100% 0,50% 100%)}
+.pointer::after{content:"";position:absolute;top:-7px;left:50%;translate:-50%;width:15px;height:15px;background:#fff;border:3px solid var(--ink);border-radius:50%}
+.pointer.wig{animation:wig .12s}
+@keyframes wig{50%{transform:rotate(-11deg)}}
+.hub{position:absolute;left:50%;top:50%;translate:-50% -50%;z-index:6;width:92px;height:92px;border-radius:50%;
+  background:var(--yellow);border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);cursor:pointer;
+  font-family:'LXGW WenKai TC';font-weight:700;font-size:24px;color:var(--ink);transition:.12s}
+.hub:hover{filter:brightness(1.06)}
+.hub:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.hub:disabled{filter:grayscale(.6);cursor:not-allowed}
+.wheel-meta{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:16px;font-weight:700;flex-wrap:wrap}
+#countLabel{background:var(--ink);color:var(--yellow);padding:5px 14px;border-radius:999px;font-size:14px;letter-spacing:1px}
+.switch{display:flex;align-items:center;gap:7px;font-size:14px;cursor:pointer}
+.switch input{width:17px;height:17px;accent-color:var(--red);cursor:pointer}
+
+/* ===== 側欄 ===== */
+.panel{background:var(--card);border:2px solid var(--ink);border-radius:18px;padding:20px;box-shadow:7px 7px 0 #00000015}
+.panel h2{font-family:'LXGW WenKai TC';font-size:19px;letter-spacing:2px;margin:20px 0 10px;display:flex;align-items:center;gap:8px}
+.panel h2:first-child{margin-top:0}
+.panel h2::before{content:"";width:10px;height:10px;background:var(--red);border-radius:3px;transform:rotate(45deg)}
+.types{display:flex;flex-direction:column;gap:8px}
+.type-row{display:flex;align-items:center;gap:8px}
+.type-chip{flex:1;display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid var(--ink);border-radius:12px;background:#f4ead9;cursor:pointer;font-weight:700;font-size:15px;transition:.15s}
+.type-chip .cnt{margin-left:auto;font-size:12px;background:#00000014;border-radius:999px;padding:2px 8px}
+.type-chip.off{opacity:.42;filter:grayscale(.7)}
+.type-chip:not(.off){background:var(--tc);color:var(--tct);box-shadow:0 3px 0 var(--ink)}
+.type-chip:hover{transform:translateX(3px)}
+.maplink{flex-shrink:0;width:36px;height:36px;display:grid;place-items:center;font-size:16px;text-decoration:none;background:#eaf3ff;border:2px solid var(--ink);border-radius:10px;transition:.12s}
+.maplink:hover{transform:translateY(-2px);box-shadow:0 3px 0 var(--ink)}
+.actions{display:flex;gap:8px;margin-top:10px}
+.mini-btn{font-family:'Noto Sans TC';font-weight:900;font-size:13px;padding:7px 14px;border:2px solid var(--ink);border-radius:10px;background:var(--yellow);cursor:pointer;box-shadow:0 3px 0 var(--ink);transition:.12s}
+.mini-btn:active{transform:translateY(3px);box-shadow:none}
+.mini-btn.add{background:var(--teal);color:#fff}
+.add-form{display:flex;gap:8px}
+.add-form input{flex:1;min-width:0;border:2px solid var(--ink);border-radius:10px;padding:8px 10px;font:500 14px 'Noto Sans TC';background:#fff}
+.add-form select{border:2px solid var(--ink);border-radius:10px;padding:6px;font:700 14px 'Noto Sans TC';background:#fff}
+.link-btn{margin-left:auto;border:none;background:none;color:#a2543f;font-size:12px;cursor:pointer;text-decoration:underline dotted}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid #00000026;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700}
+.chip .del{border:none;background:none;cursor:pointer;color:#c0392b;font-weight:900;font-size:13px;padding:0 2px}
+.chip a{text-decoration:none}
+.hist .chip{background:#fff3d6}
+.empty{font-size:13px;color:#9a8c7a}
+
+/* ===== 結果視窗 ===== */
+.overlay{position:fixed;inset:0;z-index:50;background:#2b232070;display:grid;place-items:center;opacity:0;pointer-events:none;transition:.25s}
+.overlay.show{opacity:1;pointer-events:auto}
+.result-card{background:var(--paper);border:3px solid var(--ink);border-radius:22px;padding:34px 30px 26px;text-align:center;max-width:340px;width:calc(100vw - 60px);box-shadow:10px 10px 0 #00000030;transform:scale(.8) rotate(-3deg);transition:.3s cubic-bezier(.2,1.4,.4,1)}
+.overlay.show .result-card{transform:scale(1) rotate(0)}
+.r-emoji{font-size:64px;line-height:1;animation:bounce .6s}
+@keyframes bounce{40%{transform:translateY(-14px) scale(1.1)}}
+.r-type{display:inline-block;margin-top:10px;font-size:12px;font-weight:900;letter-spacing:2px;color:#fff;background:var(--rc,var(--red));padding:4px 12px;border-radius:999px}
+.result-card h3{font-family:'LXGW WenKai TC';font-size:34px;margin-top:8px;letter-spacing:1px}
+.r-cheer{margin-top:4px;font-size:14px;font-weight:700;color:#7a6c5c}
+.r-actions{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.btn{font:900 15px 'Noto Sans TC';padding:11px;border:2px solid var(--ink);border-radius:12px;cursor:pointer;background:var(--yellow);color:var(--ink);text-decoration:none;box-shadow:0 4px 0 var(--ink);transition:.12s}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.map{background:var(--teal);color:#fff}
+.btn.ghost{background:#fff;box-shadow:none;border-color:#00000030}
+
+#confetti{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden}
+#confetti i{position:absolute;top:-24px;width:10px;height:16px;border-radius:2px;animation:cfall linear forwards}
+@keyframes cfall{85%{opacity:1}to{transform:translate3d(var(--dx),108vh,0) rotate(var(--rr));opacity:0}}
+
+footer{position:relative;z-index:1;text-align:center;font-size:12px;color:#9a8c7a;padding:0 16px 34px}
+</style>
+</head>
+<body>
+
+<div class="awning" aria-hidden="true"></div>
+<div class="floaters" aria-hidden="true">
+  <span style="left:6%;top:22%;font-size:56px">🍜</span>
+  <span style="right:8%;top:18%;font-size:46px;animation-delay:-3s">🍱</span>
+  <span style="left:12%;bottom:14%;font-size:50px;animation-delay:-6s">🥟</span>
+  <span style="right:14%;bottom:20%;font-size:44px;animation-delay:-2s">🍔</span>
+</div>
+
+<header>
+  <h1>今天吃<em>什麼</em>？</h1>
+  <p class="tag">午餐轉盤 ・ 轉一下就知道 🥢</p>
+  <button class="icon-btn" id="muteBtn" aria-label="音效開關">🔊</button>
+</header>
+
+<main class="layout">
+  <section class="wheel-zone">
+    <div class="wheel-wrap">
+      <div class="pointer" id="pointer"></div>
+      <canvas id="wheel"></canvas>
+      <button class="hub" id="spinBtn">開轉!</button>
+    </div>
+    <div class="wheel-meta">
+      <span id="countLabel">候選 0 家</span>
+      <label class="switch"><input type="checkbox" id="noRepeat"> 不連續重複</label>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <h2>篩選類型</h2>
+    <div class="types" id="typeFilters"></div>
+    <div class="actions">
+      <button class="mini-btn" id="allOn">全選</button>
+      <button class="mini-btn" id="allOff">全不選</button>
+    </div>
+
+    <h2>加進口袋名單</h2>
+    <form class="add-form" id="addForm">
+      <input id="addName" placeholder="餐廳名稱" maxlength="12" required>
+      <select id="addType"></select>
+      <button class="mini-btn add" type="submit">＋</button>
+    </form>
+
+    <h2>目前候選 <button class="link-btn" id="resetData">恢復預設</button></h2>
+    <div class="chips" id="list"></div>
+
+    <h2>最近紀錄</h2>
+    <div class="chips hist" id="history"></div>
+  </aside>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="result-card">
+    <div class="r-emoji" id="rEmoji">🍱</div>
+    <div class="r-type" id="rType">日式</div>
+    <h3 id="rName">藏壽司</h3>
+    <p class="r-cheer" id="rCheer">就決定是你了！</p>
+    <div class="r-actions">
+      <a class="btn map" id="rMap" target="_blank" rel="noopener">🗺️ 開 Google Maps</a>
+      <button class="btn" id="rAgain">🎡 再轉一次</button>
+      <button class="btn ghost" id="rClose">收起</button>
+    </div>
+  </div>
+</div>
+
+<div id="confetti"></div>
+<footer>純前端單一檔案 ・ 餐廳清單可自行增減，資料存於瀏覽器</footer>
+
+<script>
+(() => {
+'use strict';
+const TAU = Math.PI * 2, INK = '#2b2320';
+
+const TYPES = {
+  tai:   {name:'台式', emoji:'🍚', color:'#e63946', map:'台式料理'},
+  jap:   {name:'日式', emoji:'🍱', color:'#f4a261', map:'日式料理'},
+  noodle:{name:'麵食', emoji:'🍜', color:'#e9c46a', map:'麵店'},
+  west:  {name:'西式', emoji:'🍔', color:'#2a9d8f', map:'西式餐廳'},
+  kor:   {name:'韓式', emoji:'🍲', color:'#9d4edd', map:'韓式料理'},
+  fast:  {name:'速食', emoji:'🍟', color:'#457b9d', map:'速食店'},
+  veg:   {name:'素食', emoji:'🥗', color:'#52b788', map:'素食餐廳'},
+};
+const DEFAULTS = [
+  {id:'d1', name:'鬍鬚張魯肉飯', type:'tai'}, {id:'d2', name:'雙月食品社', type:'tai'},
+  {id:'d3', name:'阿城鵝肉', type:'tai'},     {id:'d4', name:'金峰魯肉飯', type:'tai'},
+  {id:'d5', name:'爭鮮迴轉壽司', type:'jap'}, {id:'d6', name:'藏壽司', type:'jap'},
+  {id:'d7', name:'吉野家', type:'jap'},       {id:'d8', name:'丸亀製麵', type:'noodle'},
+  {id:'d9', name:'永康牛肉麵', type:'noodle'},{id:'d10',name:'度小月擔仔麵', type:'noodle'},
+  {id:'d11',name:'薩莉亞', type:'west'},      {id:'d12',name:'達美樂披薩', type:'west'},
+  {id:'d13',name:'品田牧場', type:'west'},    {id:'d14',name:'涓豆腐', type:'kor'},
+  {id:'d15',name:'姜虎東白丁', type:'kor'},   {id:'d16',name:'兩班家韓式料理', type:'kor'},
+  {id:'d17',name:'麥當勞', type:'fast'},      {id:'d18',name:'肯德基', type:'fast'},
+  {id:'d19',name:'摩斯漢堡', type:'fast'},    {id:'d20',name:'漢堡王', type:'fast'},
+  {id:'d21',name:'素食自助餐', type:'veg', q:'素食餐廳'},
+  {id:'d22',name:'素喜素食', type:'veg', q:'素食餐廳'},
+];
+const CHEERS = ['就決定是你了！','午餐有著落了 🙌','衝一波！','今天吃這間 🤤','老闆來一份！','出發，別遲疑！'];
+
+/* ===== 狀態 ===== */
+const store = {
+  get:(k,d)=>{try{const v=localStorage.getItem('lunch.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set:(k,v)=>{try{localStorage.setItem('lunch.'+k,JSON.stringify(v))}catch(e){}}
+};
+let custom  = store.get('custom', []);
+let removed = new Set(store.get('removed', []));
+let typesOff= new Set(store.get('typesOff', []));
+let muted   = store.get('muted', false);
+let history = store.get('history', []);
+let lastId  = null, pool = [], rot = 0, spinning = false, lastIdx = -1;
+
+const $ = id => document.getElementById(id);
+const canvas=$('wheel'), ctx=canvas.getContext('2d'), spinBtn=$('spinBtn'),
+      pointerEl=$('pointer'), overlay=$('overlay');
+const all = () => [...DEFAULTS, ...custom].filter(r => !removed.has(r.id));
+const mapUrl = r => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.q || r.name);
+const lum = hex => { const n=parseInt(hex.slice(1),16); return .299*(n>>16&255)+.587*(n>>8&255)+.114*(n&255); };
+
+/* ===== 音效 ===== */
+let AC=null;
+const ctxA=()=>{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;};
+function tone(f,{d=.1,type='sine',v=.15,at=0}={}){
+  if(muted)return; const c=ctxA(),t=c.currentTime+at,o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.05);
+}
+const sTick=()=>tone(1900,{d:.03,type:'square',v:.04});
+const sWin =()=>[523,659,784,1046].forEach((f,i)=>tone(f,{d:.14,type:'triangle',v:.14,at:i*.09}));
+
+/* ===== 轉盤繪製 ===== */
+let size=0, dpr=1;
+function resize(){
+  dpr=window.devicePixelRatio||1; size=canvas.parentElement.clientWidth;
+  canvas.width=size*dpr; canvas.height=size*dpr;
+  canvas.style.width=size+'px'; canvas.style.height=size+'px';
+  draw();
+}
+function draw(){
+  const n=pool.length, R=size/2;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,size,size);
+  ctx.save(); ctx.translate(R,R);
+  if(n===0){
+    ctx.beginPath();ctx.arc(0,0,R-8,0,TAU);ctx.fillStyle='#efe4cf';ctx.fill();
+    ctx.lineWidth=6;ctx.strokeStyle=INK;ctx.stroke();
+    ctx.fillStyle='#9a8c7a';ctx.font='700 19px "LXGW WenKai TC"';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('先選類型或加餐廳！',0,0);
+    ctx.restore();return;
+  }
+  const step=TAU/n;
+  pool.forEach((r,i)=>{
+    const c=TYPES[r.type].color, a0=rot+i*step;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R-8,a0,a0+step);ctx.closePath();
+    ctx.fillStyle=c;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    ctx.save();ctx.rotate(a0+step/2);
+    ctx.fillStyle=lum(c)>150?INK:'#fff';
+    const fs=n<=8?16:n<=14?14:n<=20?12:10.5;
+    ctx.font=`700 ${fs}px "Noto Sans TC"`;ctx.textAlign='right';ctx.textBaseline='middle';
+    let nm=r.name; if(nm.length>7)nm=nm.slice(0,6)+'…';
+    ctx.fillText(nm,R-36,0);
+    ctx.textAlign='center';ctx.font=`${Math.max(14,Math.min(22,26-n*.4))}px "Noto Sans TC"`;
+    ctx.fillText(TYPES[r.type].emoji,R-20,0);
+    ctx.restore();
+  });
+  ctx.beginPath();ctx.arc(0,0,R-8,0,TAU);ctx.lineWidth=6;ctx.strokeStyle=INK;ctx.stroke();
+  ctx.restore();
+}
+
+/* ===== 旋轉 ===== */
+const norm=a=>((a%TAU)+TAU)%TAU;
+function pointerIdx(){
+  const n=pool.length; if(!n)return -1;
+  return Math.floor(norm(-Math.PI/2-rot)/(TAU/n))%n;
+}
+function spin(){
+  if(spinning||pool.length===0)return;
+  spinning=true;spinBtn.disabled=true;hideOverlay();
+  const n=pool.length, step=TAU/n, target=Math.floor(Math.random()*n);
+  const finalMod=norm(-Math.PI/2-(target*step+step/2));
+  const start=norm(rot);
+  let delta=(finalMod-start)%TAU; if(delta<0)delta+=TAU;
+  const total=(4+Math.floor(Math.random()*3))*TAU+delta;
+  const dur=4300+Math.random()*700, t0=performance.now();
+  lastIdx=-1;
+  (function frame(t){
+    const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,4);
+    rot=start+total*e;
+    const idx=pointerIdx();
+    if(idx!==lastIdx){lastIdx=idx;sTick();pointerEl.classList.remove('wig');void pointerEl.offsetWidth;pointerEl.classList.add('wig');}
+    draw();
+    if(k<1)requestAnimationFrame(frame);
+    else{rot=norm(rot);spinning=false;updateSpinState();finish(pool[target]);}
+  })(t0);
+}
+function finish(r){
+  lastId=r.id;
+  history.unshift({name:r.name,emoji:TYPES[r.type].emoji,type:r.type,q:r.q});
+  history=history.slice(0,6); store.set('history',history);
+  $('rEmoji').textContent=TYPES[r.type].emoji;
+  $('rType').textContent=TYPES[r.type].name;
+  $('rType').style.setProperty('--rc',TYPES[r.type].color);
+  $('rName').textContent=r.name;
+  $('rCheer').textContent=CHEERS[Math.floor(Math.random()*CHEERS.length)];
+  $('rMap').href=mapUrl(r);
+  overlay.classList.add('show');
+  confetti(); sWin(); renderHistory();
+}
+function confetti(){
+  const host=$('confetti'), colors=Object.values(TYPES).map(t=>t.color).concat(['#ffb703','#e6432d']);
+  for(let i=0;i<90;i++){
+    const p=document.createElement('i');
+    p.style.left=Math.random()*100+'%';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.setProperty('--dx',(Math.random()*160-80)+'px');
+    p.style.setProperty('--rr',(360+Math.random()*720)+'deg');
+    p.style.animationDuration=(1.1+Math.random()*.9)+'s';
+    p.style.animationDelay=(Math.random()*.35)+'s';
+    host.appendChild(p); setTimeout(()=>p.remove(),2600);
+  }
+}
+const hideOverlay=()=>overlay.classList.remove('show');
+
+/* ===== 介面重建 ===== */
+function rebuild(){
+  let list=all().filter(r=>!typesOff.has(r.type));
+  if($('noRepeat').checked&&lastId&&list.length>1)list=list.filter(r=>r.id!==lastId);
+  pool=list;
+  $('countLabel').textContent=`候選 ${pool.length} 家`;
+  updateSpinState(); renderTypes(); renderList(); renderHistory(); draw();
+}
+function updateSpinState(){ spinBtn.disabled=spinning||pool.length===0; }
+function renderTypes(){
+  const counts={}; all().forEach(r=>counts[r.type]=(counts[r.type]||0)+1);
+  $('typeFilters').innerHTML=Object.entries(TYPES).map(([k,t])=>{
+    const off=typesOff.has(k), dark=lum(t.color)>150;
+    return `<div class="type-row">
+      <div class="type-chip ${off?'off':''}" data-type="${k}" style="--tc:${t.color};--tct:${dark?INK:'#fff'}" role="checkbox" aria-checked="${!off}" tabindex="0">
+        <span>${t.emoji}</span><span>${t.name}</span><span class="cnt">${counts[k]||0}</span>
+      </div>
+      <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.map+' 附近')}" target="_blank" rel="noopener" title="在地圖上看${t.name}">🗺️</a>
+    </div>`;
+  }).join('');
+}
+function renderList(){
+  $('list').innerHTML=pool.length?pool.map(r=>
+    `<span class="chip">${TYPES[r.type].emoji} ${r.name}<button class="del" data-id="${r.id}" title="移除">✕</button></span>`
+  ).join(''):`<span class="empty">（空）</span>`;
+}
+function renderHistory(){
+  $('history').innerHTML=history.length?history.map(h=>
+    `<span class="chip">${h.emoji} ${h.name}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.q||h.name)}" target="_blank" rel="noopener" title="開地圖">🗺️</a></span>`
+  ).join(''):`<span class="empty">還沒有紀錄</span>`;
+}
+
+/* ===== 事件 ===== */
+$('typeFilters').addEventListener('click',e=>{
+  const chip=e.target.closest('.type-chip'); if(!chip)return;
+  const k=chip.dataset.type;
+  typesOff.has(k)?typesOff.delete(k):typesOff.add(k);
+  store.set('typesOff',[...typesOff]); rebuild();
+});
+$('allOn').onclick =()=>{typesOff.clear();store.set('typesOff',[]);rebuild();};
+$('allOff').onclick=()=>{typesOff=new Set(Object.keys(TYPES));store.set('typesOff',[...typesOff]);rebuild();};
+$('list').addEventListener('click',e=>{
+  const b=e.target.closest('.del'); if(!b)return;
+  removed.add(b.dataset.id); store.set('removed',[...removed]); rebuild();
+});
+$('addForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('addName').value.trim(); if(!name)return;
+  custom.push({id:'c'+Date.now(),name,type:$('addType').value});
+  store.set('custom',custom); $('addName').value=''; rebuild();
+});
+$('resetData').onclick=()=>{
+  if(!confirm('恢復預設餐廳清單？（自訂與移除紀錄會清除）'))return;
+  custom=[];removed.clear();store.set('custom',[]);store.set('removed',[]);rebuild();
+};
+$('noRepeat').onchange=rebuild;
+spinBtn.onclick=spin;
+$('rClose').onclick=hideOverlay;
+$('rAgain').onclick=()=>{hideOverlay();setTimeout(spin,180);};
+overlay.addEventListener('click',e=>{if(e.target===overlay)hideOverlay();});
+$('muteBtn').onclick=()=>{muted=!muted;store.set('muted',muted);$('muteBtn').textContent=muted?'🔇':'🔊';};
+addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)){e.preventDefault();spin();}
+});
+addEventListener('resize',resize);
+
+/* ===== 初始化 ===== */
+$('addType').innerHTML=Object.entries(TYPES).map(([k,t])=>`<option value="${k}">${t.emoji} ${t.name}</option>`).join('');
+$('muteBtn').textContent=muted?'🔇':'🔊';
+resize(); rebuild();
+})();
+</script>
+</body>
+</html>
