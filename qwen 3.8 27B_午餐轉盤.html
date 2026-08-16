@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>午餐轉盤 · Lunch Roulette</title>
+<meta name="description" content="選擇障礙救星：轉一下，午餐吃什麼就決定了，結果直接連結 Google Maps 搜尋。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=ZCOOL+KuaiLe&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFD94A;
+  --ink:#241a10;
+  --red:#F04E2E;
+  --green:#176B4A;
+  --green-dark:#0E4A33;
+  --cream:#FFF7E6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Noto Sans TC',sans-serif;
+  color:var(--ink);
+  background-color:var(--yellow);
+  background-image:radial-gradient(rgba(36,26,16,.07) 1.5px,transparent 1.6px);
+  background-size:24px 24px;
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* ── 背景漂浮食物 ─────────────────────── */
+.floaters{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.floaters span{position:absolute;font-size:52px;opacity:.13;animation:floaty 9s ease-in-out infinite alternate}
+@keyframes floaty{from{transform:translateY(-14px) rotate(-8deg)}to{transform:translateY(16px) rotate(10deg)}}
+
+/* ── 跑馬燈 ─────────────────────── */
+.ticker{background:var(--red);border-bottom:3px solid var(--ink);overflow:hidden;position:relative;z-index:2}
+.ticker-track{display:flex;width:max-content;padding:8px 0;animation:marquee 26s linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-item{font-family:'Fredoka','ZCOOL KuaiLe',sans-serif;font-weight:700;color:var(--cream);white-space:nowrap;font-size:.95rem;letter-spacing:.04em;padding:0 14px;display:flex;align-items:center;gap:8px}
+.ticker-item::after{content:'✦';color:var(--yellow);margin-left:16px}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* ── 頁首 ─────────────────────── */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:24px clamp(16px,4vw,44px) 6px;flex-wrap:wrap;position:relative;z-index:2}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-badge{width:64px;height:64px;background:var(--cream);border:3px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:2rem;box-shadow:4px 4px 0 var(--ink);transform:rotate(-8deg)}
+.brand h1{font-family:'Fredoka','ZCOOL KuaiLe',sans-serif;font-size:clamp(2rem,4.5vw,3rem);line-height:1}
+.brand .sub{font-size:.7rem;font-weight:700;letter-spacing:.35em;color:var(--green-dark);margin-top:8px}
+.clock-box{background:var(--green);color:var(--cream);border:3px solid var(--ink);border-radius:14px;padding:10px 18px;box-shadow:5px 5px 0 var(--ink);display:flex;flex-direction:column;align-items:flex-end}
+#clock{font-family:'Fredoka',sans-serif;font-size:1.7rem;font-weight:700;line-height:1;color:var(--yellow)}
+#clockMsg{font-size:.72rem;margin-top:5px;opacity:.9}
+
+/* ── 主版面 ─────────────────────── */
+.layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.85fr);gap:clamp(20px,3vw,40px);padding:clamp(16px,3vw,36px) clamp(16px,4vw,44px);align-items:start;position:relative;z-index:1;max-width:1200px;margin:0 auto}
+@media(max-width:940px){.layout{grid-template-columns:1fr}}
+
+/* ── 轉盤區 ─────────────────────── */
+.wheel-zone{display:flex;flex-direction:column;align-items:center;gap:18px}
+.wheel-stage{position:relative;width:min(520px,92vw);aspect-ratio:1;margin:0 auto}
+.wheel-stage::before{content:'';position:absolute;inset:-10%;background:radial-gradient(circle,rgba(255,247,230,.9),rgba(255,247,230,0) 65%);z-index:0;border-radius:50%}
+#wheelCanvas{position:relative;z-index:1;width:100%;height:100%;display:block;filter:drop-shadow(8px 10px 0 rgba(36,26,16,.18))}
+.pointer{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:38px;height:46px;background:var(--red);clip-path:polygon(50% 100%,6% 0,94% 0);z-index:6;filter:drop-shadow(0 4px 0 var(--ink));transform-origin:50% 0}
+body.is-spinning .pointer{animation:wiggle .16s linear infinite}
+@keyframes wiggle{0%,100%{transform:translateX(-50%) rotate(0)}50%{transform:translateX(-50%) rotate(7deg)}}
+.hub-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:27%;aspect-ratio:1;border-radius:50%;background:var(--red);color:var(--cream);border:4px solid var(--ink);font-family:'Fredoka','ZCOOL KuaiLe',sans-serif;font-size:clamp(1.3rem,4vw,1.9rem);font-weight:700;cursor:pointer;box-shadow:0 6px 0 var(--ink),inset 0 -6px 0 rgba(0,0,0,.18);z-index:5;transition:transform .12s,box-shadow .12s}
+.hub-btn:hover{transform:translate(-50%,-50%) scale(1.06)}
+.hub-btn:active{transform:translate(-50%,-50%) translateY(4px) scale(.98);box-shadow:0 2px 0 var(--ink)}
+.hub-btn:disabled{opacity:.55;cursor:not-allowed}
+body.is-spinning .hub-btn{animation:hubpulse .5s ease-in-out infinite alternate}
+@keyframes hubpulse{to{transform:translate(-50%,-50%) scale(1.08)}}
+.hint{font-size:.82rem;font-weight:700;color:rgba(36,26,16,.65)}
+
+/* ── 結果卡 ─────────────────────── */
+.result-card{display:flex;gap:18px;width:min(560px,92vw);background:var(--cream);border:3px solid var(--ink);border-radius:20px;padding:20px 22px;box-shadow:7px 7px 0 var(--ink);animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+.result-card.hidden{display:none}
+@keyframes pop{from{transform:scale(.85) translateY(14px);opacity:0}}
+.result-emoji{flex:0 0 auto;width:76px;height:76px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-size:2.2rem;background:var(--red)}
+.result-kicker{font-size:.72rem;font-weight:700;letter-spacing:.2em;color:var(--green-dark)}
+.result-body h2{font-family:'Fredoka','ZCOOL KuaiLe',sans-serif;font-size:2rem;line-height:1.15;margin-top:4px}
+#rDesc{margin-top:6px;font-size:.92rem;line-height:1.65}
+.result-meta{margin-top:8px;font-size:.8rem;font-weight:700;color:var(--green-dark)}
+.result-actions{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Noto Sans TC',sans-serif;font-weight:900;font-size:.92rem;padding:11px 18px;border-radius:12px;border:3px solid var(--ink);cursor:pointer;text-decoration:none;box-shadow:4px 4px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn-red{background:var(--red);color:var(--cream)}
+.btn-ghost{background:var(--yellow);color:var(--ink)}
+
+/* ── 篩選面板 ─────────────────────── */
+.panel{background:var(--green);border:3px solid var(--ink);border-radius:22px;padding:clamp(18px,2.5vw,26px);box-shadow:8px 8px 0 var(--ink);color:var(--cream)}
+.panel-title{font-family:'Fredoka','ZCOOL KuaiLe',sans-serif;font-size:1.4rem;margin-bottom:18px}
+.filter-group{margin-bottom:18px}
+.f-label{font-size:.8rem;font-weight:900;letter-spacing:.08em;margin-bottom:10px;color:var(--yellow);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.f-note{font-weight:500;font-size:.68rem;opacity:.75;letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:'Noto Sans TC',sans-serif;font-weight:700;font-size:.82rem;padding:8px 14px;border-radius:999px;border:2px solid rgba(255,247,230,.55);background:transparent;color:var(--cream);cursor:pointer;transition:transform .12s,background .15s,border-color .15s}
+.chip:hover{transform:translateY(-2px)}
+.chip.on{background:var(--yellow);color:var(--ink);border-color:var(--ink);box-shadow:2px 3px 0 rgba(36,26,16,.45)}
+.chips-cats .chip.off{opacity:.5;border-style:dashed;text-decoration:line-through}
+body.is-spinning .chip,body.is-spinning .switch-row{pointer-events:none;opacity:.75}
+
+.switch-row{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;font-weight:700;padding:6px 0;cursor:pointer;gap:12px}
+.switch{appearance:none;width:44px;height:24px;border-radius:999px;background:rgba(255,247,230,.25);border:2px solid var(--cream);position:relative;cursor:pointer;transition:background .2s;flex:0 0 auto}
+.switch::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--cream);transition:left .2s,background .2s}
+.switch:checked{background:var(--yellow)}
+.switch:checked::after{left:22px;background:var(--ink)}
+
+.pool-box{background:var(--green-dark);border:2px solid rgba(255,247,230,.35);border-radius:14px;padding:12px 16px;font-size:.85rem;margin-bottom:18px}
+.pool-count{font-family:'Fredoka',sans-serif;font-size:1.6rem;font-weight:700;color:var(--yellow);margin-right:6px}
+.pool-warn{margin-top:6px;color:var(--yellow);font-size:.75rem;font-weight:700}
+.hidden{display:none}
+
+.hist-list{display:flex;flex-wrap:wrap;gap:8px}
+.hist-item{background:rgba(255,247,230,.12);border:1.5px solid rgba(255,247,230,.4);border-radius:999px;padding:5px 12px;font-size:.75rem;display:flex;gap:6px;align-items:center}
+.hist-item time{opacity:.65;font-size:.68rem}
+.hist-empty{font-size:.78rem;opacity:.6}
+.mini-btn{background:none;border:none;color:var(--yellow);font-size:.68rem;cursor:pointer;text-decoration:underline;font-weight:700}
+
+/* ── 彩帶 ─────────────────────── */
+.confetti{position:absolute;width:10px;height:10px;pointer-events:none;z-index:30;border-radius:2px;left:50%;top:50%;animation:conf 1s cubic-bezier(.15,.6,.4,1) forwards}
+@keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
+
+footer{text-align:center;padding:26px 16px 36px;font-size:.75rem;color:rgba(36,26,16,.65);position:relative;z-index:1}
+</style>
+</head>
+<body>
+
+<div class="floaters" aria-hidden="true">
+  <span style="left:4%;top:18%;animation-duration:11s">🍜</span>
+  <span style="left:90%;top:12%;animation-duration:9s;animation-delay:-3s">🍔</span>
+  <span style="left:78%;top:64%;animation-duration:13s;animation-delay:-5s">🍣</span>
+  <span style="left:8%;top:70%;animation-duration:10s;animation-delay:-2s">🧋</span>
+  <span style="left:46%;top:86%;animation-duration:12s;animation-delay:-6s">🍢</span>
+  <span style="left:30%;top:6%;animation-duration:9.5s;animation-delay:-4s">🥗</span>
+  <span style="left:60%;top:4%;animation-duration:12.5s;animation-delay:-1s">🍲</span>
+</div>
+
+<div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
+
+<header class="top">
+  <div class="brand">
+    <span class="brand-badge">🍱</span>
+    <div>
+      <h1>午餐轉盤</h1>
+      <p class="sub">LUNCH ROULETTE · 選擇障礙救星</p>
+    </div>
+  </div>
+  <div class="clock-box">
+    <span id="clock">--:--</span>
+    <span id="clockMsg">…</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- 轉盤 -->
+  <section class="wheel-zone">
+    <div class="wheel-stage" id="stage">
+      <div class="pointer" aria-hidden="true"></div>
+      <canvas id="wheelCanvas"></canvas>
+      <button id="spinBtn" class="hub-btn" title="按空白鍵也可以轉">轉！</button>
+    </div>
+    <p class="hint">點中間的「轉！」或按空白鍵，把命運交給轉盤 👆</p>
+
+    <div id="resultCard" class="result-card hidden">
+      <div class="result-emoji" id="rEmoji">🍜</div>
+      <div class="result-body">
+        <p class="result-kicker">今天午餐決定是——</p>
+        <h2 id="rName">麵食</h2>
+        <p id="rDesc"></p>
+        <p class="result-meta" id="rMeta"></p>
+        <div class="result-actions">
+          <a id="mapsLink" class="btn btn-red" target="_blank" rel="noopener">🗺️ 在 Google Maps 搜尋</a>
+          <button id="againBtn" class="btn btn-ghost">🔄 不滿意，再轉一次</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 篩選器 -->
+  <aside class="panel">
+    <h2 class="panel-title">⚙️ 篩選器</h2>
+
+    <div class="filter-group">
+      <p class="f-label">區域 <span class="f-note">會帶進 Google Maps 搜尋</span></p>
+      <div id="areaChips" class="chips"></div>
+    </div>
+
+    <div class="filter-group">
+      <p class="f-label">預算（每人）</p>
+      <div id="priceChips" class="chips"></div>
+    </div>
+
+    <div class="filter-group">
+      <p class="f-label">想吃哪幾種？ <span class="f-note">至少勾選 2 種</span></p>
+      <div id="catChips" class="chips chips-cats"></div>
+    </div>
+
+    <div class="filter-group">
+      <label class="switch-row"><span>避開最近吃過的</span><input type="checkbox" id="avoidRecent" class="switch"></label>
+      <label class="switch-row"><span>轉盤音效（滴答聲）</span><input type="checkbox" id="soundOn" class="switch"></label>
+    </div>
+
+    <div class="pool-box">
+      <span class="pool-count" id="poolCount">10</span>種類型在轉盤上
+      <p class="pool-warn hidden" id="poolWarn"></p>
+    </div>
+
+    <div class="history">
+      <p class="f-label">最近吃過 <button id="clearHist" class="mini-btn">清空</button></p>
+      <div id="histList" class="hist-list"></div>
+    </div>
+  </aside>
+</main>
+
+<footer>🍱 午餐轉盤 · 單一 HTML 檔案直接開即用 · 結果連結 Google Maps 即時搜尋</footer>
+
+<script>
+/* ── 資料 ─────────────────────────────── */
+const CATS=[
+  {id:'noodles', name:'麵食',     emoji:'🍜', color:'#EF4A2C', price:1, desc:'牛肉麵、拉麵、陽春麵，熱騰騰的一碗最治癒。'},
+  {id:'japanese',name:'日式料理', emoji:'🍣', color:'#FF8C42', price:2, desc:'壽司、丼飯、炸豬排定食，出餐快又穩定。'},
+  {id:'western', name:'西式簡餐', emoji:'🥪', color:'#C99A06', price:2, desc:'義大利麵、披薩、早午餐，重口味換心情。'},
+  {id:'burger',  name:'漢堡炸物', emoji:'🍔', color:'#9A5B22', price:1, desc:'厚切漢堡配薯條，快速填飽的午間經典。'},
+  {id:'bbq',     name:'燒烤串燒', emoji:'🍢', color:'#7B4BB5', price:2, desc:'炭火香氣直撲面來，一串接一根本停不下來。'},
+  {id:'hotpot',  name:'火鍋',     emoji:'🍲', color:'#D8315B', price:3, desc:'咕嘟咕嘟的湯底，冬天和加班日的神器。'},
+  {id:'tearoom', name:'茶餐廳',   emoji:'🧋', color:'#2E9E6B', price:1, desc:'奶茶配西多士，港式節奏一秒上線。'},
+  {id:'korean',  name:'韓式料理', emoji:'🌶️', color:'#0F8A8C', price:2, desc:'石鍋拌飯、辣炒年糕，微辣剛剛好。'},
+  {id:'veggie',  name:'素食輕食', emoji:'🥗', color:'#6FA32B', price:1, desc:'輕食碗、蔬食麵、健康餐，清爽不昏沉。'},
+  {id:'dessert', name:'甜品飲料', emoji:'🍰', color:'#E56BA8', price:1, desc:'甜點配咖啡，幸福直接拉滿的下午茶式午餐。'}
+];
+const AREAS=['台北市','中正區','信義區','大安區','松山區','中山區','萬華區','內湖區'];
+const PRICES=[
+  {id:'all',label:'全部',   test:()=>true},
+  {id:'p1', label:'≤ $200', test:c=>c.price<=1},
+  {id:'p2', label:'$200–400',test:c=>c.price<=2},
+  {id:'p3', label:'≥ $400', test:c=>c.price>=3}
+];
+const PRICE_LABEL={1:'約 $150 以內',2:'約 $200–400',3:'約 $400 起'};
+
+/* ── 狀態（含 localStorage 記憶）────────── */
+const store={
+  get(){try{return JSON.parse(localStorage.getItem('lunchRoulette')||'{}')}catch(e){return{}}},
+  set(v){try{localStorage.setItem('lunchRoulette',JSON.stringify(v))}catch(e){}}
+};
+const saved=store.get();
+const state={
+  area:saved.area||AREAS[0],
+  price:saved.price||'all',
+  cats:new Set(saved.cats&&saved.cats.length?saved.cats:CATS.map(c=>c.id)),
+  avoid:!!saved.avoid,
+  sound:saved.sound!==false,
+  history:Array.isArray(saved.history)?saved.history.slice(0,8):[],
+  spinning:false
+};
+function save(){store.set({area:state.area,price:state.price,cats:[...state.cats],avoid:state.avoid,sound:state.sound,history:state.history})}
+
+/* ── DOM ─────────────────────────────── */
+const $=id=>document.getElementById(id);
+const stage=$('stage'),canvas=$('wheelCanvas'),ctx=canvas.getContext('2d');
+const spinBtn=$('spinBtn'),resultCard=$('resultCard'),rEmoji=$('rEmoji'),rName=$('rName'),
+      rDesc=$('rDesc'),rMeta=$('rMeta'),mapsLink=$('mapsLink'),againBtn=$('againBtn'),
+      poolCount=$('poolCount'),poolWarn=$('poolWarn'),histList=$('histList');
+
+/* ── 跑馬燈 ─────────────────────────────── */
+(function(){
+  const items=CATS.map(c=>`<span class="ticker-item">${c.emoji} ${c.name}</span>`).join('');
+  const group=`<span class="ticker-item">🍽️ 今天吃什麼？</span>`+items;
+  $('tickerTrack').innerHTML=group+group;
+})();
+
+/* ── 時鐘 ─────────────────────────────── */
+function tickClock(){
+  const d=new Date(),h=d.getHours();
+  $('clock').textContent=`${String(h).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  $('clockMsg').textContent =
+    h<5?'夜貓子也該吃了 🌙':
+    h<10?'還沒到午餐？先墊點東西':
+    h<14?'午餐時間！快轉 👇':
+    h<17?'晚了點，還是吃吧':'晚餐預習中 🍽️';
+}
+tickClock();setInterval(tickClock,10000);
+
+/* ── 音效（WebAudio）────────────────────── */
+let actx=null;
+function beep(freq,dur,type,vol,when=0){
+  if(!state.sound)return;
+  actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const t=actx.currentTime+when,o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,t);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur+.02);
+}
+const tickSound=()=>beep(1800+Math.random()*400,.045,'square',.04);
+const winSound =()=>{beep(660,.12,'triangle',.09);beep(880,.18,'triangle',.09,.12);beep(1320,.25,'triangle',.07,.24)};
+
+/* ── 篩選 chips ─────────────────────────── */
+const areaChips=$('areaChips'),priceChips=$('priceChips'),catChips=$('catChips');
+AREAS.forEach(a=>{
+  const b=document.createElement('button');b.className='chip';b.textContent=a;
+  if(a===state.area)b.classList.add('on');
+  b.onclick=()=>{if(state.spinning)return;state.area=a;
+    [...areaChips.children].forEach(x=>x.classList.toggle('on',x===b));save();refresh();};
+  areaChips.appendChild(b);
+});
+PRICES.forEach(p=>{
+  const b=document.createElement('button');b.className='chip';b.textContent=p.label;
+  if(p.id===state.price)b.classList.add('on');
+  b.onclick=()=>{if(state.spinning)return;state.price=p.id;
+    [...priceChips.children].forEach(x=>x.classList.toggle('on',x===b));save();refresh();};
+  priceChips.appendChild(b);
+});
+CATS.forEach(c=>{
+  const b=document.createElement('button');b.className='chip';b.textContent=`${c.emoji} ${c.name}`;
+  const on=state.cats.has(c.id);b.classList.toggle('on',on);b.classList.toggle('off',!on);
+  b.onclick=()=>{if(state.spinning)return;
+    state.cats.has(c.id)?state.cats.delete(c.id):state.cats.add(c.id);
+    b.classList.toggle('on',state.cats.has(c.id));b.classList.toggle('off',!state.cats.has(c.id));
+    save();refresh();};
+  catChips.appendChild(b);
+});
+$('avoidRecent').checked=state.avoid;
+$('avoidRecent').onchange=e=>{state.avoid=e.target.checked;save();refresh()};
+$('soundOn').checked=state.sound;
+$('soundOn').onchange=e=>{state.sound=e.target.checked;save()};
+$('clearHist').onclick=()=>{state.history=[];save();renderHistory();refresh()};
+
+/* ── 池子計算 ───────────────────────────── */
+function getPool(){
+  const p=PRICES.find(x=>x.id===state.price);
+  let list=CATS.filter(c=>state.cats.has(c.id)&&p.test(c));
+  let relaxed=false;
+  if(state.avoid){
+    const recent=new Set(state.history.slice(0,3).map(h=>h.id));
+    const filtered=list.filter(c=>!recent.has(c.id));
+    if(filtered.length>=2)list=filtered;else relaxed=true;
+  }
+  return {list,relaxed};
+}
+
+/* ── 轉盤繪製 ───────────────────────────── */
+let rotation=0,currentList=CATS.slice(),spinAnim=null;
+function sizeCanvas(){
+  const s=stage.clientWidth,dpr=window.devicePixelRatio||1;
+  canvas.width=s*dpr;canvas.height=s*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function render(rot,t){
+  const size=canvas.clientWidth||500,cx=size/2;
+  ctx.clearRect(0,0,size,size);
+  ctx.save();ctx.translate(cx,cx);
+  const R0=size/2-4,Rs=R0-16,n=currentList.length||1,seg=360/n;
+
+  // 外圈底座
+  ctx.beginPath();ctx.arc(0,0,R0,0,Math.PI*2);
+  ctx.fillStyle='#FFF7E6';ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='#241a10';ctx.stroke();
+
+  // 區塊（隨 rot 旋轉）
+  ctx.save();ctx.rotate(rot*Math.PI/180);
+  for(let i=0;i<n;i++){
+    const a0=(-90+i*seg)*Math.PI/180,a1=a0+seg*Math.PI/180;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,Rs,a0,a1);ctx.closePath();
+    ctx.fillStyle=currentList[i].color;ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle='#FFF7E6';ctx.stroke();
+
+    const c=currentList[i],mid=(a0+a1)/2;
+    ctx.save();ctx.rotate(mid);
+    // emoji
+    ctx.font=`${Math.round(size*.055)}px 'Noto Color Emoji','Apple Color Emoji',sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(c.emoji,Rs*.40,0);
+    // 名稱（沿半徑）
+    let fs=Math.min(size*.05,24);
+    ctx.font=`${fs}px 'ZCOOL KuaiLe','Noto Sans TC',sans-serif`;
+    const maxW=Rs*.42,w=ctx.measureText(c.name).width;
+    if(w>maxW){fs=Math.floor(fs*maxW/w);ctx.font=`${fs}px 'ZCOOL KuaiLe','Noto Sans TC',sans-serif`;}
+    ctx.fillStyle='#FFF7E6';
+    ctx.shadowColor='rgba(36,26,16,.55)';ctx.shadowOffsetX=1;ctx.shadowOffsetY=1;
+    ctx.textAlign='left';
+    ctx.fillText(c.name,Rs*.52,0);
+    ctx.shadowColor='transparent';ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 燈泡（外圈，旋轉時追逐閃爍）
+  const nB=Math.max(16,n*3);
+  for(let i=0;i<nB;i++){
+    const a=(i/nB)*Math.PI*2-Math.PI/2;
+    const lit=state.spinning?(i+Math.floor(t/90))%2===0:i%2===0;
+    ctx.beginPath();ctx.arc(Math.cos(a)*(R0-8),Math.sin(a)*(R0-8),3.2,0,Math.PI*2);
+    ctx.fillStyle=lit?'#FFD94A':'rgba(36,26,16,.35)';ctx.fill();
+  }
+
+  // 中心圓盤（按鈕底下）
+  ctx.beginPath();ctx.arc(0,0,size*.155,0,Math.PI*2);
+  ctx.fillStyle='#FFF7E6';ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='#241a10';ctx.stroke();
+  ctx.restore();
+}
+
+/* ── 主迴圈（含待機緩慢旋轉）────────────── */
+function loop(t){
+  if(spinAnim){
+    const p=Math.min(1,(t-spinAnim.start)/spinAnim.dur);
+    const e=1-Math.pow(1-p,4);
+    rotation=spinAnim.from+(spinAnim.to-spinAnim.from)*e;
+    const top=((-rotation)%360+360)%360;
+    const sIdx=Math.floor(top/spinAnim.seg);
+    if(sIdx!==spinAnim.lastIdx){tickSound();spinAnim.lastIdx=sIdx;}
+    if(p>=1){const cat=currentList[spinAnim.idx];spinAnim=null;finish(cat);}
+  }else{
+    rotation+=.03; // 待機時輕輕轉動
+  }
+  render(rotation,t);
+  requestAnimationFrame(loop);
+}
+
+/* ── 旋轉 ─────────────────────────────── */
+function spin(){
+  if(state.spinning||spinBtn.disabled)return;
+  const {list}=getPool();
+  if(list.length<2)return;
+  const idx=Math.floor(Math.random()*list.length);
+  const seg=360/list.length;
+  const center=idx*seg+seg/2;
+  const jitter=(Math.random()*.5-.25)*seg;
+  const targetMod=(360-(center+jitter))%360;
+  const cur=rotation%360;
+  const delta=(targetMod-cur+360)%360;
+  const spins=5+Math.floor(Math.random()*3);
+  spinAnim={from:rotation,to:rotation+spins*360+delta,start:performance.now(),
+            dur:4200+Math.random()*800,seg,idx,lastIdx:Math.floor(((-rotation)%360+360)%360/seg)};
+  state.spinning=true;
+  document.body.classList.add('is-spinning');
+  spinBtn.disabled=true;
+}
+spinBtn.onclick=spin;
+againBtn.onclick=spin;
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!['INPUT','BUTTON'].includes(e.target.tagName)){e.preventDefault();spin();}
+});
+
+/* ── 完成：結果卡 + Google Maps ─────────── */
+function finish(cat){
+  state.spinning=false;
+  document.body.classList.remove('is-spinning');
+  winSound();
+  rEmoji.textContent=cat.emoji;rEmoji.style.background=cat.color;
+  rName.textContent=cat.name;
+  rDesc.textContent=cat.desc;
+  rMeta.textContent=`📍 ${state.area} · ${PRICE_LABEL[cat.price]}`;
+  mapsLink.href='https://www.google.com/maps/search/'+encodeURIComponent(cat.name+' '+state.area);
+  mapsLink.textContent=`🗺️ 在 Google Maps 搜尋「${cat.name} ${state.area}」`;
+  resultCard.classList.remove('hidden');
+  state.history.unshift({id:cat.id,area:state.area,t:Date.now()});
+  state.history=state.history.slice(0,8);
+  save();renderHistory();refresh();
+  confetti(cat.color);
+}
+
+/* ── 彩帶 ─────────────────────────────── */
+function confetti(color){
+  const rect=stage.getBoundingClientRect();
+  const colors=[color,'#FFD94A','#FFF7E6','#F04E2E'];
+  for(let i=0;i<44;i++){
+    const p=document.createElement('i');p.className='confetti';
+    const ang=Math.random()*Math.PI*2,dist=80+Math.random()*rect.width*.55;
+    p.style.setProperty('--dx',Math.cos(ang)*dist+'px');
+    p.style.setProperty('--dy',(Math.sin(ang)*dist-60)+'px');
+    p.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    p.style.background=colors[i%4];
+    stage.appendChild(p);
+    setTimeout(()=>p.remove(),1100);
+  }
+}
+
+/* ── 歷史紀錄 ───────────────────────────── */
+function fmtTime(t){const d=new Date(t);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function renderHistory(){
+  histList.innerHTML='';
+  if(!state.history.length){histList.innerHTML='<span class="hist-empty">還沒有紀錄，轉一下就有 🎯</span>';return;}
+  state.history.slice(0,5).forEach(h=>{
+    const c=CATS.find(x=>x.id===h.id);if(!c)return;
+    const el=document.createElement('span');el.className='hist-item';
+    el.innerHTML=`${c.emoji} ${c.name} <time>${fmtTime(h.t)}</time>`;
+    histList.appendChild(el);
+  });
+}
+
+/* ── 刷新池子與 UI ─────────────────────── */
+function refresh(){
+  const {list,relaxed}=getPool();
+  currentList=list;
+  poolCount.textContent=list.length;
+  const showWarn=list.length<2||relaxed;
+  poolWarn.classList.toggle('hidden',!showWarn);
+  poolWarn.textContent=list.length<2?'至少勾選兩種類型才能轉 🙈':'選項太少，已暫時放開「避開最近」';
+  spinBtn.disabled=list.length<2||state.spinning;
+}
+
+/* ── 初始化 ─────────────────────────────── */
+function onResize(){sizeCanvas()}
+window.addEventListener('resize',onResize);
+onResize();renderHistory();refresh();
+requestAnimationFrame(loop);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{}); // 字型載入後 rAF 會自動用新字型重繪
+</script>
+</body>
+</html>
