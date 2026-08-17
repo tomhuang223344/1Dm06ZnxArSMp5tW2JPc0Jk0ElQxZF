@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROG Zephyrus G16 (2026) GU606 完整規格報告</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel2: #1d212b;
+    --border: #2a3040;
+    --text: #e8ebf0;
+    --muted: #9aa3b2;
+    --accent: #ff4d4d;
+    --accent2: #ffb84d;
+    --green: #4dd07a;
+    --blue: #5aa9ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft JhengHei", -apple-system, sans-serif;
+    line-height: 1.65;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+  }
+  h1 { font-size: 26px; letter-spacing: .5px; }
+  h1 .ro { color: var(--accent); }
+  .sub { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .meta-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .meta-item .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .meta-item .v { font-size: 15px; margin-top: 4px; font-weight: 600; }
+  h2 {
+    font-size: 19px;
+    margin: 34px 0 14px;
+    padding-left: 12px;
+    border-left: 4px solid var(--accent);
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent2); font-size: 13px; text-transform: uppercase; letter-spacing: .8px; background: var(--panel2); }
+  tr:last-child td { border-bottom: none; }
+  td.k { color: var(--muted); width: 34%; white-space: nowrap; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--blue);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+  .price { color: var(--green); font-weight: 700; }
+  .old { color: var(--muted); text-decoration: line-through; font-size: 13px; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  ul.clean { list-style: none; }
+  ul.clean li { padding: 7px 0; border-bottom: 1px dashed var(--border); }
+  ul.clean li:last-child { border-bottom: none; }
+  ul.clean li::before { content: "▸ "; color: var(--accent); }
+  .hl { color: var(--accent2); font-weight: 600; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--border); padding-top: 16px; }
+  a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="ro">ROG</span> Zephyrus G16 (2026) — GU606 完整規格報告</h1>
+  <div class="sub">資料來源：ASUS ROG 台灣官網技術規格頁（rog.asus.com/tw）｜整理日期：2026-08-17</div>
+  <div class="meta-grid">
+    <div class="meta-item"><div class="k">產品型號</div><div class="v">GU606（Zephyrus G16 2026）</div></div>
+    <div class="meta-item"><div class="k">處理器</div><div class="v">Intel Core Ultra 9 386H</div></div>
+    <div class="meta-item"><div class="k">顯示卡範圍</div><div class="v">RTX 5060 → RTX 5090 Laptop</div></div>
+    <div class="meta-item"><div class="k">螢幕</div><div class="v">16" 2.5K OLED 240Hz</div></div>
+    <div class="meta-item"><div class="k">重量</div><div class="v">1.85 ~ 1.95 kg</div></div>
+    <div class="meta-item"><div class="k">台灣售價</div><div class="v price">NT$95,999 起</div></div>
+  </div>
+</header>
+
+<h2>一、銷售型號與價格（ROG 台灣官網）</h2>
+<div class="card">
+<table>
+  <tr><th>SKU</th><th>顯示卡</th><th>記憶體</th><th>SSD</th><th>OS</th><th>重量</th><th>售價</th></tr>
+  <tr><td>GU606AM-0022H386H-NBLO</td><td>RTX 5060 8GB</td><td>32GB</td><td>1TB PCIe 4.0</td><td>Win 11 Home</td><td>1.85 kg</td><td class="price">NT$95,999 <span class="old">NT$109,999</span></td></tr>
+  <tr><td>GU606AM-0032I386H-NBLO</td><td>RTX 5060 8GB</td><td>32GB</td><td>1TB PCIe 4.0</td><td>Win 11 Home</td><td>1.85 kg</td><td class="price">NT$95,999 <span class="old">NT$109,999</span></td></tr>
+  <tr><td>GU606AR-0058I386H-NBLO</td><td>RTX 5070 Ti 12GB</td><td>64GB</td><td>1TB PCIe 5.0</td><td>Win 11 Home</td><td>1.95 kg</td><td class="price">NT$139,999 <span class="old">NT$159,999</span></td></tr>
+  <tr><td>GU606AW-0048H386H-NBLO</td><td>RTX 5080 16GB</td><td>64GB</td><td>1TB PCIe 5.0</td><td>Win 11 Home</td><td>1.95 kg</td><td class="price">NT$157,999 <span class="old">NT$179,999</span></td></tr>
+  <tr><td>GU606AX-0048H386H-NBLO</td><td>RTX 5090 24GB</td><td>64GB</td><td>1TB PCIe 5.0</td><td>Win 11 Home</td><td>1.95 kg</td><td class="price">NT$189,999 <span class="old">NT$219,999</span></td></tr>
+  <tr><td>GU606AX-0078I386H</td><td>RTX 5090 24GB</td><td>64GB</td><td>2TB PCIe 5.0</td><td>Win 11 Pro</td><td>1.95 kg</td><td>官網展示價（促銷中）</td></tr>
+</table>
+<div class="note">* 價格為 ROG 台灣官網 2026-08-17 當下促價，原價見刪除線。GPU/記憶體/SSD 對應係依型號代碼與官網規格欄位推斷，實際以各 SKU 頁面為準。</div>
+</div>
+
+<h2>二、核心規格</h2>
+
+<div class="card">
+<table>
+  <tr><td class="k">作業系統</td><td>Windows 11 Home / Windows 11 Pro（依型號）</td></tr>
+  <tr><td class="k">處理器</td><td>Intel® Core™ Ultra 9 Processor 386H — 2.1 GHz（18MB Cache，最高 4.9 GHz，16 核心 / 16 執行緒）；Intel® NPU 最高 50 TOPS</td></tr>
+  <tr><td class="k">Neural Processor (NPU)</td><td>Intel® NPU up to 50 TOPS</td></tr>
+  <tr><td class="k">顯示卡（依型號）</td><td>
+    <span class="hl">RTX 5060 Laptop GPU</span>：8GB GDDR7，ROG Boost Turbo/Manual 1737MHz @ 115W（1687MHz + 50MHz OC，100W+15W Dynamic Boost）<br>
+    <span class="hl">RTX 5070 Ti Laptop GPU</span>：12GB GDDR7，Turbo 1497MHz @ 125W；Manual 1497MHz @ 140W（1447MHz + 50MHz OC，105W+20W / 115W+25W Dynamic Boost）<br>
+    <span class="hl">RTX 5080 Laptop GPU</span>：16GB GDDR7，Turbo 1550MHz @ 135W；Manual 1550MHz @ 160W（1500MHz + 50MHz OC，115W+20W / 135W+25W Dynamic Boost）<br>
+    <span class="hl">RTX 5090 Laptop GPU</span>：24GB GDDR7，Turbo 1647MHz @ 135W；Manual 1647MHz @ 160W（1597MHz + 50MHz OC，115W+20W / 135W+25W Dynamic Boost）
+  </td></tr>
+  <tr><td class="k">顯示器</td><td>ROG Nebula HDR Display｜16 吋 2.5K（2560×1600, WQXGA）OLED，16:10｜防眩光 (AR) 塗層｜DCI-P3 廣色域 100%（部分型號標示）｜更新率 240Hz｜G-Sync｜Pantone 認證｜MUX Switch + NVIDIA® Advanced Optimus</td></tr>
+  <tr><td class="k">記憶體</td><td>32GB 或 64GB LPDDR5X 8533（板載）｜最大容量 32GB / 64GB（依型號）｜雙通道｜無擴充插槽（No expansion possible）</td></tr>
+  <tr><td class="k">儲存空間</td><td>1TB PCIe® 4.0 NVMe™ M.2 SSD（RTX 5060 型號）／1TB 或 2TB PCIe® 5.0 NVMe™ M.2 Performance SSD（RTX 5070 Ti 以上型號）</td></tr>
+  <tr><td class="k">擴充插槽</td><td>2x M.2 PCIe（含已使用槽位）</td></tr>
+  <tr><td class="k">I/O 連接埠</td><td>1x 3.5mm Combo Audio Jack｜1x HDMI 2.1 FRL｜2x USB 3.2 Gen 2 Type-A｜1x USB 3.2 Gen 2 Type-C（支援 DisplayPort™ / 供電 / G-SYNC）｜1x Type-C USB 4（支援顯示器 / 充電 / Thunderbolt™ 4）｜SD 讀卡機（UHS-II, 312MB/s）｜支援 XG Mobile（GC34 外接顯卡盒）</td></tr>
+  <tr><td class="k">鍵盤與觸控板</td><td>全尺寸背光鍵盤｜Touchpad｜附 Copilot 鍵<br><span class="note">*Copilot in Windows (in preview) 依市場逐步推送，時程因裝置與地區而異。</span></td></tr>
+  <tr><td class="k">攝影機</td><td>1080P FHD IR Camera（支援 Windows Hello）</td></tr>
+  <tr><td class="k">音效技術</td><td>4 喇叭系統（雙動力低音喇叭）+ 2 組高音喇叭｜Smart Amp Technology｜Dolby Atmos｜AI 降噪技術｜內建陣列麥克風</td></tr>
+  <tr><td class="k">網路與通訊</td><td>Wi-Fi 7（802.11be）Triple band 2*2 + Bluetooth® 6.0 Wireless Card（*藍牙版本可能隨 OS 版本而異）</td></tr>
+  <tr><td class="k">電池</td><td>90WHrs，4S1P，4-cell Li-ion</td></tr>
+  <tr><td class="k">電源</td><td>250W AC 適配器（Rectangle Conn）｜輸出：20V DC / 12.5A / 250W｜輸入：100–240V AC, 50/60Hz universal<br><span class="note">*是否附充電器依國家、地區與型號而異。</span></td></tr>
+  <tr><td class="k">燈效設備</td><td>Slash Lighting（斜線燈效）</td></tr>
+  <tr><td class="k">重量</td><td>1.85 kg（4.08 lbs，RTX 5060 型號）／1.95 kg（4.30 lbs，其餘型號）</td></tr>
+  <tr><td class="k">尺寸</td><td>35.4 × 24.6 × 1.49 ~ 1.64 cm（13.94" × 9.69" × 0.59" ~ 0.65"，RTX 5060 型號）<br>35.4 × 24.6 × 1.49 ~ 1.79 cm（13.94" × 9.69" × 0.59" ~ 0.70"，其餘型號）</td></tr>
+  <tr><td class="k">保固 / 安全</td><td>Secured-core PC (Level 3)｜Pluton Security Processor｜BIOS 管理者與使用者密碼保護｜McAfee® 1 年</td></tr>
+  <tr><td class="k">盒裝內附</td><td>ROG Zephyrus G16 Sleeve (2026)（部分型號）｜ROG Impact Gaming Mouse</td></tr>
+</table>
+</div>
+
+<h2>三、預裝軟體與訂閱優惠</h2>
+<div class="card">
+<ul class="clean">
+  <li><span class="hl">Microsoft Office</span>：新 Microsoft 365 用戶 1 個月試用（需信用卡）</li>
+  <li><span class="hl">Xbox Game Pass</span>：Premium 2 個月（*條款與排除適用，僅限符合資格的市場；遊戲庫依地區、裝置與時間而異）</li>
+  <li><span class="hl">Exclusive Subscription Offers</span>：3 個月 Google AI Pro 訂閱｜6 個月 Dropbox 500GB 訂閱｜1 年 ASUS Secure Auto-Backup 200GB 訂閱（*僅限符合資格的市場）</li>
+</ul>
+</div>
+
+<h2>四、亮點標籤</h2>
+<div class="tags">
+  <span class="tag">Core Ultra 9 386H</span>
+  <span class="tag">NPU 50 TOPS</span>
+  <span class="tag">RTX 50 系列（5060~5090）</span>
+  <span class="tag">16" 2.5K OLED 240Hz</span>
+  <span class="tag">ROG Nebula HDR</span>
+  <span class="tag">DCI-P3 100%</span>
+  <span class="tag">Pantone 認證</span>
+  <span class="tag">MUX + Advanced Optimus</span>
+  <span class="tag">Wi-Fi 7 + BT 6.0</span>
+  <span class="tag">90Wh 電池</span>
+  <span class="tag">250W 快充</span>
+  <span class="tag">Thunderbolt 4 / USB4</span>
+  <span class="tag">XG Mobile 支援</span>
+  <span class="tag">Windows Hello IR</span>
+  <span class="tag">Dolby Atmos</span>
+  <span class="tag">1.85kg 起</span>
+</div>
+
+<h2>五、免責聲明（ASUS 原文摘錄）</h2>
+<div class="card">
+<ul class="clean">
+  <li>除非另有說明，否則所有效能聲明皆以理論值做為基準，實際情況可能會有所差異。</li>
+  <li>USB 3.0、USB 3.1（第 1 代和第 2 代）以及 Type-C 的實際傳輸速度將依據使用情境而變化，包括電腦設備、檔案規格及系統配置等因素。</li>
+  <li>產品規格可能會依國家地區而有所變動，建議與當地經銷商或零售商確認目前販售產品的規格。</li>
+  <li>產品顏色可能會因拍照光線誤差或螢幕設定而與實際產品有所差異。</li>
+  <li>本網站所提供的產品規格如有更改，恕不另行通知。規格和功能因型號而異，所有圖片僅供參考。</li>
+</ul>
+</div>
+
+<footer>
+  資料來源：<a href="https://rog.asus.com/tw/laptops/rog-zephyrus/rog-zephyrus-g16-2026/spec/">rog.asus.com/tw — ROG Zephyrus G16 (2026) GU606 技術規格頁</a><br>
+  報告產生：Hermes Agent｜2026-08-17（UTC+8）
+</footer>
+
+</div>
+</body>
+</html>
