@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>打地鼠 Whack-a-Mole</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: radial-gradient(ellipse at top, #2b3a55 0%, #16203a 55%, #0d1428 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 16px;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  .game {
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+  }
+  h1 {
+    font-size: 30px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-shadow: 0 3px 12px rgba(0,0,0,.5);
+  }
+  .hud {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin: 10px 0 16px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 14px;
+    padding: 8px 16px;
+    min-width: 92px;
+    backdrop-filter: blur(6px);
+  }
+  .stat .label { font-size: 12px; opacity: .7; }
+  .stat .value { font-size: 22px; font-weight: 700; }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    gap: 14px;
+    background: rgba(0,0,0,.25);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: inset 0 4px 20px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+  .hole {
+    position: relative;
+    aspect-ratio: 1 / 1.05;
+    min-height: 0;
+    perspective: 300px;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+  .dirt {
+    position: absolute;
+    bottom: 6%;
+    left: 8%;
+    right: 8%;
+    height: 26%;
+    background: radial-gradient(ellipse at center, #4a2f17 0%, #33200f 70%, rgba(51,32,15,0) 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 -6px 12px rgba(0,0,0,.6);
+    z-index: 1;
+  }
+  .mole {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 14%;
+    height: 74%;
+    transform-origin: bottom center;
+    transform: translateY(125%);
+    transition: transform .18s cubic-bezier(.34,1.4,.64,1);
+    cursor: pointer;
+    z-index: 2;
+    font-size: clamp(38px, 12vw, 64px);
+    line-height: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
+  }
+  .mole.up { transform: translateY(0); }
+  .mole.gold { filter: drop-shadow(0 0 14px #ffd700) hue-rotate(0deg); }
+  .mole.bomb { filter: drop-shadow(0 0 12px #ff5533); }
+  .hit-fx {
+    position: absolute;
+    left: 50%;
+    bottom: 45%;
+    transform: translate(-50%, 0);
+    font-size: 26px;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 5;
+    animation: floatUp .7s ease-out forwards;
+    text-shadow: 0 2px 6px rgba(0,0,0,.6);
+  }
+  @keyframes floatUp {
+    from { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    to   { opacity: 0; transform: translate(-50%, -46px) scale(1.4); }
+  }
+  .mole.whacked { animation: squish .25s ease-out; }
+  @keyframes squish {
+    0% { transform: translateY(0) scaleY(1); }
+    40% { transform: translateY(6%) scaleY(.55) scaleX(1.25); }
+    100% { transform: translateY(125%) scaleY(1); }
+  }
+  .controls { margin-top: 18px; display: flex; justify-content: center; gap: 12px; }
+  .speed-row {
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+  }
+  .speed-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #cfd8ea;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 12px;
+    padding: 8px 18px;
+    cursor: pointer;
+    box-shadow: none;
+    transition: all .12s;
+  }
+  .speed-btn:active { transform: translateY(2px); }
+  .speed-btn.active {
+    color: #1a1a1a;
+    background: linear-gradient(180deg, #ffd75e, #ffb347);
+    border-color: transparent;
+    box-shadow: 0 3px 10px rgba(255,179,71,.35);
+  }
+  button {
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(180deg, #ffb347, #ff8c1a);
+    border: none;
+    border-radius: 16px;
+    padding: 12px 30px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #b35900, 0 8px 16px rgba(0,0,0,.35);
+    transition: transform .08s, box-shadow .08s;
+  }
+  button:active { transform: translateY(4px); box-shadow: 0 1px 0 #b35900; }
+  button.secondary {
+    background: linear-gradient(180deg, #5a6b8c, #3d4c6b);
+    box-shadow: 0 5px 0 #273349, 0 8px 16px rgba(0,0,0,.35);
+  }
+  button.secondary:active { box-shadow: 0 1px 0 #273349; }
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8,12,24,.82);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    background: linear-gradient(180deg, #243352, #18233c);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 24px;
+    padding: 34px 30px;
+    max-width: 380px;
+    width: calc(100% - 40px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    text-align: center;
+  }
+  .panel h2 { font-size: 26px; margin-bottom: 14px; }
+  .panel p { font-size: 15px; line-height: 1.8; opacity: .85; margin-bottom: 8px; }
+  .legend { display: flex; justify-content: center; gap: 18px; margin: 16px 0 22px; font-size: 14px; }
+  .legend div { line-height: 1.5; }
+  .legend span.ico { font-size: 28px; display: block; }
+  .final-score { font-size: 44px; font-weight: 800; color: #ffd75e; margin: 6px 0 2px; text-shadow: 0 3px 10px rgba(0,0,0,.5); }
+  .new-record { color: #7dff9b; font-weight: 700; font-size: 15px; margin-bottom: 10px; min-height: 20px; }
+  .countdown {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 120px;
+    font-weight: 900;
+    color: #ffd75e;
+    text-shadow: 0 6px 30px rgba(0,0,0,.7);
+    z-index: 9;
+    pointer-events: none;
+    animation: pop .8s ease-out;
+  }
+  @keyframes pop {
+    0% { transform: scale(2.2); opacity: 0; }
+    30% { transform: scale(1); opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>🔨 打地鼠</h1>
+  <div class="hud">
+    <div class="stat"><div class="label">分數</div><div class="value" id="score">0</div></div>
+    <div class="stat"><div class="label">時間</div><div class="value" id="time">30</div></div>
+    <div class="stat"><div class="label">最高分</div><div class="value" id="best">0</div></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="speed-row">
+    <span>速度：</span>
+    <button class="speed-btn" data-speed="easy">🐢 慢速</button>
+    <button class="speed-btn active" data-speed="normal">🐇 正常</button>
+    <button class="speed-btn" data-speed="hard">🔥 快速</button>
+  </div>
+  <div class="controls">
+    <button id="startBtn">開始遊戲</button>
+  </div>
+</div>
+
+<div class="overlay" id="startOverlay">
+  <div class="panel">
+    <h2>🔨 打地鼠</h2>
+    <p>30 秒內盡可能多打地鼠！</p>
+    <div class="legend">
+      <div><span class="ico">🐹</span>普通 +10</div>
+      <div><span class="ico">✨</span>金鼠 +30</div>
+      <div><span class="ico">💣</span>地雷 -20</div>
+    </div>
+    <button id="startBtn2">開始遊戲</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="endOverlay">
+  <div class="panel">
+    <h2>⏰ 時間到！</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <div class="new-record" id="newRecord"></div>
+    <p id="endMsg"></p>
+    <button id="againBtn">再玩一次</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const GAME_TIME = 30;
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const bestEl = document.getElementById('best');
+  const startOverlay = document.getElementById('startOverlay');
+  const endOverlay = document.getElementById('endOverlay');
+
+  let score = 0, timeLeft = GAME_TIME, running = false;
+  let timerId = null, spawnId = null, spawnPending = false;
+  let best = +(localStorage.getItem('whack_best') || 0);
+  bestEl.textContent = best;
+
+  // Speed presets: spawn interval range + hide duration range (slow -> fast)
+  const SPEEDS = {
+    easy:   { spawnMin: 950,  spawnMax: 1400, hideMin: 850,  hideMax: 1450 },
+    normal: { spawnMin: 600,  spawnMax: 950,  hideMin: 520,  hideMax: 1050 },
+    hard:   { spawnMin: 380,  spawnMax: 640,  hideMin: 380,  hideMax: 700  },
+  };
+  let speed = localStorage.getItem('whack_speed') || 'normal';
+  if (!SPEEDS[speed]) speed = 'normal';
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.speed === speed);
+    b.addEventListener('click', () => {
+      speed = b.dataset.speed;
+      localStorage.setItem('whack_speed', speed);
+      document.querySelectorAll('.speed-btn').forEach(x => x.classList.toggle('active', x === b));
+    });
+  });
+
+  // Build 9 holes
+  const holes = [];
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.innerHTML = '<div class="dirt"></div><div class="mole"></div>';
+    board.appendChild(hole);
+    holes.push({ el: hole, mole: hole.querySelector('.mole'), active: false, type: null });
+  }
+
+  function rand(n) { return Math.floor(Math.random() * n); }
+
+  function pickType() {
+    const r = Math.random();
+    if (r < 0.12) return 'bomb';
+    if (r < 0.28) return 'gold';
+    return 'normal';
+  }
+
+  function moleEmoji(type) {
+    return type === 'bomb' ? '💣' : type === 'gold' ? '✨🐹' : '🐹';
+  }
+
+  // Only ONE mole at a time: skip spawn while one is still up or pending
+  function popMole() {
+    if (!running) return;
+    spawnPending = false;
+    const idle = holes.filter(h => !h.active);
+    if (idle.length !== holes.length) return;
+    const h = idle[rand(idle.length)];
+    const type = pickType();
+    h.active = true;
+    h.type = type;
+    h.mole.textContent = moleEmoji(type);
+    h.mole.className = 'mole up' + (type === 'gold' ? ' gold' : type === 'bomb' ? ' bomb' : '');
+    // Hide duration ramps up over time, scaled by selected speed preset
+    const elapsed = GAME_TIME - timeLeft;
+    const sp = SPEEDS[speed];
+    const t = Math.min(1, elapsed / GAME_TIME);
+    const hideMs = sp.hideMax - (sp.hideMax - sp.hideMin) * t;
+    setTimeout(() => {
+      if (h.active && h.type === type) hideMole(h);
+    }, hideMs);
+  }
+
+  function hideMole(h) {
+    h.active = false;
+    h.mole.classList.remove('up');
+    h.type = null;
+  }
+
+  function showFx(hole, text, color) {
+    const fx = document.createElement('div');
+    fx.className = 'hit-fx';
+    fx.textContent = text;
+    fx.style.color = color;
+    hole.el.appendChild(fx);
+    setTimeout(() => fx.remove(), 700);
+  }
+
+  function whack(h) {
+    if (!running || !h.active) return;
+    const type = h.type;
+    let pts = 0, txt = '', color = '#fff';
+    if (type === 'normal') { pts = 10; txt = '+10'; color = '#7dff9b'; }
+    else if (type === 'gold') { pts = 30; txt = '+30'; color = '#ffd75e'; }
+    else { pts = -20; txt = '-20'; color = '#ff6b4a'; }
+    score = Math.max(0, score + pts);
+    scoreEl.textContent = score;
+    showFx(h, txt, color);
+    h.mole.classList.remove('up');
+    h.mole.classList.add('whacked');
+    setTimeout(() => h.mole.classList.remove('whacked'), 260);
+    h.active = false;
+    h.type = null;
+  }
+
+  holes.forEach((h, i) => {
+    h.mole.addEventListener('pointerdown', e => { e.preventDefault(); whack(h); });
+  });
+
+  function startGame() {
+    score = 0; timeLeft = GAME_TIME; running = true;
+    scoreEl.textContent = '0';
+    timeEl.textContent = timeLeft;
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    document.getElementById('startBtn').textContent = '重新開始';
+    // countdown
+    let c = 3;
+    const cd = document.createElement('div');
+    cd.className = 'countdown';
+    cd.textContent = c;
+    document.body.appendChild(cd);
+    const cdInt = setInterval(() => {
+      c--;
+      if (c > 0) {
+        cd.textContent = c;
+        cd.style.animation = 'none';
+        void cd.offsetWidth;
+        cd.style.animation = '';
+      } else {
+        clearInterval(cdInt);
+        cd.remove();
+        timerId = setInterval(tick, 1000);
+        const sp = SPEEDS[speed];
+        spawnId = setInterval(() => {
+          if (spawnPending) return;
+          const t = Math.min(1, (GAME_TIME - timeLeft) / GAME_TIME);
+          const delay = sp.spawnMax - (sp.spawnMax - sp.spawnMin) * t;
+          spawnPending = true;
+          setTimeout(popMole, delay);
+        }, 200);
+        popMole();
+      }
+    }, 800);
+  }
+
+  function tick() {
+    timeLeft--;
+    timeEl.textContent = timeLeft;
+    if (timeLeft <= 5) timeEl.style.color = '#ff6b4a'; else timeEl.style.color = '';
+    if (timeLeft <= 0) endGame();
+  }
+
+  function endGame() {
+    running = false;
+    clearInterval(timerId);
+    clearInterval(spawnId);
+    holes.forEach(h => { h.active = false; h.mole.classList.remove('up'); });
+    document.getElementById('finalScore').textContent = score;
+    const rec = document.getElementById('newRecord');
+    if (score > best) {
+      best = score;
+      localStorage.setItem('whack_best', best);
+      bestEl.textContent = best;
+      rec.textContent = '🎉 新紀錄！';
+    } else rec.textContent = '';
+    const msg = document.getElementById('endMsg');
+    msg.textContent = score >= 300 ? '神級槌法，無敵！🏆' :
+                      score >= 200 ? '高手過招，非常棒！💪' :
+                      score >= 100 ? '不錯喔，繼續加油！👍' :
+                      '再練練，下次更強！';
+    endOverlay.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('startBtn2').addEventListener('click', startGame);
+  document.getElementById('againBtn').addEventListener('click', startGame);
+})();
+</script>
+</body>
+</html>
