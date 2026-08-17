@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天選 7 Pro（U7-251HX + RTX 5060）評測數據分析 — 中正評測</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel2: #1d212b;
+    --border: #2a3040;
+    --text: #e8ebf0;
+    --muted: #9aa3b2;
+    --accent: #ff4d4d;
+    --accent2: #ffb84d;
+    --green: #4dd07a;
+    --red: #ff6b6b;
+    --blue: #5aa9ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft JhengHei", -apple-system, sans-serif;
+    line-height: 1.65;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  header { border-bottom: 2px solid var(--accent); padding-bottom: 18px; margin-bottom: 24px; }
+  h1 { font-size: 25px; letter-spacing: .5px; }
+  h1 .ro { color: var(--accent); }
+  .sub { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .meta-item { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .meta-item .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .meta-item .v { font-size: 15px; margin-top: 4px; font-weight: 600; }
+  h2 { font-size: 19px; margin: 34px 0 14px; padding-left: 12px; border-left: 4px solid var(--accent); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent2); font-size: 13px; text-transform: uppercase; letter-spacing: .8px; background: var(--panel2); }
+  tr:last-child td { border-bottom: none; }
+  td.k { color: var(--muted); width: 36%; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .good { color: var(--green); font-weight: 700; }
+  .bad { color: var(--red); font-weight: 700; }
+  .mid { color: var(--accent2); font-weight: 700; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .tag { background: var(--panel2); border: 1px solid var(--border); color: var(--blue); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  ul.clean { list-style: none; }
+  ul.clean li { padding: 7px 0; border-bottom: 1px dashed var(--border); }
+  ul.clean li:last-child { border-bottom: none; }
+  ul.clean li::before { content: "▸ "; color: var(--accent); }
+  .quote { border-left: 3px solid var(--blue); padding: 8px 14px; margin: 10px 0; background: var(--panel2); border-radius: 0 8px 8px 0; font-size: 14px; }
+  .quote .who { color: var(--muted); font-size: 12.5px; display: block; margin-top: 4px; }
+  .verdict { background: linear-gradient(135deg, #1d212b, #232836); border: 1px solid var(--accent); }
+  .verdict .big { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--border); padding-top: 16px; }
+  a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="ro">評測分析</span>｜天選 7 Pro（酷睿版）U7-251HX + RTX 5060</h1>
+  <div class="sub">影片來源：YouTube「中正評測」—《天选7Pro，U7-251HX、5060》｜發布：2026-05-24｜片長 13:16｜觀看 2,881 次<br>
+  本報告數據由影片語音轉錄（Whisper）提取，整理日期 2026-08-17</div>
+  <div class="meta-grid">
+    <div class="meta-item"><div class="k">機型</div><div class="v">天選 7 Pro 酷睿版（第 7 代）</div></div>
+    <div class="meta-item"><div class="k">CPU</div><div class="v">Intel Core Ultra 7 251HX<br>6P+12E / 18 執行緒</div></div>
+    <div class="meta-item"><div class="k">GPU</div><div class="v">RTX 5060 Laptop 115W<br>8GB GDDR7</div></div>
+    <div class="meta-item"><div class="k">螢幕</div><div class="v">BOE 2.5K 300Hz<br>峰值亮度 712nit（全場第 3）</div></div>
+    <div class="meta-item"><div class="k">重量</div><div class="v">2230g（適配器 810g / 280W）</div></div>
+    <div class="meta-item"><div class="k">售價</div><div class="v">原價 ¥10,799（評測者：偏貴）</div></div>
+  </div>
+</header>
+
+<h2>一、硬件配置（實機確認）</h2>
+<div class="card">
+<table>
+  <tr><td class="k">CPU</td><td>Intel Core Ultra 7 251HX｜6 大核 + 12 小核，共 18 執行緒｜L2/L3 各 30MB｜規格定位介於 255H 與 255HX 之間（比 255HX 少 2 個大核）｜內建 NPU（可用於騰訊會議、剪映）＋48EU 核顯</td></tr>
+  <tr><td class="k">CPU 功耗設定</td><td>PL1 100W / PL2 135W（性能模式全程「增強」）</td></tr>
+  <tr><td class="k">GPU</td><td>NVIDIA RTX 5060 Laptop，115W（與市面其他 5060 筆電一致）</td></tr>
+  <tr><td class="k">記憶體</td><td>16GB DDR5-5600（美光顆粒），<span class="mid">出廠僅單條</span>，2 個插槽可自行擴充</td></tr>
+  <tr><td class="k">硬碟</td><td>三星 1TB SSD｜另有 2 個 M.2 2280 盤位（主盤位 + 網卡上方備用位）</td></tr>
+  <tr><td class="k">螢幕</td><td>京東方（BOE）2025 年 3 月出廠｜2560×1600｜<span class="good">300Hz</span> 刷新率</td></tr>
+  <tr><td class="k">無線</td><td>Intel AX211/8852CE（轉錄為「8852CE」）Wi-Fi 網卡</td></tr>
+  <tr><td class="k">電池 / 散熱</td><td>90Wh 電池｜4 條熱管 + 2 風扇 + 2 出風口，中央與芯片組均有散熱片與熱管</td></tr>
+  <tr><td class="k">I/O</td><td>右側 2x USB-A｜左側 3 個 USB 口（共 5 個 USB）｜HDMI、有線網口、耳機麥克風複合孔、電源</td></tr>
+  <tr><td class="k">外觀</td><td>A 面金屬淡藍磨砂，D 面塑料（故意做粗）｜三面窄邊框｜腳墊阻尼感佳（加分項）</td></tr>
+</table>
+</div>
+
+<h2>二、基準跑分與橫比</h2>
+<div class="card">
+<table>
+  <tr><th>測試項目</th><th>天選 7 Pro（本機）</th><th>橫比結果</th></tr>
+  <tr><td>Cinebench R15 多核（10 分鐘）</td><td class="num">26565</td><td>天選 6 Pro（255HX，多 2 大核）僅高 5% → 本機發揮良好；對 235HX 高 18.4%（2 大核差距）；比翼龍 R7 H255+5060 明顯領先；台式 270K Plus 仍高 60%</td></tr>
+  <tr><td>Cinebench R15 單核（10 分鐘）</td><td class="num">2023</td><td>天選 6 Pro（255HX）低 3.2%；235HX 略高一點點；台式 270K Plus 高 20%</td></tr>
+  <tr><td>3DMark Time Spy 圖形</td><td class="num">12475</td><td class="good">5060 筆電中偏好水平；翼龍低 4%、魔霸星銳高 1.5%、天選 5070 高 16.6%</td></tr>
+  <tr><td>3DMark（雙通道記憶體後）</td><td class="num">12520</td><td>幾乎無變化（+0.4%）</td></tr>
+  <tr><td>魯大師跑分</td><td class="num">6.1 版 CPU 102 萬級別</td><td>另有古老 5.2 版 CPU 32 萬（評測者提及，版本不同不可直接比）</td></tr>
+  <tr><td>一萬多行電子表格轉字体</td><td class="num">36.5 秒（CPU ~4.3GHz）</td><td>天選 235HX 快 0.5 秒；天選 255HX 慢 22%；台式 Ultra 7 快 22%；翼龍 R7 H255 慢 80%</td></tr>
+  <tr><td>AI 繪圖 100 張（512×512）</td><td class="num">351 秒（顯存佔用 4.8/8GB）</td><td class="mid">5060 正常表現；魔霸星銳 5060 快 5.4%；天選 5070 僅快 15%；5080 快 32%；台式 5070 快一倍</td></tr>
+  <tr><td>剪映 4K60 影片剪輯</td><td class="num">32 秒</td><td>所有機器速度差不多（GPU 佔用、CPU 佔用很低）</td></tr>
+  <tr><td>SSD（三星 1TB，200GB 混合模式）</td><td class="num">讀 2.1GB/s / 寫 2.2GB/s</td><td>最高溫 79°C，在三星硬碟中算比較低</td></tr>
+  <tr><td>螢幕亮度（9 點量測 nit）</td><td class="num">565~712，平均約 630</td><td class="good">評測者記錄的 300+ 款機器中<b>排名第三</b></td></tr>
+</table>
+<div class="note">* 轉錄自語音，「拉15」解讀為 Cinebench R15、「二鏡值優化」解讀為 Intel Game Boost（遊戲增強）、「魔八星锐」應為「魔霸/星銳」系列筆電；個別數字以影片畫面為準。</div>
+</div>
+
+<h2>三、遊戲實測（外接擷取卡錄製，內外接螢幕皆直連 5060）</h2>
+<div class="card">
+<table>
+  <tr><th>遊戲 / 設定</th><th>Game Boost 關</th><th>Game Boost 開</th><th>雙通道記憶體</th><th>橫比備註</th></tr>
+  <tr><td>古墓麗影（2K 最高畫質）</td><td class="num">106 fps</td><td class="num">106 fps（無提升）</td><td class="num">106 fps</td><td class="good">5060 筆電中表現算好；魔霸星銳 5060 僅高 1 幀；天選 5070 高 16%；台式 6800XT 高 45%</td></tr>
+  <tr><td>CS2（1080P 最低畫質/陰影最高）</td><td class="num">429.3 fps</td><td class="num good">451.8 fps（+5.3%）</td><td class="num good">458.7 fps</td><td class="good">5060 筆電中帧數最高；宏碁 5080 只高 2 幀；開 Game Boost 後甚至贏過宏碁 5080；X3D+5090 筆電高 40%；翼龍 R7 H255+5060 低 40%</td></tr>
+  <tr><td>地平線（2K 最高畫質，高要求 3A）</td><td class="num">73 fps</td><td>—</td><td class="num good">83 fps（+13.7%）</td><td>5060 正常表現；12GB 5070 高 43%；台式 16GB 6800XT 高 82%</td></tr>
+  <tr><td>絕地求生（2K 三極致畫質）</td><td colspan="2" class="num">幀數良好（已開 Game Boost）</td><td>無明顯提升</td><td>CPU 不拖累顯卡，GPU 使用率 90%+；此機看不出對記憶體敏感</td></tr>
+  <tr><td>無畏契約（2K 最低畫質）</td><td colspan="2" class="num">幀數不錯</td><td>—</td><td>網游表現好的印證</td></tr>
+  <tr><td>坦克世界（2K 最高畫質）</td><td colspan="3" class="num">已實測（影片展示）</td><td>—</td></tr>
+</table>
+<div class="note">* 「雙通道記憶體」= 加裝第二條 16GB 後重測。3A 遊戲表現正常、網游表現出色是本機最明顯的特質。</div>
+</div>
+
+<h2>四、記憶體單條 vs 雙通道（重點發現）</h2>
+<div class="card">
+<table>
+  <tr><th>項目</th><th>單條 16GB</th><th>雙通道 32GB</th><th>變化</th></tr>
+  <tr><td>CPU 跑分</td><td>基準</td><td>略降（誤差範圍內）</td><td>≈ 無變化</td></tr>
+  <tr><td>3DMark Time Spy</td><td class="num">12475</td><td class="num">12520</td><td>+0.4%</td></tr>
+  <tr><td>古墓麗影 2K</td><td class="num">106 fps</td><td class="num">106 fps</td><td>0%</td></tr>
+  <tr><td>地平線 2K 最高</td><td class="num">73 fps</td><td class="num good">83 fps</td><td class="good">+13.7%（+10fps）</td></tr>
+  <tr><td>CS2</td><td class="num">451.8 fps</td><td class="num">458.7 fps</td><td>+7fps（約 +1.5%，「等於沒有提升」）</td></tr>
+  <tr><td>絕地求生 2K</td><td colspan="2">無明顯提升</td><td>—</td></tr>
+</table>
+<div class="note">評測者結論：出廠單條記憶體是可惜之處，加第二條後部分高負載 3A（地平線）可提升近 14%，建議購買後自行補齊雙通道。</div>
+</div>
+
+<h2>五、烤機與溫度噪音（環境 22.9°C）</h2>
+<div class="card">
+<table>
+  <tr><th>測試</th><th>CPU</th><th>GPU</th><th>其他</th></tr>
+  <tr><td>單烤 CPU（10 分鐘）</td><td class="num">80~100W，72°C</td><td>—</td><td>起烤約 120W</td></tr>
+  <tr><td>雙烤（CPU+GPU）</td><td class="num">49~55W，80°C</td><td class="num">2.35~2.39GHz，75°C（顯存 60°C）</td><td>噪音：人位 55.2dB / 機身 61.3dB；插線板實測 220W</td></tr>
+  <tr><td>單烤 GPU + 超頻</td><td>—</td><td class="num">2.76GHz，溫度再降 2~3°C</td><td>頻率無變化</td></tr>
+</table>
+<ul class="clean" style="margin-top:10px">
+  <li>噪音性質：介於低沉舒適與刺耳之間，不算吵（評測者主觀）</li>
+  <li>熱成像：WASD 鍵區溫度沒問題</li>
+  <li>多核跑分時噪音不大</li>
+</ul>
+</div>
+
+<h2>六、評測者觀點摘錄（中正評測）</h2>
+<div class="card">
+<div class="quote">「這是一個進化的完全體的天選，之前的槽點都已经補足了。」<span class="who">— 總結評價 [12:35]</span></div>
+<div class="quote">「天選出了七代，我噴了他六代屏，这回会有点不适应了（這次螢幕真的好）。」<span class="who">— 對螢幕的評價 [06:06]，亮度在其 300+ 台記錄中排第三</span></div>
+<div class="quote">「CPU 的表現總算是正常了，不再是之前天選那種殘弱的 CPU 了。」<span class="who">— 對 251HX 的評價 [12:06]</span></div>
+<div class="quote">「3A 遊戲的表現正常（3A 更看顯卡），網游的表現很好。」<span class="who">— 遊戲定位 [12:18]</span></div>
+<div class="quote">「原价是 10799……我个人认为还是贵。」<span class="who">— 對價格的評價 [12:27]</span></div>
+</div>
+
+<h2>七、優缺點總評</h2>
+<div class="card">
+<table>
+  <tr><th style="width:50%">✅ 優點</th><th>❌ 缺點 / 槽點</th></tr>
+  <tr>
+    <td>
+      <ul class="clean">
+        <li>螢幕大幅進化：2.5K 300Hz，亮度全場第 3（前 6 代都被噴）</li>
+        <li>CPU 釋放正常，不再是「殘弱天選」；網游表現優異（CS2 為 5060 筆電最高幀數）</li>
+        <li>5060 性能釋放偏好（Time Spy 12475、古墓 106fps）</li>
+        <li>接口齊全：5 個 USB + HDMI + 有線網口</li>
+        <li>腳墊阻尼感好、機身剛性佳</li>
+        <li>內部可擴充：2x M.2、2x 記憶體插槽</li>
+        <li>烤機溫度控制良好（CPU 72°C / GPU 75°C）</li>
+      </ul>
+    </td>
+    <td>
+      <ul class="clean">
+        <li>不夠輕薄：2230g（天選 5 為 2800g，本機更重；評測者期待 2000g 級）</li>
+        <li>噪音相比優秀機型略大一點點</li>
+        <li>D 面塑料（若金屬 D 面就完美了）</li>
+        <li>出廠單條記憶體，需自補雙通道才能發揮全部潛力</li>
+        <li>價格 ¥10,799 偏貴（評測者：和今年所有機器一樣都很貴）</li>
+        <li>適配器 280W / 810g 體積大</li>
+        <li>鍵盤無明確段落感、Shift 與 0 鍵偏小</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+</div>
+
+<h2>八、關鍵標籤</h2>
+<div class="tags">
+  <span class="tag">天選 7 Pro 酷睿版</span>
+  <span class="tag">U7-251HX（6P+12E）</span>
+  <span class="tag">RTX 5060 115W</span>
+  <span class="tag">2.5K 300Hz BOE</span>
+  <span class="tag">亮度全場第 3</span>
+  <span class="tag">CS2 458fps（5060 筆電最高）</span>
+  <span class="tag">雙通道 +13.7%（地平線）</span>
+  <span class="tag">烤機 CPU 72°C / GPU 75°C</span>
+  <span class="tag">2230g</span>
+  <span class="tag">¥10,799 偏貴</span>
+  <span class="tag">「進化的完全體」</span>
+</div>
+
+<footer>
+  影片：<a href="https://www.youtube.com/watch?v=8t-L6ypahuo">youtube.com/watch?v=8t-L6ypahuo</a>（中正評測，2026-05-24）<br>
+  數據提取方式：faster-whisper (medium, zh) 全片語音轉錄 → 人工校對整理｜報告產生：Hermes Agent，2026-08-17（UTC+8）<br>
+  注意：語音轉錄存在同音字誤差（如型號、品牌名），關鍵數字建議對照影片畫面核實。
+</footer>
+
+</div>
+</body>
+</html>
