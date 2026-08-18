@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>粒子塑形儀 · PARTICLE FORGE</title>
+<!-- 引入 GIF 編碼庫 -->
+<script src="https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.0/dist/gif.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='9' fill='%23ffc76a'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=ZCOOL+QingKe+HuangYou&family=Unbounded:wght@300;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04060e; --ink:#e8ecf8; --dim:#8b94ad;
+  --line:rgba(160,190,255,.14); --amber:#ffc76a; --cyan:#7de3ff;
+  --panel:rgba(9,13,24,.78);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); overflow:hidden;
+  font-family:'Noto Sans SC',sans-serif; user-select:none;
+}
+
+/* ---------- 畫布（帶視差餘量） ---------- */
+#stage{position:fixed;left:-28px;top:-28px;width:calc(100% + 56px);height:calc(100% + 56px);cursor:crosshair;z-index:1}
+
+/* ---------- 環境層 ---------- */
+.layer{position:fixed;inset:0;pointer-events:none}
+.glow{mix-blend-mode:screen;z-index:2}
+.g1{background:radial-gradient(42% 42% at 22% 26%, rgba(64,214,255,.13), transparent 70%);animation:drift1 36s ease-in-out infinite alternate}
+.g2{background:radial-gradient(40% 40% at 78% 68%, rgba(255,110,190,.09), transparent 70%);animation:drift2 44s ease-in-out infinite alternate}
+.g3{background:radial-gradient(34% 34% at 62% 12%, rgba(255,196,90,.08), transparent 70%);animation:drift3 30s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(5%,7%) scale(1.12)}}
+@keyframes drift2{to{transform:translate(-6%,-5%) scale(1.15)}}
+@keyframes drift3{to{transform:translate(-4%,8%) scale(1.1)}}
+.grid{z-index:3;opacity:.45;
+  background-image:radial-gradient(rgba(150,180,255,.08) 1px, transparent 1.5px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(90% 80% at 50% 45%, #000 25%, transparent 100%);
+          mask-image:radial-gradient(90% 80% at 50% 45%, #000 25%, transparent 100%);}
+.vig{z-index:4;background:radial-gradient(120% 95% at 50% 42%, transparent 55%, rgba(2,3,9,.62) 100%)}
+
+/* ---------- 頂部 HUD ---------- */
+.hud{position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;
+  display:flex;justify-content:space-between;align-items:flex-start;padding:20px 26px}
+.brand{display:flex;gap:13px;align-items:center}
+.mark{width:36px;height:36px;border:1px solid rgba(255,199,106,.55);border-radius:50%;position:relative;animation:spin 9s linear infinite;flex:none}
+.mark::before{content:'';position:absolute;top:-3px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.mark::after{content:'';position:absolute;inset:7px;border:1px dashed rgba(125,227,255,.45);border-radius:50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brand h1{font-family:'ZCOOL QingKe HuangYou','Noto Sans SC',sans-serif;font-weight:400;font-size:22px;letter-spacing:4px;line-height:1}
+.brand p{font-family:'Unbounded','Noto Sans SC',sans-serif;font-size:8.5px;letter-spacing:4.5px;color:var(--dim);margin-top:5px}
+.stats{display:flex;gap:28px;text-align:right}
+.stat label{display:block;font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:5px}
+.stat b{font-family:'Unbounded',sans-serif;font-weight:500;font-size:15px;color:#ffe0a8}
+.stat b.cy{color:#9fe8ff}
+
+/* ---------- 右側階段追蹤 ---------- */
+.cycle{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:10;pointer-events:none;
+  display:flex;flex-direction:column;gap:17px}
+.c-name{font-size:11px;letter-spacing:2.5px;color:var(--dim);display:flex;gap:8px;align-items:baseline;transition:color .35s}
+.c-name i{font-family:'Unbounded',sans-serif;font-style:normal;font-size:7.5px;letter-spacing:2px;opacity:.6}
+.c-bar{width:92px;height:2px;background:rgba(160,190,255,.12);margin-top:6px;overflow:hidden}
+.c-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--cyan));transform-origin:left;transform:scaleX(0)}
+.c-item.on .c-name{color:#ffd98f}
+
+/* ---------- 形態字幕 ---------- */
+.caption{position:fixed;left:50%;bottom:132px;transform:translateX(-50%);z-index:9;pointer-events:none;
+  font-family:'ZCOOL QingKe HuangYou',sans-serif;font-size:15px;letter-spacing:8px;color:#ffe0a8;
+  text-shadow:0 0 18px rgba(255,199,106,.45);opacity:0;white-space:nowrap}
+.caption.show{animation:cap 3s ease forwards}
+@keyframes cap{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px);letter-spacing:15px}
+  18%{opacity:.9} 60%{opacity:.55}
+  100%{opacity:.32;transform:translateX(-50%) translateY(0);letter-spacing:8px}}
+
+/* ---------- 底部控制台 ---------- */
+.dock{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:11;
+  width:min(96vw,1040px);background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:13px 16px 15px;backdrop-filter:blur(14px);box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.dock::before,.dock::after{content:'';position:absolute;width:11px;height:11px;border:1px solid rgba(255,199,106,.6)}
+.dock::before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-radius:3px 0 0 0}
+.dock::after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-radius:0 0 3px 0}
+.row{display:flex;align-items:center;gap:10px}
+.row + .row{margin-top:11px}
+.chips{gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  font-family:'ZCOOL QingKe HuangYou',sans-serif;font-size:15px;letter-spacing:2px;color:var(--ink);
+  background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:8px;padding:7px 14px;
+  transition:transform .2s ease, border-color .2s, background .2s, box-shadow .2s}
+.chip i{font-style:normal;color:var(--amber);font-size:13px;transition:color .2s}
+.chip:hover{transform:translateY(-2px);border-color:rgba(255,199,106,.55);box-shadow:0 6px 18px rgba(255,180,80,.12)}
+.chip:active{transform:translateY(0) scale(.96)}
+.chip.active{background:linear-gradient(180deg,#ffd98f,#ffb043);color:#301f04;border-color:transparent;box-shadow:0 0 22px rgba(255,180,80,.4)}
+.chip.active i{color:#7a4a08}
+
+.input-wrap{display:flex;gap:8px}
+#customText{width:212px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;
+  color:var(--ink);padding:8px 12px;font:14px 'Noto Sans SC',sans-serif;letter-spacing:1px;outline:none;transition:border-color .2s, box-shadow .2s}
+#customText::placeholder{color:rgba(139,148,173,.6)}
+#customText:focus{border-color:rgba(255,199,106,.7);box-shadow:0 0 0 3px rgba(255,199,106,.12)}
+.btn-gen{font-family:'ZCOOL QingKe HuangYou',sans-serif;font-size:15px;letter-spacing:3px;cursor:pointer;
+  background:linear-gradient(180deg,#ffd98f,#ffb043);color:#301f04;border:none;border-radius:8px;padding:8px 17px;
+  transition:filter .2s, transform .15s}
+.btn-gen:hover{filter:brightness(1.1)}
+.btn-gen:active{transform:scale(.95)}
+
+.slider{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:2.5px;color:var(--dim)}
+.slider input{width:86px;accent-color:var(--amber);cursor:pointer}
+.btn-auto{margin-left:auto;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  font-family:'ZCOOL QingKe HuangYou',sans-serif;font-size:14px;letter-spacing:2px;color:var(--dim);
+  background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 14px;transition:.25s}
+.btn-auto .dot{width:6px;height:6px;border-radius:50%;background:rgba(139,148,173,.5);transition:.25s}
+.btn-auto.on{color:var(--amber);border-color:rgba(255,199,106,.6)}
+.btn-auto.on .dot{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.hint{font-size:10px;letter-spacing:1px;color:rgba(139,148,173,.7);white-space:nowrap}
+
+/* ---------- 進場 ---------- */
+.hud,.dock,.cycle{opacity:0;transition:opacity .9s ease, transform .9s ease}
+.hud{transform:translateY(-12px)}
+.dock{transform:translate(-50%,16px)}
+.cycle{transform:translateY(calc(-50% + 14px))}
+body.ready .hud{opacity:1;transform:none;transition-delay:.15s}
+body.ready .dock{opacity:1;transform:translate(-50%,0);transition-delay:.4s}
+body.ready .cycle{opacity:1;transform:translateY(-50%);transition-delay:.65s}
+
+@media (max-width:900px){
+  .cycle,.hint,.stat:nth-child(3){display:none}
+  .brand p{display:none}
+  .row{flex-wrap:wrap}
+  .btn-auto{margin-left:0}
+  .caption{bottom:196px}
+  .stats{gap:18px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="stage"></canvas>
+
+<div class="layer glow g1"></div>
+<div class="layer glow g2"></div>
+<div class="layer glow g3"></div>
+<div class="layer grid"></div>
+<div class="layer vig"></div>
+
+<header class="hud">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1>粒子塑形儀</h1>
+      <p>PARTICLE · MORPH · LOOP</p>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><label>粒子數</label><b id="stCount">0</b></div>
+    <div class="stat"><label>FPS</label><b class="cy" id="stFps">60</b></div>
+    <div class="stat"><label>當前形態</label><b id="stShape">—</b></div>
+  </div>
+</header>
+
+<aside class="cycle" id="cycle"></aside>
+<div class="caption" id="caption"></div>
+
+<footer class="dock">
+  <div class="row chips" id="chips"></div>
+  <div class="row">
+    <div class="input-wrap">
+      <input id="customText" type="text" maxlength="12" placeholder="輸入文字，鑄入星塵…" autocomplete="off">
+      <button class="btn-gen" id="btnGen">鑄入 ✦</button>
+    </div>
+    <label class="slider">密度<input type="range" id="rgDensity" min="50" max="160" value="100"></label>
+    <label class="slider">拖影<input type="range" id="rgTrail" min="0" max="100" value="55"></label>
+    <button class="btn-auto on" id="btnAuto"><span class="dot"></span>循環播放</button>
+    <button class="btn-gen" id="btnGif" style="margin-left:8px;">存檔 GIF (10s)</button>
+    <span class="hint">點擊空白：衝擊波 · 掠過：擾動 · 空格：循環開關 · 1–6：切換形態</span>
+  </div>
+</footer>
+
+<script>
+(()=>{
+'use strict';
+const TAU=Math.PI*2, PAD=28, BG='#04060e';
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const stage=document.getElementById('stage'), ctx=stage.getContext('2d');
+let W=0,H=0,DPR=1,CX=0,CY=0;
+
+/* ================= 形態定義 ================= */
+const PALETTES={
+  aurora :[[165,95,62],[195,95,64],[226,95,68],[268,90,70]],
+  sunset :[[44,100,64],[24,100,62],[354,95,64],[330,90,60]],
+  circuit:[[185,100,62],[215,100,68],[282,95,66],[320,100,66]],
+  solar  :[[55,100,80],[45,100,63],[26,96,56]],
+  nebula :[[205,100,74],[190,95,62],[262,85,66]],
+  vapor  :[[312,95,68],[276,90,66],[214,95,64]],
+  jade   :[[150,90,60],[170,95,62],[190,100,66]],
+  ember  :[[18,100,60],[36,100,62],[52,100,68]]
+};
+const PRESETS=[
+  {name:'星辰大海',glyph:'✦',type:'text',value:'星辰大海',grad:'x',pal:PALETTES.aurora},
+  {name:'引力之心',glyph:'♥',type:'heart',grad:'y',pal:PALETTES.sunset},
+  {name:'無限迴路',glyph:'∞',type:'infinity',grad:'x',pal:PALETTES.circuit},
+  {name:'五芒恆星',glyph:'★',type:'star',grad:'r',pal:PALETTES.solar},
+  {name:'螺旋星雲',glyph:'❂',type:'galaxy',grad:'r',pal:PALETTES.nebula},
+  {name:'你好宇宙',glyph:'◉',type:'text',value:'你好宇宙',grad:'x',pal:PALETTES.vapor}
+];
+const CUSTOM_PALS=[PALETTES.jade,PALETTES.ember,PALETTES.vapor,PALETTES.aurora];
+let custom=null, customCount=0;
+const activeList=()=>custom?[...PRESETS,custom]:PRESETS;
+
+const PHASES=[
+  {k:'gather',  n:'聚合',en:'GATHER',  dur:3000},
+  {k:'hold',    n:'顯形',en:'HOLD',    dur:3200},
+  {k:'dissolve',n:'消散',en:'DISSOLVE',dur:1150},
+  {k:'drift',   n:'漂移',en:'DRIFT',   dur:1700}
+];
+if(RM) PHASES.forEach(p=>p.dur*=1.45);
+
+/* ================= 狀態 ================= */
+let particles=[], dust=[], rings=[];
+let presetIdx=0, phaseIdx=0, phaseStart=0, started=false, auto=true;
+let currentShape=null, hueShift=0, fadeA=.168, baseCount=1200;
+let fps=60, last=performance.now(), statT=0, parX=0, parY=0;
+const ptr={x:-9e3,y:-9e3,sx:0,sy:0,on:false};
+
+/* ================= 工具 ================= */
+const rand=(a,b)=>a+Math.random()*(b-a);
+const gauss=()=> (Math.random()+Math.random()+Math.random()-1.5)*1.15;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function inPoly(x,y,pts){let ins=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){
+  const xi=pts[i][0],yi=pts[i][1],xj=pts[j][0],yj=pts[j][1];
+  if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))ins=!ins}return ins}
+function palColor(pal,t){
+  t=Math.min(.999,Math.max(0,t));
+  const seg=t*(pal.length-1), i=seg|0, f=seg-i, A=pal[i], B=pal[i+1]||A;
+  return [A[0]+(B[0]-A[0])*f+hueShift, A[1]+(B[1]-A[1])*f, A[2]+(B[2]-A[2])*f];
+}
+const hsla=(c,a)=>`hsla(${c[0]|0},${c[1]|0}%,${c[2]|0}%,${a})`;
+
+/* ================= 形態取樣 ================= */
+const off=document.createElement('canvas'), octx=off.getContext('2d',{willReadFrequently:true});
+const setFont=s=>{octx.font=`900 ${s}px "Noto Sans SC","ZCOOL QingKe HuangYou",sans-serif`};
+
+function textPoints(str){
+  const maxW=Math.min(W*.86,1150), maxH=Math.min(H*.46,430);
+  let fs=300; setFont(fs);
+  const w0=octx.measureText(str).width||1;
+  fs=Math.max(26,Math.floor(Math.min(fs*maxW/w0,maxH)));
+  setFont(fs);
+  const w=octx.measureText(str).width, pad=26;
+  off.width=Math.ceil(w+pad*2); off.height=Math.ceil(fs*1.35+pad*2);
+  setFont(fs); octx.fillStyle='#fff'; octx.textAlign='center'; octx.textBaseline='middle';
+  octx.fillText(str,off.width/2,off.height/2);
+  const img=octx.getImageData(0,0,off.width,off.height).data;
+  const desired=Math.max(500,particles.length*.8);
+  let c3=0;
+  for(let y=0;y<off.height;y+=3)for(let x=0;x<off.width;x+=3)
+    if(img[(y*off.width+x)*4+3]>120)c3++;
+  let gap=Math.round(3*Math.sqrt(c3/Math.max(1,desired)));
+  gap=Math.max(3,Math.min(9,gap));
+  const pts=[];
+  for(let y=0;y<off.height;y+=gap)for(let x=0;x<off.width;x+=gap)
+    if(img[(y*off.width+x)*4+3]>120)
+      pts.push([CX+(x-off.width/2), CY+(y-off.height/2)]);
+  return pts;
+}
+function heartPoints(n){
+  const s=Math.min(W,H)*.30, pts=[]; let guard=0;
+  while(pts.length<n&&guard++<n*40){
+    const x=Math.random()*2.6-1.3, y=Math.random()*3.0-1.7, q=x*x+y*y-1;
+    if(q*q*q-x*x*y*y*y<=0)pts.push([CX+x*s, CY-y*s+s*.08]);
+  } return pts;
+}
+function infinityPoints(n){
+  const a=Math.min(W*.30,H*.34), th=Math.min(W,H)*.055, pts=[];
+  for(let i=0;i<n;i++){
+    const t=Math.random()*TAU, d=1+Math.sin(t)**2;
+    const x=a*Math.cos(t)/d, y=a*Math.sin(t)*Math.cos(t)/d;
+    const e=.02, d2=1+Math.sin(t+e)**2;
+    const x2=a*Math.cos(t+e)/d2, y2=a*Math.sin(t+e)*Math.cos(t+e)/d2;
+    let nx=-(y2-y), ny=x2-x; const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+    const o=(Math.random()-.5)*2*th*(.35+.65*Math.random());
+    pts.push([CX+x+nx*o, CY+y+ny*o]);
+  } return pts;
+}
+function starPoints(n){
+  const R=Math.min(W,H)*.34, r=R*.46, poly=[];
+  for(let k=0;k<10;k++){const ang=-Math.PI/2+k*Math.PI/5, rad=k%2?r:R;
+    poly.push([Math.cos(ang)*rad,Math.sin(ang)*rad])}
+  const pts=[]; let guard=0;
+  while(pts.length<n&&guard++<n*30){
+    const x=rand(-R,R), y=rand(-R,R);
+    if(inPoly(x,y,poly))pts.push([CX+x,CY+y]);
+  } return pts;
+}
+function galaxyPoints(n){
+  const mR=Math.min(W,H)*.36, pts=[], arms=3;
+  for(let i=0;i<n;i++){
+    if(Math.random()<.22){
+      const a=Math.random()*TAU, rr=Math.abs(gauss())*mR*.17;
+      pts.push([CX+Math.cos(a)*rr, CY+Math.sin(a)*rr*.8]);
+    }else{
+      const arm=(Math.random()*arms)|0, t=Math.pow(Math.random(),.85);
+      const ang=arm*(TAU/arms)+t*4.6, rad=t*mR;
+      const sp=(.02+.15*(1-t*.7))*mR;
+      pts.push([CX+Math.cos(ang)*rad+gauss()*sp,
+                CY+(Math.sin(ang)*rad+gauss()*sp)*.8]);
+    }
+  } return pts;
+}
+function buildShape(pr){
+  const n=Math.max(600,Math.round(particles.length*.75));
+  let pts;
+  switch(pr.type){
+    case 'text':     pts=textPoints(pr.value||pr.name); break;
+    case 'heart':    pts=heartPoints(n); break;
+    case 'infinity': pts=infinityPoints(n); break;
+    case 'star':     pts=starPoints(n); break;
+    case 'galaxy':   pts=galaxyPoints(n); break;
+    default:         pts=textPoints('✦');
+  }
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  for(const[x,y]of pts){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y}
+  return {pts,pr,minX,maxX,minY,maxY,r:Math.max(1,Math.hypot(maxX-CX,maxY-CY))};
+}
+
+/* ================= 粒子 ================= */
+function makeParticle(){
+  return {x:Math.random()*W,y:Math.random()*H,vx:rand(-1.5,1.5),vy:rand(-1.5,1.5),
+    tx:CX,ty:CY,g:Math.random(),delay:0,seed:Math.random()*1000,
+    sizeBase:rand(.9,2.2),tw:rand(.6,2)};
+}
+function assignAll(shape){
+  const pts=shuffle(shape.pts), n=pts.length, pr=shape.pr;
+  particles.forEach((p,i)=>{
+    const pt=pts[i%n];
+    p.tx=pt[0]+rand(-1.2,1.2); p.ty=pt[1]+rand(-1.2,1.2);
+    let g;
+    if(pr.grad==='y') g=(p.ty-shape.minY)/Math.max(1,shape.maxY-shape.minY);
+    else if(pr.grad==='r') g=Math.min(1,Math.hypot(p.tx-CX,p.ty-CY)/shape.r);
+    else g=(p.tx-shape.minX)/Math.max(1,shape.maxX-shape.minX);
+    p.g=Math.min(1,Math.max(0,g+rand(-.04,.04)));
+    p.delay=Math.hypot(p.tx-CX,p.ty-CY)/shape.r*620+Math.random()*260;
+  });
+}
+function buildParticles(){
+  baseCount=Math.max(700,Math.min(2400,Math.round(innerWidth*innerHeight/1050)));
+  setCount(baseCount);
+  const dn=Math.max(60,Math.min(160,Math.round(innerWidth*innerHeight/16000)));
+  dust=[];
+  for(let i=0;i<dn;i++)dust.push({x:Math.random()*W,y:Math.random()*H,
+    seed:Math.random()*10,r:rand(.5,1.4),a:rand(.04,.13)});
+}
+function setCount(n){
+  while(particles.length<n){const p=makeParticle();particles.push(p);
+    if(currentShape)assignOne(p,particles.length-1)}
+  if(particles.length>n)particles.length=n;
+}
+function assignOne(p,i){
+  if(!currentShape)return;
+  const pts=currentShape.pts, pt=pts[i%pts.length], sh=currentShape, pr=sh.pr;
+  p.tx=pt[0]+rand(-1.2,1.2); p.ty=pt[1]+rand(-1.2,1.2);
+  p.g=pr.grad==='r'?Math.min(1,Math.hypot(p.tx-CX,p.ty-CY)/sh.r)
+     :pr.grad==='y'?(p.ty-sh.minY)/Math.max(1,sh.maxY-sh.minY)
+     :(p.tx-sh.minX)/Math.max(1,sh.maxX-sh.minX);
+  p.delay=Math.random()*400;
+}
+
+/* ================= 階段控制 ================= */
+function startGather(){
+  phaseIdx=0; phaseStart=performance.now();
+  const pr=activeList()[presetIdx];
+  currentShape=buildShape(pr);
+  assignAll(currentShape);
+  document.getElementById('stShape').textContent=pr.name;
+  document.querySelectorAll('.chip').forEach(c=>
+    c.classList.toggle('active',+c.dataset.i===presetIdx||(custom&&presetIdx===activeList().length-1&&c.id==='chipCustom')));
+  const cap=document.getElementById('caption');
+  cap.textContent=`◈ ${pr.name}`;
+  cap.classList.remove('show'); void cap.offsetWidth; cap.classList.add('show');
+}
+function enterDissolve(){
+  if(RM)return;
+  for(const p of particles){
+    let a=Math.atan2(p.y-CY,p.x-CX);
+    if(!isFinite(a))a=Math.random()*TAU;
+    a+=rand(-.5,.5);
+    const sp=rand(1.8,6.2);
+    p.vx+=Math.cos(a)*sp; p.vy+=Math.sin(a)*sp;
+  }
+}
+function advance(now){
+  phaseIdx=(phaseIdx+1)%PHASES.length;
+  phaseStart=now;
+  const k=PHASES[phaseIdx].k;
+  if(k==='gather'){
+    if(auto&&started)presetIdx=(presetIdx+1)%activeList().length;
+    startGather();
+  }else if(k==='dissolve')enterDissolve();
+  started=true;
+}
+function selectPreset(i){presetIdx=i; startGather()}
+
+/* ================= GIF 錄製 (延長至 10 秒) ================= */
+let isRecording = false, isRendering = false, gifInstance = null, recordedFrames = 0, maxFrames = 300, frameInterval = 1000 / 30, lastRecordTime = 0;
+
+function startRecording(){
+  const btn = document.getElementById('btnGif');
+  if(isRecording || isRendering) return;
+  
+  if (typeof GIF === 'undefined') {
+    alert('GIF 函式庫載入失敗，請檢查網路連線後重新整理。');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = '準備中...';
+  
+  fetch('https://cdn.jsdelivr.net/npm/gif.js.optimized@1.0.0/dist/gif.worker.js')
+    .then(r => {
+      if (!r.ok) throw new Error('Network response was not ok');
+      return r.blob();
+    })
+    .then(blob => {
+      const workerScriptUrl = URL.createObjectURL(blob);
+      let visW = innerWidth, visH = innerHeight;
+      const MAX_W = 1024; // 為了控制 10 秒 GIF 的檔案大小，將寬度上限微調至 1024px
+      if (visW > MAX_W) {
+        const scale = MAX_W / visW;
+        visW = Math.round(visW * scale);
+        visH = Math.round(visH * scale);
+      }
+      window.recordW = visW;
+      window.recordH = visH;
+      
+      if (!window.recordCanvas || window.recordCanvas.width !== visW || window.recordCanvas.height !== visH) {
+        window.recordCanvas = document.createElement('canvas');
+        window.recordCanvas.width = visW;
+        window.recordCanvas.height = visH;
+      }
+      
+      gifInstance = new GIF({
+        workers: 2,
+        quality: 15, // 品質數字越大，畫質越低但檔案越小 (10秒影片建議設為15避免檔案過大)
+        workerScript: workerScriptUrl,
+        width: visW,
+        height: visH
+      });
+      
+      gifInstance.on('progress', function(p) {
+        btn.textContent = `生成中... ${Math.round(p * 100)}%`;
+      });
+      
+      gifInstance.on('finished', function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'particle_animation_10s.gif';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        btn.disabled = false;
+        btn.textContent = '存檔 GIF (10s)';
+        isRendering = false;
+      });
+      
+      isRecording = true;
+      isRendering = false;
+      recordedFrames = 0;
+      lastRecordTime = performance.now();
+      btn.textContent = `錄製中... (0/${maxFrames})`;
+    })
+    .catch(err => {
+      console.error('GIF recording failed:', err);
+      alert('GIF Worker 載入失敗，請檢查網路連線。');
+      btn.disabled = false;
+      btn.textContent = '存檔 GIF (10s)';
+    });
+}
+
+/* ================= 主循環 ================= */
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(50,now-last); last=now;
+  const s=dt/16.7;
+  fps=fps*.92+(1000/Math.max(1,dt))*.08;
+  hueShift+=dt*.0016;
+
+  const ph=PHASES[phaseIdx], el=now-phaseStart;
+  if(el>ph.dur)advance(now);
+  const free=ph.k==='dissolve'||ph.k==='drift';
+  const pulse=ph.k==='hold'?1+Math.sin(now*.0021)*.03:1;
+
+  /* 拖影淡出 */
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle=`rgba(4,6,14,${fadeA})`;
+  ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+
+  /* 背景星塵 */
+  for(const d of dust){
+    const a=Math.sin(d.x*.0015+now*.0003+d.seed)+Math.cos(d.y*.0018-now*.00026+d.seed*2);
+    d.x+=Math.cos(a*2.3)*.35*s; d.y+=Math.sin(a*2.3)*.35*s;
+    if(d.x<0)d.x+=W; if(d.x>W)d.x-=W; if(d.y<0)d.y+=H; if(d.y>H)d.y-=H;
+    ctx.fillStyle=`hsla(${205+d.seed*8},80%,82%,${d.a*(.7+.3*Math.sin(now*.002+d.seed*9))})`;
+    ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,TAU); ctx.fill();
+  }
+
+  /* 主粒子 */
+  const pal=activeList()[presetIdx].pal, R=130, R2=R*R;
+  for(let i=0;i<particles.length;i++){
+    const p=particles[i];
+    if(!free){
+      if(el>=p.delay){
+        const px=CX+(p.tx-CX)*pulse, py=CY+(p.ty-CY)*pulse;
+        const k=.014+(p.seed%1)*.006, dmp=Math.pow(.865,s);
+        p.vx=(p.vx+(px-p.x)*k*s)*dmp;
+        p.vy=(p.vy+(py-p.y)*k*s)*dmp;
+      }else{
+        const a=Math.sin(p.x*.0016+now*.00033+p.seed)+Math.cos(p.y*.002-now*.00027+p.seed*1.7);
+        const fr=Math.pow(.97,s);
+        p.vx=(p.vx+Math.cos(a*2.2)*.012*s)*fr;
+        p.vy=(p.vy+Math.sin(a*2.2)*.012*s)*fr;
+      }
+    }else{
+      const f=ph.k==='dissolve'?.02:.03, fr=Math.pow(ph.k==='dissolve'?.992:.985,s);
+      const a=Math.sin(p.x*.0016+now*.00033+p.seed)+Math.cos(p.y*.002-now*.00027+p.seed*1.7);
+      p.vx=(p.vx+Math.cos(a*2.2)*f*s)*fr;
+      p.vy=(p.vy+Math.sin(a*2.2)*f*s)*fr;
+      if(ph.k==='drift'){p.vx+=(CX-p.x)*.00002*s*dt; p.vy+=(CY-p.y)*.00002*s*dt}
+    }
+    /* 鼠標斥力 */
+    if(ptr.on){
+      const dx=p.x-ptr.x, dy=p.y-ptr.y, d2=dx*dx+dy*dy;
+      if(d2<R2&&d2>.01){
+        const d=Math.sqrt(d2), f=(1-d/R); const ff=f*f*2.6;
+        p.vx+=dx/d*ff; p.vy+=dy/d*ff;
+      }
+    }
+    const sp=Math.hypot(p.vx,p.vy);
+    if(sp>18){p.vx*=18/sp; p.vy*=18/sp}
+    p.x+=p.vx*s; p.y+=p.vy*s;
+    if(p.x<-40)p.x+=W+80; if(p.x>W+40)p.x-=W+80;
+    if(p.y<-40)p.y+=H+80; if(p.y>H+40)p.y-=H+80;
+
+    /* 繪製 */
+    let al;
+    if(free)al=ph.k==='dissolve'?.85:.68;
+    else if(el<p.delay)al=.4;
+    else al=.5+.45*Math.min(1,(el-p.delay)/600);
+    al*=.72+.28*Math.sin(now*.0035*p.tw+p.seed);
+    const c=palColor(pal,p.g);
+    const r=p.sizeBase*(free?1:.72+.62*p.g)*(ph.k==='hold'?1.06:1);
+    ctx.fillStyle=hsla(c,al);
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,TAU); ctx.fill();
+    if(i%3===0){
+      ctx.fillStyle=hsla(c,al*.15);
+      ctx.beginPath(); ctx.arc(p.x,p.y,r*3,0,TAU); ctx.fill();
+    }
+  }
+
+  /* 顯形期閃爍星光 */
+  if(ph.k==='hold'){
+    for(let k2=0;k2<2;k2++){
+      const p=particles[(Math.random()*particles.length)|0];
+      const L=rand(5,14);
+      ctx.strokeStyle=`hsla(46,100%,86%,${rand(.18,.42)})`;
+      ctx.lineWidth=.8;
+      ctx.beginPath();
+      ctx.moveTo(p.x-L,p.y); ctx.lineTo(p.x+L,p.y);
+      ctx.moveTo(p.x,p.y-L); ctx.lineTo(p.x,p.y+L);
+      ctx.stroke();
+    }
+  }
+  /* 衝擊波環 */
+  for(let i=rings.length-1;i>=0;i--){
+    const rg=rings[i];
+    ctx.strokeStyle=`hsla(42,100%,80%,${rg.life*.4})`;
+    ctx.lineWidth=1.2+rg.life*2.2;
+    ctx.beginPath(); ctx.arc(rg.x,rg.y,rg.r,0,TAU); ctx.stroke();
+    rg.r+=7+(1-rg.life)*7; rg.life-=.018;
+    if(rg.life<=0)rings.splice(i,1);
+  }
+  /* 指針光環 */
+  if(ptr.on){
+    ctx.strokeStyle='rgba(255,222,155,.13)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(ptr.x,ptr.y,30,0,TAU); ctx.stroke();
+  }
+
+  /* 視差 */
+  const tx=(ptr.sx/innerWidth-.5)*16, ty=(ptr.sy/innerHeight-.5)*12;
+  parX+=(tx-parX)*.05; parY+=(ty-parY)*.05;
+  stage.style.transform=`translate(${parX.toFixed(2)}px,${parY.toFixed(2)}px)`;
+
+  /* HUD */
+  cycleEls.forEach((el,i)=>{
+    el.classList.toggle('on',i===phaseIdx);
+    const bar=el._bar;
+    bar.style.transform=`scaleX(${i<phaseIdx?1:i===phaseIdx?Math.min(1,el===cycleEls[phaseIdx]?el2P(el,el2(el)):0):0})`;
+  });
+  
+  if (isRecording) {
+    if (now - lastRecordTime >= frameInterval) {
+      lastRecordTime = now;
+      const rCtx = window.recordCanvas.getContext('2d');
+      rCtx.drawImage(stage, PAD*DPR, PAD*DPR, innerWidth*DPR, innerHeight*DPR, 0, 0, window.recordW, window.recordH);
+      gifInstance.addFrame(window.recordCanvas, {copy: true, delay: Math.round(frameInterval)});
+      recordedFrames++;
+      document.getElementById('btnGif').textContent = `錄製中... (${recordedFrames}/${maxFrames})`;
+      if (recordedFrames >= maxFrames) {
+        isRecording = false;
+        isRendering = true;
+        document.getElementById('btnGif').textContent = '生成 GIF 中...';
+        gifInstance.render();
+      }
+    }
+  }
+  
+  updateCycleBars(el,ph,now);
+  statT+=dt;
+  if(statT>400){
+    statT=0;
+    document.getElementById('stFps').textContent=Math.round(Math.min(120,fps));
+    document.getElementById('stCount').textContent=particles.length;
+  }
+}
+/* 階段進度條 */
+let cycleEls=[];
+function buildCycle(){
+  const box=document.getElementById('cycle');
+  cycleEls=PHASES.map(p=>{
+    const d=document.createElement('div');
+    d.className='c-item';
+    d.innerHTML=`<div class="c-name">${p.n} <i>${p.en}</i></div><div class="c-bar"><span></span></div>`;
+    box.appendChild(d); d._bar=d.querySelector('.c-bar span');
+    return d;
+  });
+}
+function updateCycleBars(phaseEl,ph,now){
+  const prog=Math.min(1,(now-phaseStart)/ph.dur);
+  cycleEls.forEach((el,i)=>{
+    el.classList.toggle('on',i===phaseIdx);
+    el._bar.style.transform=`scaleX(${i<phaseIdx?1:i>phaseIdx?0:prog})`;
+  });
+}
+const el2=()=>0, el2P=()=>0; // 佔位（已被 updateCycleBars 取代）
+
+/* ================= UI 綁定 ================= */
+function buildChips(){
+  const box=document.getElementById('chips');
+  PRESETS.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.className='chip'; b.dataset.i=i;
+    b.innerHTML=`<i>${p.glyph}</i><span>${p.name}</span>`;
+    b.addEventListener('click',()=>selectPreset(i));
+    box.appendChild(b);
+  });
+  const c=document.createElement('button');
+  c.className='chip'; c.id='chipCustom'; c.style.display='none';
+  c.addEventListener('click',()=>selectPreset(activeList().length-1));
+  box.appendChild(c);
+}
+function bindUI(){
+  const input=document.getElementById('customText');
+  const gen=()=>{
+    const v=input.value.trim().slice(0,12);
+    if(!v){input.focus();return}
+    custom={name:v.length>7?v.slice(0,7)+'…':v,glyph:'✎',type:'text',
+      value:v,grad:'x',pal:CUSTOM_PALS[customCount++%CUSTOM_PALS.length]};
+    const chip=document.getElementById('chipCustom');
+    chip.innerHTML=`<i>✎</i><span>${custom.name}</span>`;
+    chip.style.display='';
+    selectPreset(activeList().length-1);
+    input.blur();
+  };
+  document.getElementById('btnGen').addEventListener('click',gen);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')gen(); e.stopPropagation()});
+
+  document.getElementById('rgTrail').addEventListener('input',e=>{
+    fadeA=.30-(+e.target.value)*.0024;
+  });
+  document.getElementById('rgDensity').addEventListener('input',e=>{
+    setCount(Math.round(baseCount*(+e.target.value)/100));
+  });
+  const btnAuto=document.getElementById('btnAuto');
+  const toggleAuto=()=>{auto=!auto; btnAuto.classList.toggle('on',auto)};
+  btnAuto.addEventListener('click',toggleAuto);
+  
+  document.getElementById('btnGif').addEventListener('click', startRecording);
+
+  window.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT')return;
+    if(e.code==='Space'){e.preventDefault(); toggleAuto()}
+    const m=e.key.match(/^([1-6])$/);
+    if(m)selectPreset(+m[1]-1);
+  });
+
+  window.addEventListener('pointermove',e=>{
+    ptr.x=e.clientX+PAD; ptr.y=e.clientY+PAD;
+    ptr.sx=e.clientX; ptr.sy=e.clientY; ptr.on=true;
+  });
+  window.addEventListener('pointerleave',()=>ptr.on=false);
+  window.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,input,.dock,.hud,label'))return;
+    const x=e.clientX+PAD, y=e.clientY+PAD;
+    if(!RM){
+      rings.push({x,y,r:6,life:1});
+      for(const p of particles){
+        const dx=p.x-x, dy=p.y-y, d=Math.hypot(dx,dy);
+        if(d<240&&d>.01){
+          const f=(1-d/240)*7;
+          p.vx+=dx/d*f; p.vy+=dy/d*f;
+        }
+      }
+    }
+  });
+
+  let rT=null;
+  window.addEventListener('resize',()=>{
+    clearTimeout(rT);
+    rT=setTimeout(()=>{
+      resize();
+      if(currentShape){
+        currentShape=buildShape(activeList()[presetIdx]);
+        assignAll(currentShape);
+      }
+    },150);
+  });
+  document.addEventListener('visibilitychange',()=>{last=performance.now()});
+}
+
+/* ================= 啟動 ================= */
+function resize(){
+  W=innerWidth+PAD*2; H=innerHeight+PAD*2;
+  DPR=Math.min(devicePixelRatio||1,2);
+  stage.width=W*DPR; stage.height=H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  CX=W/2; CY=H*.455;
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
+}
+function init(){
+  resize();
+  buildParticles();
+  buildCycle();
+  buildChips();
+  bindUI();
+  startGather();
+  requestAnimationFrame(frame);
+  document.body.classList.add('ready');
+}
+Promise.race([
+  document.fonts?Promise.all([
+    document.fonts.load('900 80px "Noto Sans SC"','星'),
+    document.fonts.load('16px "ZCOOL QingKe HuangYou"','粒')
+  ]):Promise.resolve(),
+  new Promise(r=>setTimeout(r,2500))
+]).then(init);
+})();
+</script>
+</body>
+</html>
