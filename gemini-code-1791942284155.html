@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鵜鶘在土星環上騎自行車</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #050510;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+        }
+        .ui-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 20, 38, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 210, 125, 0.3);
+            padding: 12px 24px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        .ui-panel label {
+            font-size: 14px;
+            color: #ffd27d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="range"] {
+            accent-color: #ff6b4a;
+            cursor: pointer;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b4a, #ff3b1f);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 2px 10px rgba(255, 107, 74, 0.4);
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 107, 74, 0.6);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .title-badge {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            pointer-events: none;
+        }
+        .title-badge h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #ffd27d;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+        .title-badge p {
+            font-size: 12px;
+            color: #9ba4b5;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="title-badge">
+        <h1>🪐 環星自行車號：鵜鶘特派員</h1>
+        <p>點擊畫面或按鈕可進行「低重力跳躍」，按住空白鍵可噴射加速</p>
+    </div>
+
+    <div class="ui-panel">
+        <label>
+            ⚡ 踩踏速度
+            <input type="range" id="speedSlider" min="0.2" max="3.5" step="0.1" value="1.2">
+        </label>
+        <button id="jumpBtn">🚀 低重力跳躍 (Space)</button>
+        <button id="fishBtn">🐟 餵食太空魚</button>
+    </div>
+
+    <canvas id="spaceCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('spaceCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedSlider = document.getElementById('speedSlider');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const fishBtn = document.getElementById('fishBtn');
+
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 狀態與物理參數
+        let orbitAngle = Math.PI * 0.25; // 初始在前景
+        let pedalAngle = 0;
+        let baseSpeed = 1.2;
+        let jumpHeight = 0;
+        let jumpVelocity = 0;
+        let isBoosting = false;
+        let fishJumping = false;
+        let fishJumpProgress = 0;
+
+        // 星空背景與環上碎石
+        const stars = Array.from({ length: 220 }, () => ({
+            x: Math.random(),
+            y: Math.random(),
+            size: Math.random() * 2 + 0.5,
+            alpha: Math.random(),
+            twinkleSpeed: (Math.random() - 0.5) * 0.03
+        }));
+
+        const ringDebris = Array.from({ length: 160 }, () => ({
+            angle: Math.random() * Math.PI * 2,
+            radiusOffset: (Math.random() - 0.5) * 70,
+            size: Math.random() * 2.5 + 1,
+            speedFactor: 0.95 + Math.random() * 0.1,
+            color: ['#e8d4b4', '#c9a97c', '#a38970', '#ffffff'][Math.floor(Math.random() * 4)]
+        }));
+
+        const exhaustParticles = [];
+
+        // 事件監聽
+        speedSlider.addEventListener('input', (e) => {
+            baseSpeed = parseFloat(e.target.value);
+        });
+
+        function triggerJump() {
+            if (jumpHeight === 0) {
+                jumpVelocity = 8.5;
+            }
+        }
+
+        jumpBtn.addEventListener('click', triggerJump);
+        fishBtn.addEventListener('click', () => {
+            if (!fishJumping) {
+                fishJumping = true;
+                fishJumpProgress = 0;
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                triggerJump();
+                isBoosting = true;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                isBoosting = false;
+            }
+        });
+        canvas.addEventListener('pointerdown', triggerJump);
+
+        // 繪製背景星空
+        function drawStars() {
+            ctx.save();
+            stars.forEach(s => {
+                s.alpha += s.twinkleSpeed;
+                if (s.alpha > 1 || s.alpha < 0.2) s.twinkleSpeed *= -1;
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, s.alpha))})`;
+                ctx.beginPath();
+                ctx.arc(s.x * width, s.y * height, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+        }
+
+        // 土星參數
+        function getSaturnParams() {
+            const cx = width * 0.5;
+            const cy = height * 0.52;
+            const planetRadius = Math.min(width, height) * 0.19;
+            const ringRx = planetRadius * 2.45;
+            const ringRy = planetRadius * 0.68;
+            const tilt = -0.22; // 土星傾角
+            return { cx, cy, planetRadius, ringRx, ringRy, tilt };
+        }
+
+        // 繪製土星環（支援繪製上半部背景環或下半部前景環）
+        function drawRings(p, isFront) {
+            ctx.save();
+            ctx.translate(p.cx, p.cy);
+            ctx.rotate(p.tilt);
+
+            const startAngle = isFront ? 0 : Math.PI;
+            const endAngle = isFront ? Math.PI : Math.PI * 2;
+
+            const ringBands = [
+                { rScale: 1.18, width: p.planetRadius * 0.14, color: 'rgba(180, 150, 115, 0.35)' },
+                { rScale: 1.03, width: p.planetRadius * 0.22, color: 'rgba(235, 205, 160, 0.75)' },
+                { rScale: 1.00, width: p.planetRadius * 0.06, color: 'rgba(255, 235, 200, 0.9)' }, // 主車道
+                { rScale: 0.88, width: p.planetRadius * 0.03, color: 'rgba(15, 15, 30, 0.85)' },    // 卡西尼縫
+                { rScale: 0.78, width: p.planetRadius * 0.20, color: 'rgba(210, 175, 130, 0.65)' },
+                { rScale: 0.63, width: p.planetRadius * 0.10, color: 'rgba(150, 125, 95, 0.25)' }
+            ];
+
+            ringBands.forEach(band => {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, p.ringRx * band.rScale, p.ringRy * band.rScale, 0, startAngle, endAngle);
+                ctx.strokeStyle = band.color;
+                ctx.lineWidth = band.width;
+                ctx.stroke();
+            });
+
+            // 繪製環上的微粒
+            ringDebris.forEach(d => {
+                const normAngle = ((d.angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+                const inFrontHalf = normAngle >= 0 && normAngle <= Math.PI;
+                if (inFrontHalf === isFront) {
+                    const rx = p.ringRx + d.radiusOffset;
+                    const ry = p.ringRy + d.radiusOffset * (p.ringRy / p.ringRx);
+                    const x = Math.cos(d.angle) * rx;
+                    const y = Math.sin(d.angle) * ry;
+                    ctx.fillStyle = d.color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, d.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            ctx.restore();
+        }
+
+        // 繪製土星本體
+        function drawPlanet(p) {
+            ctx.save();
+            ctx.translate(p.cx, p.cy);
+            ctx.rotate(p.tilt);
+
+            // 外發光
+            const glow = ctx.createRadialGradient(0, 0, p.planetRadius * 0.85, 0, 0, p.planetRadius * 1.25);
+            glow.addColorStop(0, 'rgba(255, 215, 150, 0.3)');
+            glow.addColorStop(1, 'rgba(255, 215, 150, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(0, 0, p.planetRadius * 1.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 星球表面裁切與漸層條紋
+            ctx.beginPath();
+            ctx.arc(0, 0, p.planetRadius, 0, Math.PI * 2);
+            ctx.clip();
+
+            const grad = ctx.createLinearGradient(0, -p.planetRadius, 0, p.planetRadius);
+            grad.addColorStop(0.0, '#c89e68');
+            grad.addColorStop(0.2, '#e3be88');
+            grad.addColorStop(0.35, '#d5a870');
+            grad.addColorStop(0.5, '#f4d9a9');
+            grad.addColorStop(0.65, '#d1a36b');
+            grad.addColorStop(0.8, '#e0ba85');
+            grad.addColorStop(1.0, '#a37c4d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(-p.planetRadius, -p.planetRadius, p.planetRadius * 2, p.planetRadius * 2);
+
+            // 立體陰影
+            const shadowGrad = ctx.createRadialGradient(-p.planetRadius * 0.35, -p.planetRadius * 0.3, p.planetRadius * 0.1, 0, 0, p.planetRadius * 1.1);
+            shadowGrad.addColorStop(0, 'rgba(255,255,255,0.18)');
+            shadowGrad.addColorStop(0.6, 'rgba(0,0,0,0)');
+            shadowGrad.addColorStop(1, 'rgba(10, 8, 25, 0.78)');
+            ctx.fillStyle = shadowGrad;
+            ctx.fillRect(-p.planetRadius, -p.planetRadius, p.planetRadius * 2, p.planetRadius * 2);
+
+            ctx.restore();
+        }
+
+        // 計算雙關節逆向運動學 (IK)，讓鵜鶘的腳準確踩在踏板上
+        function solveLegIK(hipX, hipY, footX, footY, L1, L2, flipKnee = false) {
+            const dx = footX - hipX;
+            const dy = footY - hipY;
+            let dist = Math.hypot(dx, dy);
+            const maxReach = (L1 + L2) * 0.999;
+            if (dist > maxReach) dist = maxReach;
+            if (dist < Math.abs(L1 - L2)) dist = Math.abs(L1 - L2) + 0.001;
+
+            const baseAngle = Math.atan2(dy, dx);
+            const cosAngle1 = (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist);
+            const angle1 = Math.acos(Math.max(-1, Math.min(1, cosAngle1)));
+            const kneeAngle = flipKnee ? baseAngle + angle1 : baseAngle - angle1;
+
+            return {
+                x: hipX + Math.cos(kneeAngle) * L1,
+                y: hipY + Math.sin(kneeAngle) * L1
+            };
+        }
+
+        // 繪製鵜鶘與腳踏車
+        function drawPelicanOnBike(p) {
+            const normAngle = ((orbitAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const sinA = Math.sin(normAngle);
+            const cosA = Math.cos(normAngle);
+
+            // 未旋轉前的橢圓座標與切線向量
+            const localX = cosA * p.ringRx;
+            const localY = sinA * p.ringRy;
+            const tangentX = -sinA * p.ringRx;
+            const tangentY = cosA * p.ringRy;
+
+            // 套用土星傾角轉為螢幕座標
+            const cosT = Math.cos(p.tilt);
+            const sinT = Math.sin(p.tilt);
+            const screenX = p.cx + localX * cosT - localY * sinT;
+            const screenY = p.cy + localX * sinT + localY * cosT;
+
+            // 深度縮放比例 (sinA = 1 在最前方最大，sinA = -1 在最後方最小)
+            const scale = (0.72 + 0.35 * sinA) * (Math.min(width, height) / 900);
+
+            // 決定車頭朝左或朝右，並計算貼合環面切線的車身傾角
+            const screenTangentX = tangentX * cosT - tangentY * sinT;
+            const screenTangentY = tangentX * sinT + tangentY * cosT;
+            const facingRight = screenTangentX >= 0;
+            let slopeAngle = Math.atan2(screenTangentY, Math.abs(screenTangentX)) * 0.45;
+
+            ctx.save();
+            ctx.translate(screenX, screenY - jumpHeight * scale);
+            if (!facingRight) {
+                ctx.scale(-1, 1);
+            }
+            ctx.rotate(slopeAngle);
+            ctx.scale(scale, scale);
+
+            // 地面陰影（隨跳躍高度縮小變淡）
+            if (jumpHeight >= 0) {
+                ctx.save();
+                ctx.translate(0, jumpHeight);
+                const shadowScale = Math.max(0.2, 1 - jumpHeight / 140);
+                ctx.fillStyle = `rgba(15, 10, 5, ${0.45 * shadowScale})`;
+                ctx.beginPath();
+                ctx.ellipse(0, 5, 58 * shadowScale, 10 * shadowScale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 腳踏車關鍵座標（預設面朝右方 +X）
+            const rearWheel = { x: -38, y: -22, r: 22 };
+            const frontWheel = { x: 40, y: -22, r: 22 };
+            const crank = { x: -2, y: -22, r: 12 };
+            const seat = { x: -22, y: -56 };
+            const handlebarStem = { x: 26, y: -62 };
+            const handGrip = { x: 18, y: -68 };
+            const hip = { x: -21, y: -65 };
+
+            // 計算左右踏板位置
+            const leftPedal = {
+                x: crank.x + Math.cos(pedalAngle + Math.PI) * crank.r,
+                y: crank.y + Math.sin(pedalAngle + Math.PI) * crank.r
+            };
+            const rightPedal = {
+                x: crank.x + Math.cos(pedalAngle) * crank.r,
+                y: crank.y + Math.sin(pedalAngle) * crank.r
+            };
+
+            // 1. 繪製後側（左腿）
+            const leftKnee = solveLegIK(hip.x, hip.y, leftPedal.x, leftPedal.y, 26, 26, false);
+            drawPelicanLeg(hip, leftKnee, leftPedal, '#d46a1e');
+
+            // 2. 繪製兩個車輪與輪輻
+            [rearWheel, frontWheel].forEach(w => {
+                ctx.save();
+                ctx.translate(w.x, w.y);
+                // 輪胎外圈
+                ctx.strokeStyle = '#222634';
+                ctx.lineWidth = 5.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, w.r, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 霓虹輪框
+                ctx.strokeStyle = '#5ce1e6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, w.r - 3, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // 旋轉輪輻
+                ctx.rotate(pedalAngle * 1.6);
+                ctx.strokeStyle = 'rgba(220, 235, 255, 0.7)';
+                ctx.lineWidth = 1.5;
+                for (let i = 0; i < 6; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(-w.r + 3, 0);
+                    ctx.lineTo(w.r - 3, 0);
+                    ctx.stroke();
+                    ctx.rotate(Math.PI / 6);
+                }
+                ctx.restore();
+            });
+
+            // 3. 繪製車架（鑽石型鋼管車架）
+            ctx.strokeStyle = '#ff4b3e';
+            ctx.lineWidth = 4.5;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            ctx.beginPath();
+            // 後三角
+            ctx.moveTo(rearWheel.x, rearWheel.y);
+            ctx.lineTo(seat.x, seat.y);
+            ctx.lineTo(crank.x, crank.y);
+            ctx.lineTo(rearWheel.x, rearWheel.y);
+            // 前三角與前叉
+            ctx.moveTo(seat.x, seat.y);
+            ctx.lineTo(handlebarStem.x, handlebarStem.y + 8);
+            ctx.lineTo(crank.x, crank.y);
+            ctx.moveTo(frontWheel.x, frontWheel.y);
+            ctx.lineTo(handlebarStem.x, handlebarStem.y);
+            ctx.stroke();
+
+            // 車手把與座墊
+            ctx.strokeStyle = '#cfd8dc';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.moveTo(handlebarStem.x, handlebarStem.y);
+            ctx.quadraticCurveTo(handlebarStem.x - 2, handlebarStem.y - 8, handGrip.x, handGrip.y);
+            ctx.stroke();
+
+            ctx.fillStyle = '#2d3142';
+            ctx.beginPath();
+            ctx.ellipse(seat.x - 2, seat.y, 11, 4, -0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 車尾火箭推進器
+            ctx.fillStyle = '#8d99ae';
+            ctx.fillRect(seat.x - 20, seat.y + 3, 14, 8);
+            ctx.fillStyle = '#ef233c';
+            ctx.beginPath();
+            ctx.moveTo(seat.x - 20, seat.y + 2);
+            ctx.lineTo(seat.x - 26, seat.y + 12);
+            ctx.lineTo(seat.x - 20, seat.y + 12);
+            ctx.fill();
+
+            // 推進器火焰
+            const flameLen = (isBoosting ? 36 : 16) + Math.random() * 10;
+            const flameGrad = ctx.createLinearGradient(seat.x - 20, seat.y + 7, seat.x - 20 - flameLen, seat.y + 7);
+            flameGrad.addColorStop(0, '#ffffff');
+            flameGrad.addColorStop(0.3, '#ffbe0b');
+            flameGrad.addColorStop(1, 'rgba(255, 0, 110, 0)');
+            ctx.fillStyle = flameGrad;
+            ctx.beginPath();
+            ctx.moveTo(seat.x - 20, seat.y + 3);
+            ctx.lineTo(seat.x - 24 - flameLen, seat.y + 7);
+            ctx.lineTo(seat.x - 20, seat.y + 11);
+            ctx.closePath();
+            ctx.fill();
+
+            // 4. 繪製大齒盤與右踏板曲柄
+            ctx.fillStyle = '#adb5bd';
+            ctx.beginPath();
+            ctx.arc(crank.x, crank.y, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. 繪製鵜鶘身體與頭部
+            const bodyBob = Math.sin(pedalAngle * 2) * 2.2;
+            ctx.save();
+            ctx.translate(0, bodyBob);
+
+            // 尾巴羽毛
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.moveTo(-32, -66);
+            ctx.lineTo(-47, -75);
+            ctx.lineTo(-43, -64);
+            ctx.lineTo(-48, -58);
+            ctx.lineTo(-30, -58);
+            ctx.closePath();
+            ctx.fill();
+
+            // 圓潤的白色軀幹
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.ellipse(-14, -74, 23, 17, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 彎曲的長脖子與頭
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 13;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-2, -83);
+            ctx.quadraticCurveTo(-8, -104, 5, -118);
+            ctx.stroke();
+
+            // 頭部圓球
+            const headPos = { x: 7, y: -120 };
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.arc(headPos.x, headPos.y, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 頭頂呆毛
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(headPos.x - 4, headPos.y - 10);
+            ctx.quadraticCurveTo(headPos.x - 12, headPos.y - 20, headPos.x - 16, headPos.y - 14);
+            ctx.moveTo(headPos.x - 1, headPos.y - 11);
+            ctx.quadraticCurveTo(headPos.x - 6, headPos.y - 22, headPos.x - 10, headPos.y - 18);
+            ctx.stroke();
+
+            // 標誌性巨大喉囊（隨踩踏微幅晃動）
+            const pouchSway = Math.sin(pedalAngle * 2 - 0.5) * 2.5;
+            ctx.fillStyle = '#ff9f1c';
+            ctx.beginPath();
+            ctx.moveTo(headPos.x + 6, headPos.y - 3);
+            ctx.lineTo(headPos.x + 56, headPos.y - 1);
+            ctx.bezierCurveTo(
+                headPos.x + 50, headPos.y + 28 + pouchSway,
+                headPos.x + 12, headPos.y + 30 + pouchSway,
+                headPos.x + 4, headPos.y + 5
+            );
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#e07a00';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 喉囊裡的太空魚（點擊按鈕時會跳起來翻滾）
+            ctx.save();
+            let fishYOffset = pouchSway * 0.5;
+            let fishRot = 0.2;
+            if (fishJumping) {
+                fishYOffset -= Math.sin(fishJumpProgress * Math.PI) * 45;
+                fishRot += fishJumpProgress * Math.PI * 2;
+            }
+            ctx.translate(headPos.x + 32, headPos.y + 8 + fishYOffset);
+            ctx.rotate(fishRot);
+            ctx.fillStyle = '#38b6ff';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-8, 0);
+            ctx.lineTo(-15, -5);
+            ctx.lineTo(-15, 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(5, -1.5, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // 上鳥喙
+            ctx.fillStyle = '#ffbf69';
+            ctx.beginPath();
+            ctx.moveTo(headPos.x + 6, headPos.y - 7);
+            ctx.lineTo(headPos.x + 58, headPos.y - 2);
+            ctx.lineTo(headPos.x + 55, headPos.y + 2);
+            ctx.lineTo(headPos.x + 56, headPos.y - 1);
+            ctx.lineTo(headPos.x + 6, headPos.y - 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // 眼睛
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(headPos.x + 4, headPos.y - 3, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(headPos.x + 4.8, headPos.y - 3.8, 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 透明玻璃太空頭盔（罩住頭部）
+            ctx.fillStyle = 'rgba(165, 243, 252, 0.18)';
+            ctx.strokeStyle = 'rgba(165, 243, 252, 0.75)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(headPos.x + 2, headPos.y - 2, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 頭盔反光高光
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(headPos.x + 2, headPos.y - 2, 14, -Math.PI * 0.75, -Math.PI * 0.35);
+            ctx.stroke();
+
+            // 翅膀握住車手把
+            ctx.fillStyle = '#f1f5f9';
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-8, -80);
+            ctx.quadraticCurveTo(8, -82, handGrip.x, handGrip.y - bodyBob);
+            ctx.quadraticCurveTo(4, -64, -12, -70);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore(); // 結束身體與頭部晃動
+
+            // 6. 繪製前側（右腿與右踏板曲柄）
+            ctx.strokeStyle = '#ced4da';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(crank.x, crank.y);
+            ctx.lineTo(rightPedal.x, rightPedal.y);
+            ctx.stroke();
+
+            const rightKnee = solveLegIK(hip.x, hip.y, rightPedal.x, rightPedal.y, 26, 26, false);
+            drawPelicanLeg(hip, rightKnee, rightPedal, '#ff8524');
+
+            ctx.restore();
+        }
+
+        function drawPelicanLeg(hip, knee, pedal, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(hip.x, hip.y);
+            ctx.lineTo(knee.x, knee.y);
+            ctx.lineTo(pedal.x, pedal.y);
+            ctx.stroke();
+
+            // 蹼足與踏板
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(pedal.x - 3, pedal.y);
+            ctx.lineTo(pedal.x + 11, pedal.y - 2);
+            ctx.lineTo(pedal.x + 9, pedal.y + 4);
+            ctx.lineTo(pedal.x - 4, pedal.y + 3);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#2b2d42';
+            ctx.fillRect(pedal.x - 5, pedal.y + 2, 12, 3.5);
+        }
+
+        // 主動畫迴圈
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // 更新時間與物理狀態
+            const currentSpeed = isBoosting ? baseSpeed * 2.2 : baseSpeed;
+            orbitAngle += 0.0045 * currentSpeed;
+            pedalAngle += 0.11 * currentSpeed;
+
+            // 環上碎石緩慢公轉
+            ringDebris.forEach(d => {
+                d.angle += 0.0012 * d.speedFactor;
+            });
+
+            // 太空魚跳躍動畫更新
+            if (fishJumping) {
+                fishJumpProgress += 0.04;
+                if (fishJumpProgress >= 1) {
+                    fishJumping = false;
+                    fishJumpProgress = 0;
+                }
+            }
+
+            // 低重力跳躍物理計算（土星環微重力感）
+            if (jumpHeight > 0 || jumpVelocity !== 0) {
+                jumpHeight += jumpVelocity;
+                jumpVelocity -= 0.22; // 低重力加速度
+                if (jumpHeight <= 0) {
+                    jumpHeight = 0;
+                    jumpVelocity = 0;
+                }
+            }
+
+            const saturn = getSaturnParams();
+
+            // 繪製背景星空
+            drawStars();
+
+            // 判斷鵜鶘目前在土星環的後半圈（背景）還是前半圈（前景）
+            const normAngle = ((orbitAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const isPelicanInFront = normAngle >= 0 && normAngle <= Math.PI;
+
+            // 依據 Z-Order 圖層順序繪製，確保鵜鶘繞過土星背後時會被土星本體正確遮擋
+            drawRings(saturn, false); // 1. 後方土星環
+
+            if (!isPelicanInFront) {
+                drawPelicanOnBike(saturn); // 2A. 鵜鶘在後半圈時，畫在土星本體後面
+            }
+
+            drawPlanet(saturn);       // 3. 土星本體
+            drawRings(saturn, true);  // 4. 前方土星環
+
+            if (isPelicanInFront) {
+                drawPelicanOnBike(saturn); // 2B. 鵜鶘在前半圈時，畫在最前面
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
