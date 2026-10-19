@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鵜鶘認真掀桌 (╯°□°）╯︵ ┻━┻</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+
+        /* 漫畫風格按鈕與邊框 */
+        .manga-box {
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s ease;
+        }
+        .manga-btn {
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+        }
+        .manga-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 5px 5px 0px #000;
+        }
+        .manga-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0px #000;
+        }
+
+        /* 自訂滑桿樣式 */
+        input[type=range].manga-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e2e8f0;
+            height: 14px;
+            border-radius: 999px;
+            border: 3px solid #000;
+        }
+        input[type=range].manga-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #ef4444;
+            cursor: pointer;
+            border: 3px solid #000;
+            box-shadow: 2px 2px 0px #000;
+            transition: transform 0.1s;
+        }
+        input[type=range].manga-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* 漫畫網點背景裝飾 */
+        .halftone-bg {
+            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+            background-size: 12px 12px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between relative select-none">
+
+    <!-- 頂部狀態與計數器列 -->
+    <header class="z-10 w-full p-3 sm:p-4 flex flex-wrap justify-between items-center gap-2 pointer-events-none">
+        <div class="flex items-center gap-3 pointer-events-auto bg-amber-400 px-4 py-2 rounded-xl manga-box">
+            <span class="text-2xl sm:text-3xl">🦩</span>
+            <div>
+                <h1 class="text-lg sm:text-xl font-black text-black tracking-wider leading-none">鵜鶘認真掀桌</h1>
+                <p class="text-xs font-bold text-amber-950 mt-0.5">究極熱血物理發洩模擬器</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+            <!-- 統計計數器 -->
+            <div class="bg-white px-3 sm:px-4 py-1.5 rounded-xl manga-box flex items-center gap-2">
+                <span class="text-xs sm:text-sm font-extrabold text-slate-600">已掀翻：</span>
+                <span id="flipCountDisplay" class="text-xl sm:text-2xl font-black text-red-600">0</span>
+                <span class="text-xs font-bold text-slate-500">張桌</span>
+            </div>
+
+            <!-- 最高高度紀錄 -->
+            <div class="hidden md:flex bg-white px-4 py-1.5 rounded-xl manga-box items-center gap-2">
+                <span class="text-sm font-extrabold text-slate-600">最高擊飛：</span>
+                <span id="maxHeightDisplay" class="text-2xl font-black text-indigo-600">0.0</span>
+                <span class="text-xs font-bold text-slate-500">m</span>
+            </div>
+
+            <!-- 音效開關 -->
+            <button id="muteBtn" class="bg-emerald-400 hover:bg-emerald-300 text-black font-black px-3 py-2 rounded-xl manga-btn flex items-center gap-1 text-sm">
+                <span id="muteIcon">🔊</span>
+                <span id="muteText" class="hidden sm:inline">音效開啟</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 畫布主容器 -->
+    <main class="absolute inset-0 w-full h-full z-0">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-pointer"></canvas>
+    </main>
+
+    <!-- 底部漫畫風控制面板 -->
+    <footer class="z-10 w-full p-2 sm:p-4 pointer-events-none flex justify-center">
+        <div class="bg-white/95 backdrop-blur-md p-3 sm:p-4 rounded-2xl manga-box w-full max-w-4xl pointer-events-auto flex flex-col gap-3">
+            
+            <!-- 第一排：認真程度滑桿與狀態提示 -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 bg-slate-100 p-2.5 rounded-xl border-2 border-black">
+                <div class="flex items-center justify-between sm:justify-start gap-2 min-w-[210px]">
+                    <span class="font-black text-sm sm:text-base text-slate-900 flex items-center gap-1">
+                        🔥 認真程度 (怒氣值):
+                    </span>
+                    <span id="powerValueText" class="font-black text-sm sm:text-base px-2 py-0.5 rounded bg-red-600 text-white border border-black">
+                        50% 認真模式
+                    </span>
+                </div>
+                <input id="powerSlider" type="range" min="10" max="100" value="55" class="manga-slider w-full">
+                <div class="text-xs font-bold text-slate-500 hidden lg:block whitespace-nowrap">
+                    💡 提示：長按畫面或掀桌鈕可「極限蓄力」！
+                </div>
+            </div>
+
+            <!-- 第二排：主操作按鈕與加菜區 -->
+            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-2.5">
+                <!-- 主按鈕：認真掀桌 (支援長按蓄力) -->
+                <button id="flipBtn" class="col-span-2 sm:col-span-2 bg-red-500 hover:bg-red-400 text-white font-black py-2.5 sm:py-3 px-4 rounded-xl manga-btn text-base sm:text-lg tracking-wider flex items-center justify-center gap-2">
+                    <span>(╯°□°）╯</span>
+                    <span id="flipBtnText">認真掀桌！</span>
+                </button>
+
+                <!-- 擺好桌子 -->
+                <button id="resetBtn" class="bg-sky-400 hover:bg-sky-300 text-black font-black py-2 px-3 rounded-xl manga-btn text-xs sm:text-sm flex flex-col items-center justify-center">
+                    <span class="text-base sm:text-lg">┬─┬ ノ( ゜-゜ノ)</span>
+                    <span>乖乖擺好桌子</span>
+                </button>
+
+                <!-- 自動連發開關 -->
+                <button id="autoBtn" class="bg-purple-400 hover:bg-purple-300 text-black font-black py-2 px-3 rounded-xl manga-btn text-xs sm:text-sm flex flex-col items-center justify-center">
+                    <span class="text-base sm:text-lg">⚡ 無限連發</span>
+                    <span id="autoStatusText">目前：關閉</span>
+                </button>
+
+                <!-- 加菜按鈕群 -->
+                <div class="col-span-2 sm:col-span-2 grid grid-cols-3 gap-1.5 bg-amber-100 p-1.5 rounded-xl border-2 border-black">
+                    <button id="addFishBtn" class="bg-blue-300 hover:bg-blue-200 text-black font-black py-1.5 px-1 rounded-lg border-2 border-black text-xs flex flex-col items-center justify-center active:translate-y-0.5">
+                        <span class="text-base">🐟</span>
+                        <span>加鮮魚</span>
+                    </button>
+                    <button id="addWorkBtn" class="bg-slate-200 hover:bg-white text-black font-black py-1.5 px-1 rounded-lg border-2 border-black text-xs flex flex-col items-center justify-center active:translate-y-0.5">
+                        <span class="text-base">💻☕</span>
+                        <span>加社畜套餐</span>
+                    </button>
+                    <button id="addChaosBtn" class="bg-orange-400 hover:bg-orange-300 text-black font-black py-1.5 px-1 rounded-lg border-2 border-black text-xs flex flex-col items-center justify-center active:translate-y-0.5">
+                        <span class="text-base">💥</span>
+                        <span>塞滿整桌</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * ==========================================
+         * 1. Web Audio API 合成音效系統 (零外部音檔依賴)
+         * ==========================================
+         */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.chargeOsc = null;
+                this.chargeGain = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                if (this.muted && this.chargeGain) {
+                    this.stopChargeSound();
+                }
+                return this.muted;
+            }
+
+            // 開始蓄力低鳴音效
+            startChargeSound() {
+                if (this.muted) return;
+                this.init();
+                this.stopChargeSound();
+
+                const now = this.ctx.currentTime;
+                this.chargeOsc = this.ctx.createOscillator();
+                const subOsc = this.ctx.createOscillator();
+                this.chargeGain = this.ctx.createGain();
+
+                this.chargeOsc.type = 'sawtooth';
+                subOsc.type = 'triangle';
+
+                this.chargeOsc.frequency.setValueAtTime(55, now);
+                subOsc.frequency.setValueAtTime(110, now);
+
+                this.chargeGain.gain.setValueAtTime(0.01, now);
+                this.chargeGain.gain.linearRampToValueAtTime(0.12, now + 0.2);
+
+                this.chargeOsc.connect(this.chargeGain);
+                subOsc.connect(this.chargeGain);
+                this.chargeGain.connect(this.ctx.destination);
+
+                this.chargeOsc.start();
+                subOsc.start();
+                this.subOsc = subOsc;
+            }
+
+            // 更新蓄力音高
+            updateChargePitch(chargeRatio) {
+                if (this.muted || !this.chargeOsc || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const baseFreq = 55 + chargeRatio * 190;
+                this.chargeOsc.frequency.setTargetAtTime(baseFreq, now, 0.05);
+                if (this.subOsc) {
+                    this.subOsc.frequency.setTargetAtTime(baseFreq * 1.5, now, 0.05);
+                }
+            }
+
+            // 停止蓄力音效
+            stopChargeSound() {
+                if (this.chargeOsc) {
+                    try {
+                        this.chargeOsc.stop();
+                        this.subOsc.stop();
+                        this.chargeOsc.disconnect();
+                        this.subOsc.disconnect();
+                    } catch (e) {}
+                    this.chargeOsc = null;
+                    this.subOsc = null;
+                }
+            }
+
+            // 掀桌爆發巨響 + 鵜鶘熱血叫聲
+            playFlipExplosion(powerRatio) {
+                if (this.muted) return;
+                this.init();
+                this.stopChargeSound();
+
+                const now = this.ctx.currentTime;
+
+                // 1. 爆炸白噪音 (Impact Noise)
+                const bufferSize = this.ctx.sampleRate * 0.45;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.12));
+                }
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800 + powerRatio * 1500, now);
+                filter.frequency.exponentialRampToValueAtTime(80, now + 0.4);
+
+                const noiseGain = this.ctx.createGain();
+                const vol = Math.min(0.6, 0.25 + powerRatio * 0.35);
+                noiseGain.gain.setValueAtTime(vol, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.44);
+
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(this.ctx.destination);
+                noise.start(now);
+
+                // 2. 重低音衝擊 (Sub Punch)
+                const punchOsc = this.ctx.createOscillator();
+                const punchGain = this.ctx.createGain();
+                punchOsc.type = 'sine';
+                punchOsc.frequency.setValueAtTime(160 + powerRatio * 80, now);
+                punchOsc.frequency.exponentialRampToValueAtTime(28, now + 0.35);
+
+                punchGain.gain.setValueAtTime(vol * 1.1, now);
+                punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+                punchOsc.connect(punchGain);
+                punchGain.connect(this.ctx.destination);
+                punchOsc.start(now);
+                punchOsc.stop(now + 0.36);
+
+                // 3. 破鏡音效 (如果力道 > 85%)
+                if (powerRatio >= 0.85) {
+                    setTimeout(() => this.playGlassShatter(), 120);
+                }
+            }
+
+            // 螢幕震裂高頻清脆聲
+            playGlassShatter() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const freqs = [2400, 3100, 4200, 5600];
+                freqs.forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.02);
+                    osc.frequency.exponentialRampToValueAtTime(f * 0.4, now + 0.15 + idx * 0.02);
+
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16 + idx * 0.02);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.02);
+                    osc.stop(now + 0.17 + idx * 0.02);
+                });
+            }
+
+            // 物品碰撞彈跳聲
+            playBounce(intensity = 0.5) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                const startFreq = 120 + Math.random() * 260;
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(45, now + 0.07);
+
+                const vol = Math.min(0.25, Math.max(0.02, intensity * 0.18));
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+
+            // 加菜/擺好桌子音效
+            playPop(pitch = 400) {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(pitch, now);
+                osc.frequency.exponentialRampToValueAtTime(pitch * 1.6, now + 0.08);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+        }
+
+        const sfx = new SoundEffects();
+
+        /**
+         * ==========================================
+         * 2. 全域狀態與畫布初始化
+         * ==========================================
+         */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        let groundY = height - 140;
+
+        // 統計數據
+        let flipCount = 0;
+        let maxTableHeightMeters = 0;
+
+        // 鵜鶘與遊戲狀態: 'IDLE' | 'CHARGING' | 'FLIPPING' | 'COOLDOWN'
+        let state = 'IDLE';
+        let basePower = 55;         // 滑桿設定的基礎力道 (10 ~ 100)
+        let bonusCharge = 0;        // 長按額外累積的怒氣 (0 ~ 45)
+        let stateTimer = 0;
+        let autoFlip = false;
+        let autoFlipTimer = 0;
+
+        // 視覺特效狀態
+        let screenShake = 0;
+        let flashAlpha = 0;
+        let impactFrames = 0;       // 黑白反轉瞬間張力幀
+        let floatingTexts = [];     // 漫畫浮動文字 (ゴゴゴ、掀桌顏文字)
+        let particles = [];         // 汗水、咖啡液體、衝擊波、火花
+        let screenCracks = [];      // 100%力道撞破螢幕裂痕
+        let shockwaves = [];        // 圓形擴散波
+
+        // 物理物件
+        let table = null;
+        let props = [];
+
+        /**
+         * ==========================================
+         * 3. 物理物件類別 (桌子與桌上物品)
+         * ==========================================
+         */
+        class Table {
+            constructor(x, y) {
+                this.initX = x;
+                this.initY = y;
+                this.w = Math.min(280, Math.max(200, width * 0.28));
+                this.h = 95;
+                this.reset();
+            }
+
+            reset() {
+                this.x = this.initX;
+                this.y = this.initY;
+                this.vx = 0;
+                this.vy = 0;
+                this.angle = 0;
+                this.va = 0;
+                this.isFlipped = false;
+                this.bounces = 0;
+            }
+
+            update(dt) {
+                if (!this.isFlipped) return;
+
+                const gravity = 1550;
+                this.vy += gravity * dt;
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.angle += this.va * dt;
+
+                // 空氣阻力
+                this.vx *= 0.995;
+                this.va *= 0.996;
+
+                // 計算最高高度紀錄 (公尺換算)
+                const currentAltitude = Math.max(0, (this.initY - this.y) / 38);
+                if (currentAltitude > maxTableHeightMeters) {
+                    maxTableHeightMeters = currentAltitude;
+                    document.getElementById('maxHeightDisplay').textContent = maxTableHeightMeters.toFixed(1);
+                }
+
+                // 左右牆壁反彈 (除非力道超大直接突破邊界)
+                const totalPower = getEffectivePower();
+                if (totalPower < 92) {
+                    if (this.x + this.w / 2 > width && this.vx > 0) {
+                        this.x = width - this.w / 2;
+                        this.vx *= -0.65;
+                        this.va *= -0.8;
+                        screenShake = Math.min(25, Math.abs(this.vx) * 0.015);
+                        sfx.playBounce(Math.abs(this.vx) / 800);
+                    } else if (this.x - this.w / 2 < 0 && this.vx < 0) {
+                        this.x = this.w / 2;
+                        this.vx *= -0.65;
+                        sfx.playBounce(Math.abs(this.vx) / 800);
+                    }
+                }
+
+                // 地面碰撞
+                const floorLimit = groundY - 20;
+                if (this.y > floorLimit && this.vy > 0) {
+                    this.y = floorLimit;
+                    if (Math.abs(this.vy) > 120) {
+                        this.vy *= -0.45;
+                        this.vx *= 0.72;
+                        this.va *= 0.65;
+                        if (this.bounces < 4) {
+                            sfx.playBounce(Math.abs(this.vy) / 1000);
+                            spawnDustParticles(this.x, floorLimit + 15, 8);
+                        }
+                        this.bounces++;
+                    } else {
+                        this.vy = 0;
+                        this.vx *= 0.85;
+                        this.va *= 0.8;
+                    }
+                }
+            }
+
+            draw(ctx, shakeOffset) {
+                ctx.save();
+                ctx.translate(this.x + shakeOffset.x, this.y + shakeOffset.y);
+                ctx.rotate(this.angle);
+
+                const halfW = this.w / 2;
+                const topThickness = 18;
+                const legWidth = 16;
+
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#000000';
+                ctx.lineJoin = 'round';
+
+                // 左桌腳
+                ctx.fillStyle = '#78350f';
+                ctx.fillRect(-halfW + 18, -this.h + topThickness, legWidth, this.h - topThickness);
+                ctx.strokeRect(-halfW + 18, -this.h + topThickness, legWidth, this.h - topThickness);
+
+                // 右桌腳
+                ctx.fillRect(halfW - 18 - legWidth, -this.h + topThickness, legWidth, this.h - topThickness);
+                ctx.strokeRect(halfW - 18 - legWidth, -this.h + topThickness, legWidth, this.h - topThickness);
+
+                // 橫樑陰影
+                ctx.fillStyle = '#451a03';
+                ctx.fillRect(-halfW + 18 + legWidth, -this.h + topThickness + 6, this.w - 36 - legWidth * 2, 10);
+                ctx.strokeRect(-halfW + 18 + legWidth, -this.h + topThickness + 6, this.w - 36 - legWidth * 2, 10);
+
+                // 桌面本體
+                ctx.fillStyle = '#b45309';
+                ctx.beginPath();
+                ctx.roundRect(-halfW, -this.h, this.w, topThickness, 5);
+                ctx.fill();
+                ctx.stroke();
+
+                // 桌面高光木紋
+                ctx.fillStyle = '#d97706';
+                ctx.fillRect(-halfW + 8, -this.h + 4, this.w - 16, 5);
+
+                ctx.restore();
+            }
+        }
+
+        class PropItem {
+            constructor(type, x, y) {
+                this.type = type; // 'laptop' | 'coffee' | 'fish' | 'papers' | 'alarm' | 'ramen'
+                this.x = x;
+                this.y = y;
+                this.vx = 0;
+                this.vy = 0;
+                this.angle = (Math.random() - 0.5) * 0.08;
+                this.va = 0;
+                this.isFlying = false;
+                this.scale = 0.1; // 生成時的彈出動畫
+                this.color = this.pickColor();
+                this.spilled = false;
+            }
+
+            pickColor() {
+                const colors = ['#38bdf8', '#f43f5e', '#a855f7', '#10b981', '#fbbf24'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update(dt) {
+                if (this.scale < 1) {
+                    this.scale = Math.min(1, this.scale + dt * 6);
+                }
+
+                if (!this.isFlying) return;
+
+                const gravity = this.type === 'papers' ? 750 : 1450;
+                this.vy += gravity * dt;
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.angle += this.va * dt;
+
+                // 咖啡或泡麵在空中灑出液體粒子
+                if ((this.type === 'coffee' || this.type === 'ramen') && Math.random() < 0.45 && this.y < groundY - 40) {
+                    particles.push({
+                        type: 'liquid',
+                        x: this.x,
+                        y: this.y,
+                        vx: this.vx * 0.3 + (Math.random() - 0.5) * 180,
+                        vy: this.vy * 0.2 - Math.random() * 120,
+                        size: 4 + Math.random() * 6,
+                        color: this.type === 'coffee' ? '#451a03' : '#f59e0b',
+                        alpha: 1,
+                        life: 0.8 + Math.random() * 0.5
+                    });
+                }
+
+                // 牆壁反彈
+                if (this.x > width - 20 && this.vx > 0) {
+                    this.x = width - 20;
+                    this.vx *= -0.6;
+                    this.va *= -0.8;
+                } else if (this.x < 20 && this.vx < 0) {
+                    this.x = 20;
+                    this.vx *= -0.6;
+                }
+
+                // 地面碰撞
+                const floorY = groundY - 8;
+                if (this.y > floorY && this.vy > 0) {
+                    this.y = floorY;
+                    if (Math.abs(this.vy) > 90) {
+                        this.vy *= -0.5;
+                        this.vx *= 0.75;
+                        this.va *= 0.7;
+                    } else {
+                        this.vy = 0;
+                        this.vx *= 0.85;
+                        this.va *= 0.8;
+                    }
+                }
+            }
+
+            draw(ctx, shakeOffset) {
+                ctx.save();
+                ctx.translate(this.x + shakeOffset.x, this.y + shakeOffset.y);
+                ctx.rotate(this.angle);
+                ctx.scale(this.scale, this.scale);
+                ctx.lineWidth = 3.2;
+                ctx.strokeStyle = '#000';
+                ctx.lineJoin = 'round';
+
+                if (this.type === 'laptop') {
+                    // 底座
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fillRect(-26, -6, 52, 6);
+                    ctx.strokeRect(-26, -6, 52, 6);
+                    // 螢幕外框
+                    ctx.save();
+                    ctx.translate(-18, -6);
+                    ctx.rotate(-0.25);
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.fillRect(0, -34, 42, 34);
+                    ctx.strokeRect(0, -34, 42, 34);
+                    // 藍屏當機畫面
+                    ctx.fillStyle = this.isFlying ? '#2563eb' : '#0f172a';
+                    ctx.fillRect(4, -30, 34, 26);
+                    // 畫面驚嘆號或報表
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.isFlying ? ':( !' : '📈', 21, -12);
+                    ctx.restore();
+
+                } else if (this.type === 'coffee') {
+                    // 馬克杯把手
+                    ctx.beginPath();
+                    ctx.arc(12, -14, 7, -Math.PI / 2, Math.PI / 2);
+                    ctx.stroke();
+                    // 杯身
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(-12, -28, 24, 28);
+                    ctx.strokeRect(-12, -28, 24, 28);
+                    // 紅色怒氣貼紙
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(-12, -18, 24, 8);
+                    // 熱氣
+                    if (!this.isFlying) {
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 2;
+                        const wave = Math.sin(performance.now() * 0.008) * 3;
+                        ctx.beginPath();
+                        ctx.moveTo(-4, -33);
+                        ctx.quadraticCurveTo(-4 + wave, -40, -2, -46);
+                        ctx.moveTo(5, -33);
+                        ctx.quadraticCurveTo(5 - wave, -40, 6, -46);
+                        ctx.stroke();
+                    }
+
+                } else if (this.type === 'fish') {
+                    // 鮮魚身體
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -10, 22, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    // 魚尾
+                    ctx.fillStyle = '#0284c7';
+                    ctx.beginPath();
+                    ctx.moveTo(18, -10);
+                    ctx.lineTo(30, -20);
+                    ctx.lineTo(28, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    // 腹部亮面
+                    ctx.fillStyle = '#e0f2fe';
+                    ctx.beginPath();
+                    ctx.ellipse(-2, -6, 15, 4, 0, 0, Math.PI);
+                    ctx.fill();
+                    // 死魚眼 (X_X)
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(-12, -12, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(-12, -12, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (this.type === 'papers') {
+                    // 文件疊
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillStyle = i === 2 ? '#ffffff' : '#e2e8f0';
+                        const offset = (i - 1) * 3;
+                        ctx.fillRect(-18 + offset, -6 - i * 5, 36, 6);
+                        ctx.strokeRect(-18 + offset, -6 - i * 5, 36, 6);
+                    }
+                    // 紅色急件印章
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(-8, -15, 16, 4);
+
+                } else if (this.type === 'ramen') {
+                    // 泡麵碗
+                    ctx.fillStyle = '#fef3c7';
+                    ctx.beginPath();
+                    ctx.moveTo(-20, -26);
+                    ctx.lineTo(20, -26);
+                    ctx.lineTo(13, 0);
+                    ctx.lineTo(-13, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    // 紅色花紋
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(-18, -22, 36, 5);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        /**
+         * ==========================================
+         * 4. 繪製極度認真的熱血鵜鶘主角
+         * ==========================================
+         */
+        function drawSeriousPelican(ctx, baseX, baseY) {
+            ctx.save();
+
+            const power = getEffectivePower();
+            const powerRatio = power / 100;
+            const now = performance.now();
+
+            // 蓄力時的劇烈顫抖與微蹲
+            let trembleX = 0;
+            let trembleY = 0;
+            let crouchY = 0;
+            let bodyTilt = 0;
+            let wingAngle = 0.2;
+            let beakOpen = 0;
+            let pouchScale = 1;
+
+            if (state === 'CHARGING') {
+                const intensity = 2 + powerRatio * 9;
+                trembleX = (Math.random() - 0.5) * intensity;
+                trembleY = (Math.random() - 0.5) * intensity;
+                crouchY = 18 + powerRatio * 18;
+                bodyTilt = -0.15 - powerRatio * 0.12;
+                wingAngle = 0.8 + powerRatio * 0.6;
+                pouchScale = 1.05 + Math.sin(now * 0.05) * 0.08;
+            } else if (state === 'FLIPPING') {
+                crouchY = -28;
+                bodyTilt = 0.28;
+                wingAngle = -1.65; // 翅膀猛烈往上揮
+                beakOpen = 0.45;   // 大吼張嘴
+                pouchScale = 1.25;
+            } else {
+                // 平常呼吸與認真盯著桌子
+                crouchY = Math.sin(now * 0.005) * 3;
+                bodyTilt = 0.03;
+                wingAngle = 0.15 + Math.sin(now * 0.005) * 0.05;
+            }
+
+            const px = baseX + trembleX;
+            const py = baseY + trembleY;
+
+            // 1. 黃金/赤紅熱血鬥氣 (Aura) - 當認真度高或蓄力時顯示
+            if (state === 'CHARGING' || power >= 65 || state === 'FLIPPING') {
+                drawMangaAura(ctx, px, py - 85 + crouchY, powerRatio);
+            }
+
+            // 2. 地面陰影
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(baseX, baseY + 8, 65, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = '#000000';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // 3. 橘色雙腳与蹼 (微蹲時彎曲)
+            ctx.fillStyle = '#f97316';
+            // 後腳
+            ctx.beginPath();
+            ctx.moveTo(px - 18, py - 50 + crouchY);
+            ctx.lineTo(px - 26, py - 22 + crouchY * 0.5);
+            ctx.lineTo(px - 15, py);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(px - 15, py);
+            ctx.lineTo(px + 12, py);
+            ctx.lineTo(px - 5, py + 7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 前腳
+            ctx.beginPath();
+            ctx.moveTo(px + 10, py - 50 + crouchY);
+            ctx.lineTo(px + 2, py - 20 + crouchY * 0.5);
+            ctx.lineTo(px + 15, py + 4);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(px + 15, py + 4);
+            ctx.lineTo(px + 44, py + 4);
+            ctx.lineTo(px + 26, py + 11);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 進入身體座標系
+            ctx.translate(px, py - 82 + crouchY);
+            ctx.rotate(bodyTilt);
+
+            // 4. 後側翅膀 (掀桌時往前上方猛揮)
+            ctx.save();
+            ctx.translate(22, -15);
+            ctx.rotate(wingAngle - 0.3);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.ellipse(0, 28, 22, 48, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. 圓潤強壯的鵜鶘身體
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 54, 46, -0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 胸口肌肉線條 (漫畫感排線)
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(24, -5, 22, -0.6, 0.8);
+            ctx.stroke();
+            ctx.lineWidth = 4.5;
+
+            // 尾巴翹起
+            ctx.fillStyle = '#cbd5e1';
+            ctx.beginPath();
+            ctx.moveTo(-48, 5);
+            ctx.lineTo(-75, -15);
+            ctx.lineTo(-65, 2);
+            ctx.lineTo(-78, 12);
+            ctx.lineTo(-46, 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 6. 脖子與頭部
+            ctx.fillStyle = '#f8fafc';
+            ctx.beginPath();
+            ctx.moveTo(18, -32);
+            ctx.quadraticCurveTo(22, -75, 12, -108);
+            ctx.lineTo(44, -105);
+            ctx.quadraticCurveTo(52, -70, 44, -22);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 頭部圓頂與後腦勺呆毛
+            ctx.beginPath();
+            ctx.arc(26, -108, 25, Math.PI * 0.75, Math.PI * 1.95);
+            // 怒髮衝冠羽毛
+            ctx.lineTo(8, -138);
+            ctx.lineTo(16, -128);
+            ctx.lineTo(-4, -132);
+            ctx.lineTo(8, -120);
+            ctx.fill();
+            ctx.stroke();
+
+            // 7. 招牌超巨大喉囊 (Gular Pouch) 與長喙
+            ctx.save();
+            ctx.translate(42, -112);
+
+            // 下嘴喙 + 超大喉囊
+            ctx.save();
+            ctx.rotate(beakOpen);
+            ctx.scale(1, pouchScale);
+
+            // 喉囊漸層與陰影
+            const pouchGrad = ctx.createLinearGradient(0, 0, 0, 68);
+            pouchGrad.addColorStop(0, '#fb923c');
+            pouchGrad.addColorStop(0.6, '#f97316');
+            pouchGrad.addColorStop(1, '#ea580c');
+            ctx.fillStyle = pouchGrad;
+
+            ctx.beginPath();
+            ctx.moveTo(-5, 6);
+            ctx.bezierCurveTo(10, 82, 95, 78, 118, 10);
+            ctx.lineTo(-5, 6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 喉囊緊繃的皺褶與漫畫陰影線
+            ctx.lineWidth = 2.2;
+            ctx.strokeStyle = '#9a3412';
+            ctx.beginPath();
+            ctx.moveTo(22, 22);
+            ctx.quadraticCurveTo(50, 52, 88, 20);
+            ctx.moveTo(35, 38);
+            ctx.quadraticCurveTo(58, 56, 78, 35);
+            ctx.stroke();
+            ctx.restore();
+
+            // 上嘴喙 (堅硬銳利、前端帶鉤)
+            ctx.save();
+            ctx.rotate(-beakOpen * 0.4);
+            ctx.fillStyle = '#facc15';
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(-6, -10);
+            ctx.lineTo(116, -4);
+            ctx.quadraticCurveTo(128, -2, 124, 14);
+            ctx.lineTo(114, 10);
+            ctx.lineTo(-6, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore(); // 結束嘴部座標
+
+            // 8. 極度認真的熱血漫畫眼神 (劇畫風濃眉 + 銳利瞳孔 + 眼下陰影)
+            ctx.save();
+            ctx.translate(34, -114);
+
+            // 眼部威壓黑影 (Serious anime shadow)
+            if (power >= 50 || state === 'CHARGING') {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+                ctx.beginPath();
+                ctx.ellipse(2, -2, 16, 9, 0.25, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 眼白
+            ctx.fillStyle = '#ffffff';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 9.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 瞳孔 (認真程度越高，瞳孔越小越銳利，甚至發紅光)
+            const pupilSize = Math.max(2.2, 4.5 - powerRatio * 2.2);
+            ctx.fillStyle = power >= 80 ? '#ef4444' : '#000000';
+            ctx.beginPath();
+            ctx.arc(3, 0, pupilSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼神紅光拖尾 (100%極限認真)
+            if (power >= 85 || state === 'FLIPPING') {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(3, 0);
+                ctx.lineTo(28, -8);
+                ctx.stroke();
+            }
+
+            // 超粗深皺眉頭 (壓住眼睛上半部，營造極度認真感)
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-15, -12);
+            ctx.lineTo(16, -2);
+            ctx.lineTo(14, -9);
+            ctx.lineTo(-12, -19);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 眉間深刻皺紋 (川字紋)
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(12, -12);
+            ctx.lineTo(15, -4);
+            ctx.moveTo(16, -14);
+            ctx.lineTo(19, -5);
+            ctx.stroke();
+
+            // 臉頰劇畫排線 (Hatching lines)
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-8, 12); ctx.lineTo(-4, 17);
+            ctx.moveTo(-3, 13); ctx.lineTo(1, 18);
+            ctx.moveTo(2, 14);  ctx.lineTo(6, 19);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // 9. 漫畫青筋符號 (💢) - 當怒氣高或蓄力時浮現於頭頂或大嘴囊上
+            if (power >= 45 || state === 'CHARGING') {
+                const veinScale = 0.8 + Math.sin(now * 0.025) * 0.2 + powerRatio * 0.4;
+                drawAnimeVein(ctx, 12, -125, veinScale);
+                if (power >= 75) {
+                    drawAnimeVein(ctx, 90, -82, veinScale * 0.85); // 嘴囊上也爆青筋
+                }
+            }
+
+            // 10. 認真流汗 (💧)
+            if (state === 'IDLE' || state === 'CHARGING') {
+                const sweatY = -102 + ((now * 0.03) % 18);
+                ctx.fillStyle = '#38bdf8';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(10, sweatY);
+                ctx.quadraticCurveTo(5, sweatY + 8, 10, sweatY + 11);
+                ctx.quadraticCurveTo(15, sweatY + 8, 10, sweatY);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 11. 前側強壯翅膀 (掀桌的主力手)
+            ctx.save();
+            ctx.translate(-8, -12);
+            ctx.rotate(wingAngle);
+            ctx.fillStyle = '#ffffff';
+            ctx.lineWidth = 4.5;
+            ctx.beginPath();
+            ctx.ellipse(0, 32, 25, 52, -0.15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // 翅膀尖端黑色飛羽
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(0, 66, 18, 0.1, Math.PI - 0.1);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        // 繪製漫畫爆青筋符號 💢
+        function drawAnimeVein(ctx, x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3.5;
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i < 4; i++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.moveTo(3, 12);
+                ctx.quadraticCurveTo(3, 3, 12, 3);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 繪製熱血鬥氣火焰 (Aura)
+        function drawMangaAura(ctx, x, y, powerRatio) {
+            ctx.save();
+            const now = performance.now() * 0.012;
+            const layers = 3;
+
+            for (let l = layers; l >= 1; l--) {
+                const radius = (75 + powerRatio * 55) * (l / layers);
+                ctx.fillStyle = l === 3
+                    ? (powerRatio > 0.8 ? 'rgba(239, 68, 68, 0.35)' : 'rgba(250, 204, 21, 0.32)')
+                    : (l === 2 ? 'rgba(249, 115, 22, 0.45)' : 'rgba(254, 240, 138, 0.6)');
+
+                ctx.beginPath();
+                const points = 18;
+                for (let i = 0; i <= points; i++) {
+                    const angle = (i / points) * Math.PI * 2;
+                    const wave = Math.sin(angle * 6 - now * 2 + l) * 14;
+                    const r = radius + wave + (Math.sin(angle) < 0 ? 35 : -10);
+                    const px = x + Math.cos(angle) * r * 0.85;
+                    const py = y + Math.sin(angle) * r * 1.15;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                if (l === 3) {
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        // 繪製漫畫集中線 (Speed Lines)
+        function drawMangaSpeedLines(ctx, centerX, centerY, intensity) {
+            ctx.save();
+            ctx.strokeStyle = impactFrames > 0 ? '#ffffff' : 'rgba(0, 0, 0, 0.75)';
+            const count = Math.floor(45 + intensity * 60);
+            const maxRadius = Math.hypot(width, height);
+            const innerRadius = Math.max(130, 320 - intensity * 160);
+
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + Math.sin(performance.now() * 0.05 + i) * 0.04;
+                const randInner = innerRadius + (Math.random() * 90);
+                ctx.lineWidth = 1.5 + Math.random() * (2.5 + intensity * 3);
+
+                ctx.beginPath();
+                ctx.moveTo(centerX + Math.cos(angle) * randInner, centerY + Math.sin(angle) * randInner);
+                ctx.lineTo(centerX + Math.cos(angle) * maxRadius, centerY + Math.sin(angle) * maxRadius);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        /**
+         * ==========================================
+         * 5. 遊戲流程與互動邏輯
+         * ==========================================
+         */
+        function getEffectivePower() {
+            return Math.min(100, basePower + bonusCharge);
+        }
+
+        function updatePowerLabel() {
+            const p = Math.round(getEffectivePower());
+            const el = document.getElementById('powerValueText');
+            let title = '普通認真';
+            let bgClass = 'bg-amber-500';
+
+            if (p >= 90) {
+                title = '🌋 突破天際・神之怒';
+                bgClass = 'bg-purple-700';
+            } else if (p >= 70) {
+                title = '🔥 超級認真・狂暴';
+                bgClass = 'bg-red-600';
+            } else if (p >= 40) {
+                title = '💢 非常認真・社畜極限';
+                bgClass = 'bg-orange-600';
+            } else {
+                title = '😤 稍微認真・小發飆';
+                bgClass = 'bg-amber-600';
+            }
+
+            el.textContent = `${p}% ${title}`;
+            el.className = `font-black text-xs sm:text-sm px-2.5 py-0.5 rounded text-white border border-black ${bgClass}`;
+        }
+
+        // 初始化或重置桌面與預設物品
+        function setupScene(playSound = false) {
+            state = 'IDLE';
+            bonusCharge = 0;
+            screenCracks = [];
+            sfx.stopChargeSound();
+            updatePowerLabel();
+
+            const pelicanX = Math.max(130, width * 0.25);
+            const tableX = pelicanX + 185;
+            groundY = height - 145;
+
+            if (!table) {
+                table = new Table(tableX, groundY);
+            } else {
+                table.initX = tableX;
+                table.initY = groundY;
+                table.reset();
+            }
+
+            // 擺放預設物品：筆電、咖啡、兩條魚、文件疊
+            props = [];
+            const topY = table.y - table.h;
+            props.push(new PropItem('papers', table.x - 75, topY));
+            props.push(new PropItem('laptop', table.x - 10, topY));
+            props.push(new PropItem('coffee', table.x + 52, topY));
+            props.push(new PropItem('fish', table.x + 92, topY));
+
+            if (playSound) {
+                sfx.playPop(520);
+                floatingTexts.push({
+                    text: '┬─┬ ノ( ゜-゜ノ) 乖乖擺好',
+                    x: table.x,
+                    y: table.y - 140,
+                    vy: -55,
+                    alpha: 1,
+                    scale: 1,
+                    color: '#0284c7'
+                });
+            }
+        }
+
+        // 開始蓄力
+        function startCharging() {
+            if (table.isFlipped) {
+                setupScene(false);
+            }
+            if (state === 'CHARGING') return;
+
+            state = 'CHARGING';
+            bonusCharge = 0;
+            sfx.startChargeSound();
+            document.getElementById('flipBtnText').textContent = '放開爆發！！';
+        }
+
+        // 執行猛烈掀桌！
+        function executeTableFlip() {
+            if (table.isFlipped) {
+                setupScene(false);
+            }
+
+            state = 'FLIPPING';
+            stateTimer = 0.45;
+            document.getElementById('flipBtnText').textContent = '認真掀桌！';
+
+            const totalPower = getEffectivePower();
+            const powerRatio = totalPower / 100;
+
+            // 計數器 +1
+            flipCount++;
+            document.getElementById('flipCountDisplay').textContent = flipCount;
+
+            // 播放爆炸音效
+            sfx.playFlipExplosion(powerRatio);
+
+            // 視覺震撼：黑白閃光幀 + 畫面劇烈震動
+            impactFrames = totalPower >= 75 ? 4 : 2;
+            flashAlpha = 0.85;
+            screenShake = 12 + powerRatio * 42;
+
+            // 賦予桌子物理拋射速度與狂暴旋轉
+            table.isFlipped = true;
+            table.vx = 280 + powerRatio * 1350;
+            table.vy = -(520 + powerRatio * 1650);
+            table.va = -(5 + powerRatio * 20);
+
+            // 賦予桌上所有物品物理噴飛
+            props.forEach((p, idx) => {
+                p.isFlying = true;
+                const spread = (idx - props.length / 2) * 90;
+                p.vx = table.vx * (0.75 + Math.random() * 0.55) + spread;
+                p.vy = table.vy * (0.85 + Math.random() * 0.5) - Math.random() * 250;
+                p.va = (Math.random() - 0.5) * (16 + powerRatio * 25);
+            });
+
+            // 衝擊波圓環
+            const hitX = table.x - table.w * 0.35;
+            const hitY = table.y - table.h * 0.6;
+            shockwaves.push({
+                x: hitX,
+                y: hitY,
+                radius: 15,
+                maxRadius: 180 + powerRatio * 320,
+                alpha: 1,
+                lineWidth: 8 + powerRatio * 12
+            });
+
+            // 爆發打擊火花粒子
+            for (let i = 0; i < 28 + powerRatio * 40; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = 150 + Math.random() * (450 + powerRatio * 750);
+                particles.push({
+                    type: 'spark',
+                    x: hitX,
+                    y: hitY,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd,
+                    size: 5 + Math.random() * 10,
+                    color: Math.random() > 0.4 ? '#facc15' : '#ef4444',
+                    alpha: 1,
+                    life: 0.45 + Math.random() * 0.4
+                });
+            }
+
+            // 浮現熱血顏文字與大字
+            const slogans = totalPower >= 85
+                ? ['(╯°Д°）╯︵ /(.□ . \\)', '老子不幹啦！！', '究極認真掀桌！！', '突破天際啦！！']
+                : ['(╯°□°）╯︵ ┻━┻', '認真掀桌！！', '給我重寫需求！！', '這什麼爛班表！！'];
+            const pickedText = slogans[Math.floor(Math.random() * slogans.length)];
+
+            floatingTexts.push({
+                text: pickedText,
+                x: table.x + 20,
+                y: table.y - 130,
+                vy: -90,
+                alpha: 1,
+                scale: 1.15 + powerRatio * 0.55,
+                color: totalPower >= 80 ? '#dc2626' : '#f59e0b'
+            });
+
+            // 若力道超過 85%，產生撞碎螢幕ガラス裂痕特效
+            if (totalPower >= 85) {
+                setTimeout(() => {
+                    createScreenCrack(width * (0.65 + Math.random() * 0.25), height * (0.2 + Math.random() * 0.3));
+                    screenShake = 35;
+                }, 110);
+            }
+
+            bonusCharge = 0;
+            updatePowerLabel();
+        }
+
+        // 建立螢幕碎裂特效
+        function createScreenCrack(cx, cy) {
+            const branches = 9;
+            const lines = [];
+            for (let i = 0; i < branches; i++) {
+                let angle = (i / branches) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+                let currX = cx;
+                let currY = cy;
+                const segments = 5 + Math.floor(Math.random() * 5);
+                for (let s = 0; s < segments; s++) {
+                    const len = 35 + Math.random() * 75;
+                    angle += (Math.random() - 0.5) * 0.45;
+                    const nextX = currX + Math.cos(angle) * len;
+                    const nextY = currY + Math.sin(angle) * len;
+                    lines.push({ x1: currX, y1: currY, x2: nextX, y2: nextY, width: Math.max(1, 5 - s * 0.7) });
+                    currX = nextX;
+                    currY = nextY;
+                }
+            }
+            screenCracks.push({ cx, cy, lines, alpha: 1 });
+        }
+
+        // 地面灰塵粒子
+        function spawnDustParticles(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    type: 'dust',
+                    x: x + (Math.random() - 0.5) * 60,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 160,
+                    vy: -Math.random() * 90,
+                    size: 8 + Math.random() * 12,
+                    color: '#cbd5e1',
+                    alpha: 0.75,
+                    life: 0.4 + Math.random() * 0.3
+                });
+            }
+        }
+
+        // 加菜功能：在桌上堆疊更多物品
+        function addPropsToTable(types) {
+            if (table.isFlipped) {
+                setupScene(false);
+            }
+            const topY = table.y - table.h;
+            types.forEach((t, i) => {
+                const randX = table.x + (Math.random() - 0.5) * (table.w - 50);
+                // 允許稍微往上堆疊
+                const stackOffset = Math.min(60, Math.floor(props.length / 5) * 16);
+                props.push(new PropItem(t, randX, topY - stackOffset));
+            });
+            sfx.playPop(380 + props.length * 15);
+        }
+
+        /**
+         * ==========================================
+         * 6. 主渲染與更新迴圈 (Game Loop)
+         * ==========================================
+         */
+        let lastTime = performance.now();
+
+        function update(dt) {
+            // 自動連發模式
+            if (autoFlip) {
+                autoFlipTimer += dt;
+                if (state === 'IDLE' && autoFlipTimer > 0.35) {
+                    startCharging();
+                } else if (state === 'CHARGING' && autoFlipTimer > 0.95) {
+                    executeTableFlip();
+                    autoFlipTimer = -0.6; // 等待飛散一下再重置
+                } else if (table.isFlipped && autoFlipTimer > 0.25) {
+                    setupScene(false);
+                    autoFlipTimer = 0;
+                }
+            }
+
+            // 蓄力階段邏輯
+            if (state === 'CHARGING') {
+                bonusCharge = Math.min(45, bonusCharge + dt * 32);
+                updatePowerLabel();
+
+                const effPower = getEffectivePower();
+                sfx.updateChargePitch(effPower / 100);
+                screenShake = Math.max(screenShake, (effPower / 100) * 5.5);
+
+                // 定期冒出漫畫威壓文字「ゴゴゴゴ (轟轟轟)」
+                if (Math.random() < dt * 7.5) {
+                    const pelicanX = Math.max(130, width * 0.25);
+                    floatingTexts.push({
+                        text: Math.random() > 0.25 ? 'ゴゴゴ' : '轟轟轟',
+                        x: pelicanX + (Math.random() - 0.5) * 200,
+                        y: groundY - 60 - Math.random() * 140,
+                        vy: -65 - Math.random() * 40,
+                        alpha: 1,
+                        scale: 0.85 + (effPower / 100) * 0.65,
+                        color: '#7e22ce'
+                    });
+                }
+            } else if (state === 'FLIPPING') {
+                stateTimer -= dt;
+                if (stateTimer <= 0) {
+                    state = 'IDLE';
+                }
+            }
+
+            // 衰減畫面震動與閃光
+            if (screenShake > 0) {
+                screenShake = Math.max(0, screenShake - dt * 60);
+            }
+            if (flashAlpha > 0) {
+                flashAlpha = Math.max(0, flashAlpha - dt * 3.5);
+            }
+            if (impactFrames > 0) {
+                impactFrames--;
+            }
+
+            // 更新桌子與物品物理
+            if (table) table.update(dt);
+            props.forEach(p => p.update(dt));
+
+            // 更新衝擊波
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                const sw = shockwaves[i];
+                sw.radius += (sw.maxRadius - sw.radius) * dt * 10;
+                sw.alpha -= dt * 2.4;
+                if (sw.alpha <= 0) shockwaves.splice(i, 1);
+            }
+
+            // 更新粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.life -= dt;
+                if (pt.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                if (pt.type === 'liquid') {
+                    pt.vy += 980 * dt;
+                }
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.alpha = Math.min(1, pt.life * 2);
+            }
+
+            // 更新漫畫浮動文字
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y += ft.vy * dt;
+                ft.alpha -= dt * 0.75;
+                if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.save();
+
+            // 計算震動偏移
+            const shakeOffset = {
+                x: (Math.random() - 0.5) * screenShake * 1.8,
+                y: (Math.random() - 0.5) * screenShake * 1.8
+            };
+
+            // 1. 背景繪製 (支援黑白衝擊幀 Impact Frame)
+            if (impactFrames > 0) {
+                ctx.fillStyle = impactFrames % 2 === 0 ? '#000000' : '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+            } else {
+                const power = getEffectivePower();
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+                if (state === 'CHARGING' || power >= 80) {
+                    bgGrad.addColorStop(0, '#450a0a');
+                    bgGrad.addColorStop(0.5, '#991b1b');
+                    bgGrad.addColorStop(1, '#f97316');
+                } else {
+                    bgGrad.addColorStop(0, '#fef08a');
+                    bgGrad.addColorStop(0.6, '#fed7aa');
+                    bgGrad.addColorStop(1, '#fdba74');
+                }
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, width, height);
+
+                // 放射狀熱血背景光芒
+                ctx.save();
+                const pelicanX = Math.max(130, width * 0.25);
+                ctx.translate(pelicanX + shakeOffset.x * 0.3, groundY - 80 + shakeOffset.y * 0.3);
+                ctx.rotate(performance.now() * 0.0003);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+                const rays = 16;
+                for (let i = 0; i < rays; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    const a1 = (i / rays) * Math.PI * 2;
+                    const a2 = ((i + 0.5) / rays) * Math.PI * 2;
+                    ctx.arc(0, 0, Math.hypot(width, height), a1, a2);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+
+            // 2. 繪製地板與踢腳線
+            ctx.fillStyle = impactFrames > 0 ? '#1e293b' : '#334155';
+            ctx.fillRect(0, groundY + shakeOffset.y, width, height - groundY + 50);
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#000000';
+            ctx.beginPath();
+            ctx.moveTo(0, groundY + shakeOffset.y);
+            ctx.lineTo(width, groundY + shakeOffset.y);
+            ctx.stroke();
+
+            // 3. 繪製主角：極度認真的鵜鶘
+            const pelicanX = Math.max(130, width * 0.25);
+            drawSeriousPelican(ctx, pelicanX + shakeOffset.x, groundY + shakeOffset.y);
+
+            // 4. 繪製桌子與桌上物品
+            if (table) table.draw(ctx, shakeOffset);
+            props.forEach(p => p.draw(ctx, shakeOffset));
+
+            // 5. 繪製衝擊波圓環
+            shockwaves.forEach(sw => {
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 255, 255, ${sw.alpha})`;
+                ctx.lineWidth = sw.lineWidth * sw.alpha;
+                ctx.beginPath();
+                ctx.arc(sw.x + shakeOffset.x, sw.y + shakeOffset.y, sw.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // 6. 繪製粒子特效 (咖啡液體、打擊火花、灰塵)
+            particles.forEach(pt => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, pt.alpha);
+                ctx.fillStyle = pt.color;
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+
+                if (pt.type === 'spark') {
+                    ctx.translate(pt.x + shakeOffset.x, pt.y + shakeOffset.y);
+                    ctx.rotate(Math.atan2(pt.vy, pt.vx));
+                    ctx.fillRect(-pt.size, -pt.size * 0.35, pt.size * 2, pt.size * 0.7);
+                    ctx.strokeRect(-pt.size, -pt.size * 0.35, pt.size * 2, pt.size * 0.7);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(pt.x + shakeOffset.x, pt.y + shakeOffset.y, pt.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (pt.type === 'liquid') ctx.stroke();
+                }
+                ctx.restore();
+            });
+
+            // 7. 繪製漫畫集中線 (當蓄力、認真度高或剛掀桌時)
+            const effPower = getEffectivePower();
+            if (state === 'CHARGING' || state === 'FLIPPING' || effPower >= 75) {
+                const lineIntensity = state === 'FLIPPING' ? 1 : (effPower / 100) * 0.7;
+                drawMangaSpeedLines(ctx, pelicanX + 60, groundY - 90, lineIntensity);
+            }
+
+            // 8. 繪製浮動漫畫大字與「ゴゴゴゴ」
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, ft.alpha);
+                ctx.translate(ft.x + shakeOffset.x, ft.y + shakeOffset.y);
+                ctx.scale(ft.scale, ft.scale);
+                ctx.font = '900 28px "Noto Sans TC", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.lineJoin = 'round';
+
+                // 黑色粗外框
+                ctx.lineWidth = 7;
+                ctx.strokeStyle = '#000000';
+                ctx.strokeText(ft.text, 0, 0);
+
+                // 內層文字顏色
+                ctx.fillStyle = ft.color;
+                ctx.fillText(ft.text, 0, 0);
+                ctx.restore();
+            });
+
+            // 9. 繪製撞碎螢幕的玻璃裂痕特效
+            screenCracks.forEach(crack => {
+                ctx.save();
+                // 裂痕白邊與黑芯
+                crack.lines.forEach(l => {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+                    ctx.lineWidth = l.width + 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(l.x1, l.y1);
+                    ctx.lineTo(l.x2, l.y2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#0f172a';
+                    ctx.lineWidth = l.width;
+                    ctx.beginPath();
+                    ctx.moveTo(l.x1, l.y1);
+                    ctx.lineTo(l.x2, l.y2);
+                    ctx.stroke();
+                });
+                // 撞擊中心蜘蛛網圓環
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 2;
+                [18, 38, 65].forEach(r => {
+                    ctx.beginPath();
+                    ctx.arc(crack.cx, crack.cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                ctx.restore();
+            });
+
+            // 10. 爆發瞬間白光閃爍
+            if (flashAlpha > 0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha})`;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            ctx.restore();
+        }
+
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * ==========================================
+         * 7. 事件綁定與 RWD 自適應調整
+         * ==========================================
+         */
+        function handleResize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            groundY = height - 145;
+
+            if (table && !table.isFlipped) {
+                setupScene(false);
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // 綁定掀桌按鈕 (支援點擊與長按蓄力)
+        const flipBtn = document.getElementById('flipBtn');
+        const startHold = (e) => {
+            e.preventDefault();
+            startCharging();
+        };
+        const endHold = (e) => {
+            e.preventDefault();
+            if (state === 'CHARGING') {
+                executeTableFlip();
+            }
+        };
+
+        flipBtn.addEventListener('mousedown', startHold);
+        flipBtn.addEventListener('touchstart', startHold, { passive: false });
+        window.addEventListener('mouseup', () => {
+            if (state === 'CHARGING') executeTableFlip();
+        });
+        window.addEventListener('touchend', () => {
+            if (state === 'CHARGING') executeTableFlip();
+        });
+
+        // 直接點擊或長按 Canvas 畫面也能蓄力掀桌
+        canvas.addEventListener('mousedown', startHold);
+        canvas.addEventListener('touchstart', startHold, { passive: false });
+
+        // 支援空白鍵蓄力掀桌
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                e.preventDefault();
+                startCharging();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'CHARGING') executeTableFlip();
+            }
+        });
+
+        // 擺好桌子按鈕
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            autoFlip = false;
+            document.getElementById('autoStatusText').textContent = '目前：關閉';
+            setupScene(true);
+        });
+
+        // 無限自動連發開關
+        document.getElementById('autoBtn').addEventListener('click', () => {
+            autoFlip = !autoFlip;
+            autoFlipTimer = 0;
+            const statusEl = document.getElementById('autoStatusText');
+            statusEl.textContent = autoFlip ? '🔥 連發中！' : '目前：關閉';
+            sfx.playPop(autoFlip ? 660 : 320);
+        });
+
+        // 認真程度滑桿
+        const powerSlider = document.getElementById('powerSlider');
+        powerSlider.addEventListener('input', (e) => {
+            basePower = parseInt(e.target.value, 10);
+            updatePowerLabel();
+        });
+
+        // 加菜按鈕群
+        document.getElementById('addFishBtn').addEventListener('click', () => {
+            addPropsToTable(['fish', 'fish', 'fish']);
+        });
+        document.getElementById('addWorkBtn').addEventListener('click', () => {
+            addPropsToTable(['laptop', 'coffee', 'papers']);
+        });
+        document.getElementById('addChaosBtn').addEventListener('click', () => {
+            addPropsToTable(['fish', 'laptop', 'coffee', 'papers', 'ramen', 'fish', 'coffee']);
+        });
+
+        // 靜音開關
+        document.getElementById('muteBtn').addEventListener('click', () => {
+            const isMuted = sfx.toggleMute();
+            document.getElementById('muteIcon').textContent = isMuted ? '🔇' : '🔊';
+            document.getElementById('muteText').textContent = isMuted ? '已靜音' : '音效開啟';
+        });
+
+        // 啟動遊戲
+        window.onload = function () {
+            handleResize();
+            setupScene(false);
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
