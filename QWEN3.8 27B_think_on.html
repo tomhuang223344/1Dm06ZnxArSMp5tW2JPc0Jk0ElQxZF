@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鵜鶘騎自行車</title>
+<style>
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:28px 16px; box-sizing:border-box;
+    background:#0d2438 radial-gradient(1200px 600px at 50% -10%, #1b4a6e, transparent);
+    font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;
+  }
+  .scene{position:relative; width:min(980px,100%); aspect-ratio:16/9;
+    border-radius:24px; overflow:hidden; box-shadow:0 24px 70px rgba(0,0,0,.45);}
+  .sky{position:absolute; inset:0; transition:opacity 1.2s;}
+  #skyDay{background:linear-gradient(#7ecdf0 0%,#bfe6f8 55%,#eaf7ff 100%);}
+  #skyNight{background:linear-gradient(#0a1c38 0%,#1d3f66 60%,#2c567e 100%); opacity:0;}
+  body.night #skyDay{opacity:0} body.night #skyNight{opacity:1}
+
+  .stage-wrap{position:absolute; inset:0; transition:filter 1.2s;}
+  body.night .stage-wrap{filter:brightness(.78) saturate(.95);}
+  svg{display:block; width:100%; height:100%;}
+
+  .hud{position:absolute; top:14px; left:16px; right:16px; z-index:5;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; pointer-events:none;}
+  .title{font-weight:800; font-size:20px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.35);
+    background:rgba(255,255,255,.14); backdrop-filter:blur(6px); padding:9px 16px; border-radius:999px;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap; pointer-events:auto;}
+  .chip{background:rgba(255,255,255,.88); border-radius:999px; padding:7px 13px; font-size:14px;
+    font-weight:600; color:#1c2b3a; display:flex; align-items:center; gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.18); backdrop-filter:blur(4px);}
+  button.chip{cursor:pointer; border:none; transition:transform .15s;}
+  button.chip:hover{transform:translateY(-2px)} button.chip:active{transform:scale(.95)}
+  input[type=range]{width:110px; accent-color:#E4572E;}
+
+  .bubble{position:absolute; left:53%; top:13%; transform:translateX(-50%) scale(.8);
+    background:#fff; border-radius:16px; padding:10px 16px; font-size:15px; font-weight:700; color:#334;
+    opacity:0; transition:.25s; z-index:6; pointer-events:none; white-space:nowrap;
+    box-shadow:0 8px 24px rgba(0,0,0,.2);}
+  .bubble.show{opacity:1; transform:translateX(-50%) scale(1);}
+  .bubble::after{content:""; position:absolute; left:36%; bottom:-14px; border:9px solid transparent; border-top-color:#fff;}
+
+  .hint{position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+    font-size:13px; color:rgba(255,255,255,.9); text-shadow:0 1px 4px rgba(0,0,0,.45); z-index:5;}
+
+  #stars{opacity:0; transition:opacity 1.2s} body.night #stars{opacity:.9}
+  #sun,#moon,#beam{transition:opacity 1.2s}
+  body.night #sun{opacity:0} #moon{opacity:0} body.night #moon{opacity:1}
+  #beam{opacity:0} body.night #beam{opacity:.35}
+</style>
+</head>
+<body>
+<div class="scene">
+  <div class="sky" id="skyDay"></div>
+  <div class="sky" id="skyNight"></div>
+
+  <div class="stage-wrap">
+  <svg viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet" aria-label="鵜鶘騎自行車">
+    <!-- 星星（JS 產生） -->
+    <g id="stars"></g>
+
+    <!-- 太陽 / 月亮 -->
+    <g id="sun">
+      <circle cx="860" cy="82" r="34" fill="#FFD54F"/>
+      <g stroke="#FFD54F" stroke-width="5" stroke-linecap="round">
+        <line x1="860" y1="30" x2="860" y2="16"/><line x1="860" y1="134" x2="860" y2="148"/>
+        <line x1="808" y1="82" x2="794" y2="82"/><line x1="912" y1="82" x2="926" y2="82"/>
+        <line x1="823" y1="45" x2="813" y2="35"/><line x1="897" y1="45" x2="907" y2="35"/>
+        <line x1="823" y1="119" x2="813" y2="129"/><line x1="897" y1="119" x2="907" y2="129"/>
+      </g>
+    </g>
+    <path id="moon" d="M872 52 A30 30 0 1 0 872 112 A24 24 0 1 1 872 52 Z" fill="#F1EFD8"/>
+
+    <!-- 雲（JS 驅動） -->
+    <g class="clouds">
+      <g class="cloud" data-x="150" data-y="86"  data-f="0.22" data-s="1">
+        <ellipse rx="46" ry="17" fill="#fff"/><ellipse cx="32" cy="-10" rx="30" ry="14" fill="#fff"/>
+        <ellipse cx="-30" cy="-8" rx="26" ry="12" fill="#fff"/></g>
+      <g class="cloud" data-x="430" data-y="58"  data-f="0.30" data-s="1.25">
+        <ellipse rx="46" ry="17" fill="#fff"/><ellipse cx="32" cy="-10" rx="30" ry="14" fill="#fff"/>
+        <ellipse cx="-30" cy="-8" rx="26" ry="12" fill="#fff"/></g>
+      <g class="cloud" data-x="700" data-y="120" data-f="0.18" data-s="0.9">
+        <ellipse rx="46" ry="17" fill="#fff"/><ellipse cx="32" cy="-10" rx="30" ry="14" fill="#fff"/>
+        <ellipse cx="-30" cy="-8" rx="26" ry="12" fill="#fff"/></g>
+      <g class="cloud" data-x="900" data-y="70"  data-f="0.26" data-s="1.1">
+        <ellipse rx="46" ry="17" fill="#fff"/><ellipse cx="32" cy="-10" rx="30" ry="14" fill="#fff"/>
+        <ellipse cx="-30" cy="-8" rx="26" ry="12" fill="#fff"/></g>
+    </g>
+
+    <!-- 海鷗 -->
+    <path id="seagull" d="M-14 0 Q-7 -8 0 0 Q7 -8 14 0" stroke="#5b6b7c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+    <!-- 遠山 -->
+    <path d="M0,470 V424 Q140,386 300,414 Q460,442 620,412 Q780,384 960,418 V470 Z" fill="#cde9dc"/>
+    <path d="M0,470 V446 Q180,420 360,444 Q560,466 740,440 Q860,424 960,446 V470 Z" fill="#b2dcc9"/>
+
+    <!-- 路邊灌木（JS 驅動） -->
+    <g id="bushes">
+      <g class="bush" data-x="100" data-f="1" data-s="1"><ellipse rx="20" ry="14" fill="#6fbf87"/><ellipse cx="-15" cy="4" rx="13" ry="10" fill="#5ea36f"/><ellipse cx="15" cy="5" rx="12" ry="9" fill="#5ea36f"/></g>
+      <g class="bush" data-x="340" data-f="1" data-s="1.15"><ellipse rx="20" ry="14" fill="#6fbf87"/><ellipse cx="-15" cy="4" rx="13" ry="10" fill="#5ea36f"/><ellipse cx="15" cy="5" rx="12" ry="9" fill="#5ea36f"/></g>
+      <g class="bush" data-x="580" data-f="1" data-s="0.85"><ellipse rx="20" ry="14" fill="#6fbf87"/><ellipse cx="-15" cy="4" rx="13" ry="10" fill="#5ea36f"/><ellipse cx="15" cy="5" rx="12" ry="9" fill="#5ea36f"/></g>
+      <g class="bush" data-x="820" data-f="1" data-s="1.05"><ellipse rx="20" ry="14" fill="#6fbf87"/><ellipse cx="-15" cy="4" rx="13" ry="10" fill="#5ea36f"/><ellipse cx="15" cy="5" rx="12" ry="9" fill="#5ea36f"/></g>
+    </g>
+
+    <!-- 道路 -->
+    <rect x="0" y="470" width="960" height="38" fill="#4f5b6b"/>
+    <line x1="0" y1="472" x2="960" y2="472" stroke="#eef2f5" stroke-width="2.5" opacity=".85"/>
+    <line id="dash" x1="-80" y1="490" x2="1040" y2="490" stroke="#ffd166" stroke-width="5" stroke-dasharray="34 46" stroke-linecap="round"/>
+    <rect x="0" y="508" width="960" height="32" fill="#a5cf8f"/>
+
+    <!-- 影子 -->
+    <ellipse cx="430" cy="474" rx="190" ry="9" fill="rgba(30,40,60,.18)"/>
+
+    <!-- ====== 自行車 ====== -->
+    <g id="bike">
+      <!-- 後輪 -->
+      <circle cx="300" cy="420" r="50" fill="none" stroke="#2f3a45" stroke-width="9"/>
+      <circle cx="300" cy="420" r="40" fill="none" stroke="#b9c2cc" stroke-width="3"/>
+      <g id="spokesRear" stroke="#9aa3ad" stroke-width="2.5">
+        <line x1="344" y1="420" x2="256" y2="420"/><line x1="331.1" y1="451.1" x2="268.9" y2="388.9"/>
+        <line x1="300" y1="464" x2="300" y2="376"/><line x1="268.9" y1="451.1" x2="331.1" y2="388.9"/>
+      </g>
+      <circle cx="300" cy="420" r="7" fill="#37474f"/>
+      <!-- 前輪 -->
+      <circle cx="580" cy="420" r="50" fill="none" stroke="#2f3a45" stroke-width="9"/>
+      <circle cx="580" cy="420" r="40" fill="none" stroke="#b9c2cc" stroke-width="3"/>
+      <g id="spokesFront" stroke="#9aa3ad" stroke-width="2.5">
+        <line x1="624" y1="420" x2="536" y2="420"/><line x1="611.1" y1="451.1" x2="548.9" y2="388.9"/>
+        <line x1="580" y1="464" x2="580" y2="376"/><line x1="548.9" y1="451.1" x2="611.1" y2="388.9"/>
+      </g>
+      <circle cx="580" cy="420" r="7" fill="#37474f"/>
+
+      <!-- 車架 -->
+      <g stroke="#E4572E" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M300,420 L415,428"/><path d="M300,420 L372,322"/><path d="M415,428 L372,322"/>
+        <path d="M372,322 L545,332"/><path d="M415,428 L553,350"/><path d="M553,350 L580,420" stroke-width="6"/>
+      </g>
+      <line x1="372" y1="322" x2="366" y2="312" stroke="#E4572E" stroke-width="5" stroke-linecap="round"/>
+      <rect x="338" y="304" width="56" height="9" rx="4.5" fill="#4a3b33"/>
+
+      <!-- 車把 -->
+      <path d="M545,330 L560,312 Q578,306 584,320" stroke="#37474f" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="584" cy="320" r="4.5" fill="#37474f"/>
+
+      <!-- 鏈條與牙盤 -->
+      <line x1="415" y1="415" x2="300" y2="413" stroke="#8a94a6" stroke-width="2.5" stroke-dasharray="4 4"/>
+      <line x1="415" y1="441" x2="300" y2="427" stroke="#8a94a6" stroke-width="2.5" stroke-dasharray="4 4"/>
+      <circle cx="300" cy="420" r="7" fill="none" stroke="#8a94a6" stroke-width="3"/>
+      <circle cx="415" cy="428" r="13" fill="none" stroke="#8a94a6" stroke-width="4"/>
+
+      <!-- 夜騎車燈光束 -->
+      <polygon id="beam" points="584,332 780,306 780,384" fill="#ffe082"/>
+
+      <!-- 前籃（裝了一條魚） -->
+      <g transform="translate(543,290) rotate(-15)">
+        <ellipse rx="11" ry="6" fill="#7fa6c9"/><path d="M10,0 L18,-6 L18,6 Z" fill="#7fa6c9"/>
+      </g>
+      <path d="M520,296 L566,296 L559,324 L527,324 Z" fill="#C98A4B" stroke="#a9713b" stroke-width="2"/>
+      <line x1="534" y1="298" x2="536" y2="322" stroke="#a9713b" stroke-width="1.5" opacity=".6"/>
+      <line x1="548" y1="298" x2="549" y2="322" stroke="#a9713b" stroke-width="1.5" opacity=".6"/>
+
+      <!-- 曲柄與踏板 -->
+      <g id="crankG">
+        <line x1="415" y1="428" x2="415" y2="402" stroke="#37474f" stroke-width="5" stroke-linecap="round"/>
+        <line x1="415" y1="428" x2="415" y2="454" stroke="#37474f" stroke-width="5" stroke-linecap="round"/>
+        <g id="pedal1"><rect x="402" y="398" width="26" height="8" rx="3" fill="#2f3a45"/></g>
+        <g id="pedal2"><rect x="402" y="450" width="26" height="8" rx="3" fill="#2f3a45"/></g>
+      </g>
+    </g>
+
+    <!-- 鵜鶘的腳（JS 更新） -->
+    <path id="legFar"  d="" stroke="#e08a2e" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <ellipse id="footFar" rx="9" ry="5" fill="#e08a2e"/>
+    <path id="legNear" d="" stroke="#ff9e3d" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <ellipse id="footNear" rx="9" ry="5" fill="#f4a340"/>
+
+    <!-- ====== 鵜鶘 ====== -->
+    <g id="rider" style="cursor:pointer">
+      <title>點我！</title>
+      <!-- 尾羽 -->
+      <path d="M358,292 Q330,288 318,270 Q338,272 348,280 Q334,262 334,246 Q350,258 358,272 Z" fill="#f19a3e"/>
+      <!-- 身體 -->
+      <ellipse cx="400" cy="286" rx="54" ry="42" transform="rotate(-14 400 286)" fill="#fff6e8" stroke="#e2d2b6" stroke-width="2"/>
+      <!-- 會扇的翅膀 -->
+      <g id="wingG">
+        <path d="M432,266 C414,246 380,244 362,262 C350,274 350,292 358,306 C376,296 398,298 414,290 C424,284 430,276 432,266 Z" fill="#f4a34d"/>
+        <path d="M356,300 Q384,290 412,288 L414,290 C398,298 376,296 358,306 Z" fill="#d97b29" opacity=".8"/>
+      </g>
+      <!-- 脖子 -->
+      <path d="M436,262 C450,244 452,218 472,200" stroke="#fff6e8" stroke-width="15" fill="none" stroke-linecap="round"/>
+      <!-- 頭部 -->
+      <g id="headG">
+        <circle cx="486" cy="196" r="19" fill="#fff6e8"/>
+        <path d="M476,178 Q470,164 480,158" stroke="#f4a34d" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <polygon points="498,186 634,202 630,213 500,203" fill="#ffb74d" stroke="#e89b2d" stroke-width="1.5"/>
+        <path d="M502,204 C540,214 590,216 626,211 C634,213 632,220 624,226 C598,254 556,260 522,248 C508,242 502,224 502,204 Z" fill="#ff9e3d"/>
+        <circle cx="490" cy="189" r="3.4" fill="#2b2b2b"/>
+        <circle cx="489" cy="187.5" r="1.1" fill="#fff"/>
+      </g>
+      <!-- 握把的翅膀手 -->
+      <path d="M436,274 C492,290 546,308 580,318" stroke="#f4a34d" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <circle cx="581" cy="319" r="7.5" fill="#d97b29"/>
+    </g>
+  </svg>
+  </div>
+
+  <div class="bubble" id="bubble"></div>
+
+  <div class="hud">
+    <div class="title">🦩🚲 鵜鶘騎自行車</div>
+    <div class="chips">
+      <span class="chip" id="speedChip">8 km/h · 0 m</span>
+      <label class="chip">⚡<input type="range" id="speed" min="0" max="16" step="0.5" value="8"></label>
+      <button class="chip" id="hornBtn">📣 嗶嗶</button>
+      <button class="chip" id="flapBtn">🪽 扇翅膀</button>
+      <button class="chip" id="nightBtn">🌙 夜騎</button>
+    </div>
+  </div>
+
+  <div class="hint">點一下鵜鶘，牠會跟你打招呼 🐟</div>
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const BB={x:415,y:428}, R=26, HIP={x:388,y:316};
+  const spokesR=$('#spokesRear'), spokesF=$('#spokesFront');
+  const crankG=$('#crankG'), pedal1=$('#pedal1'), pedal2=$('#pedal2');
+  const legFar=$('#legFar'), legNear=$('#legNear'), footFar=$('#footFar'), footNear=$('#footNear');
+  const rider=$('#rider'), headG=$('#headG'), wingG=$('#wingG'), dash=$('#dash');
+  const speedEl=$('#speed'), chip=$('#speedChip'), bubble=$('#bubble'), seagull=$('#seagull');
+
+  // 星星
+  const stars=$('#stars'); let sHtml='';
+  for(let i=0;i<26;i++){
+    const x=(Math.random()*940+10).toFixed(0), y=(Math.random()*185+15).toFixed(0);
+    const r=(0.7+Math.random()*1.3).toFixed(2), o=(0.4+Math.random()*0.6).toFixed(2);
+    sHtml+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${o}"/>`;
+  }
+  stars.innerHTML=sHtml;
+
+  // 雲 / 灌木
+  const movers=[...document.querySelectorAll('.cloud,.bush')].map(el=>({
+    el, x:+el.dataset.x, y:el.classList.contains('bush')?452:+el.dataset.y,
+    f:+el.dataset.f, s:+(el.dataset.s||1)
+  }));
+  let gull={x:700,y:150};
+
+  const phrases=['呼——海風好舒服！','今天的魚真新鮮！','踏板快踩斷了啦…','前面有海鸥，注意！',
+                 '嘎嘣？輪胎漏氣了嗎？','再騎一圈就回家吃飯～','誰說鵜鶘不會騎車！'];
+  let bt=null;
+  function say(txt,ms=2400){ bubble.textContent=txt; bubble.classList.add('show');
+    clearTimeout(bt); bt=setTimeout(()=>bubble.classList.remove('show'),ms); }
+
+  // 嗶嗶聲
+  let actx=null;
+  function honk(){
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const t0=actx.currentTime, o=actx.createOscillator(), g=actx.createGain(), f=actx.createBiquadFilter();
+    o.type='sawtooth'; f.type='lowpass'; f.frequency.value=900;
+    o.frequency.setValueAtTime(340,t0); o.frequency.exponentialRampToValueAtTime(210,t0+.22);
+    g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(.5,t0+.02);
+    g.gain.exponentialRampToValueAtTime(.0001,t0+.3);
+    o.connect(f).connect(g).connect(actx.destination); o.start(t0); o.stop(t0+.32);
+  }
+
+  let flapE=0, flapPhase=0;
+  function flapBurst(){ flapE=1; flapPhase=1; }
+
+  $('#flapBtn').onclick=()=>{ flapBurst(); say('扇起來！'); };
+  $('#hornBtn').onclick=()=>{ honk(); say('嗶嗶！！📣',1400); };
+  $('#nightBtn').onclick=e=>{ document.body.classList.toggle('night');
+    e.currentTarget.textContent=document.body.classList.contains('night')?'☀️ 白天':'🌙 夜騎'; };
+  rider.onclick=()=>{ flapBurst(); say(phrases[Math.floor(Math.random()*phrases.length)]); };
+
+  // 主迴圈
+  let wheelAng=0, crankAng=0, distPx=0, distM=0, last=performance.now();
+  function legPath(hip,foot){
+    const mx=(hip.x+foot.x)/2, my=(hip.y+foot.y)/2;
+    const dx=foot.x-hip.x, dy=foot.y-hip.y, L=Math.hypot(dx,dy)||1;
+    let kx=mx-dy/L*14, ky=my+dx/L*14; if(ky>my){kx=mx+dy/L*14;ky=my-dx/L*14;}
+    return `M${hip.x},${hip.y} Q${kx.toFixed(1)},${ky.toFixed(1)} ${foot.x.toFixed(1)},${foot.y.toFixed(1)}`;
+  }
+
+  function loop(t){
+    const dt=Math.min((t-last)/1000,.05); last=t;
+    const kmh=+speedEl.value, px=kmh*22;
+    distPx+=px*dt; distM+=kmh/3.6*dt;
+    wheelAng+=px/50*dt; crankAng+=px/50*1.6*dt;
+
+    const wDeg=(wheelAng*180/Math.PI).toFixed(2), cDeg=(crankAng*180/Math.PI).toFixed(2);
+    spokesR.setAttribute('transform',`rotate(${wDeg} 300 420)`);
+    spokesF.setAttribute('transform',`rotate(${wDeg} 580 420)`);
+    crankG.setAttribute('transform',`rotate(${cDeg} ${BB.x} ${BB.y})`);
+    pedal1.setAttribute('transform',`rotate(${-cDeg} 415 402)`);
+    pedal2.setAttribute('transform',`rotate(${-cDeg} 415 454)`);
+
+    // 腳踩踏板 + 腿
+    const bobY=Math.sin(crankAng*2)*2.6*Math.min(1,px/60);
+    const hip={x:HIP.x,y:HIP.y+bobY};
+    const p1={x:BB.x+R*Math.sin(crankAng),          y:BB.y-R*Math.cos(crankAng)};
+    const p2={x:BB.x+R*Math.sin(crankAng+Math.PI),  y:BB.y-R*Math.cos(crankAng+Math.PI)};
+    let far=p1, near=p2; if(p2.y<p1.y){far=p2;near=p1;}
+    legFar.setAttribute('d',legPath(hip,{x:far.x,y:far.y-4}));
+    legNear.setAttribute('d',legPath(hip,{x:near.x,y:near.y-4}));
+    footFar.setAttribute('cx',far.x);  footFar.setAttribute('cy',far.y-6);
+    footNear.setAttribute('cx',near.x);footNear.setAttribute('cy',near.y-6);
+
+    // 上下顛簸 + 點頭
+    rider.setAttribute('transform',`translate(0 ${bobY.toFixed(2)})`);
+    headG.setAttribute('transform',`rotate(${(Math.sin(crankAng*2+.5)*3).toFixed(2)} 470 214)`);
+
+    // 翅膀
+    const idle=Math.sin(t/380)*4;
+    if(flapE>0){ flapPhase+=dt*24; flapE=Math.max(0,flapE-dt/1.5); }
+    wingG.setAttribute('transform',`rotate(${(idle+Math.sin(flapPhase)*58*flapE).toFixed(2)} 432 266)`);
+
+    // 風景捲動
+    dash.setAttribute('stroke-dashoffset',(distPx%80).toFixed(1));
+    for(const m of movers){ m.x-=px*m.f*dt; if(m.x<-160)m.x+=1120;
+      m.el.setAttribute('transform',`translate(${m.x.toFixed(1)} ${m.y}) scale(${m.s})`); }
+    gull.x-=px*0.32*dt; if(gull.x<-40)gull.x+=1040;
+    seagull.setAttribute('transform',`translate(${gull.x.toFixed(1)} ${(gull.y+Math.sin(t/650)*7).toFixed(1)})`);
+
+    chip.textContent=`${kmh%1? kmh.toFixed(1):kmh} km/h · ${Math.floor(distM)} m`;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
