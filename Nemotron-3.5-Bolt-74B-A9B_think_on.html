@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鵜鶘騎自行車</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Microsoft JhengHei', sans-serif;
+        }
+
+        /* 地面 */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #4CAF50;
+            border-top: 10px solid #2E7D32;
+            z-index: 1;
+        }
+
+        /* 自行車 */
+        .bicycle {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+        }
+
+        /* 輪子 */
+        .wheel {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 8px solid #333;
+            border-radius: 50%;
+            background: transparent;
+        }
+
+        .wheel.front {
+            left: -20px;
+            top: 0;
+            animation: rotateWheel 0.3s linear infinite;
+        }
+
+        .wheel.back {
+            right: -20px;
+            top: 0;
+            animation: rotateWheel 0.3s linear infinite;
+        }
+
+        /* 輪毂 */
+        .spoke {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 1px;
+            height: 70px;
+            background: #666;
+            transform-origin: center;
+            transform: translate(-50%, -50%) rotate(0deg);
+        }
+
+        .spoke:nth-child(2) { transform: translate(-50%, -50%) rotate(45deg); }
+        .spoke:nth-child(3) { transform: translate(-50%, -50%) rotate(90deg); }
+        .spoke:nth-child(4) { transform: translate(-50%, -50%) rotate(135deg); }
+
+        /* 車架 */
+        .frame {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            width: 100px;
+            height: 40px;
+            background: #D2A679;
+            border-radius: 20px;
+            transform: rotate(-15deg);
+        }
+
+        /* 踏板 */
+        .pedal {
+            position: absolute;
+            width: 30px;
+            height: 15px;
+            background: #8B4513;
+            border-radius: 5px;
+            top: 90px;
+            left: 60px;
+            transform-origin: center;
+        }
+
+        .pedal.left {
+            animation: pedalMove 0.3s ease-in-out infinite alternate;
+        }
+
+        /* 把手 */
+        .handlebar {
+            position: absolute;
+            width: 80px;
+            height: 15px;
+            background: #555;
+            border-radius: 7px;
+            top: 20px;
+            left: -30px;
+            transform: rotate(-10deg);
+        }
+
+        /* 鵜鶘 */
+        .cormorant {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            animation: bodyBob 0.4s ease-in-out infinite alternate;
+        }
+
+        /* 鳥身 */
+        .body {
+            width: 120px;
+            height: 70px;
+            background: #2C3E50;
+            border-radius: 60% 40% 50% 60% / 40% 50% 50% 60%;
+            position: relative;
+        }
+
+        /* 頭 */
+        .head {
+            width: 60px;
+            height: 50px;
+            background: #2C3E50;
+            border-radius: 50% 70% 40% 60% / 50% 40% 60% 50%;
+            position: absolute;
+            top: -10px;
+            right: 30px;
+        }
+
+        /* 鼻子 */
+        .beak {
+            width: 25px;
+            height: 15px;
+            background: #F4A261;
+            border-radius: 0 50% 50% 0;
+            position: absolute;
+            top: 20px;
+            right: -10px;
+        }
+
+        /* 眼睛 */
+        .eye {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 15px;
+            left: 20px;
+        }
+
+        .eye::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: black;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+        }
+
+        /* 翅膀 */
+        .wing {
+            width: 50px;
+            height: 30px;
+            background: #34495E;
+            border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
+            position: absolute;
+            top: 25px;
+            left: -10px;
+            transform-origin: left center;
+            animation: wingFlap 0.3s ease-in-out infinite alternate;
+        }
+
+        /* 腳 */
+        .leg {
+            width: 8px;
+            height: 40px;
+            background: #F4A261;
+            position: absolute;
+            bottom: -25px;
+            border-radius: 4px;
+        }
+
+        .leg.left { left: 30px; }
+        .leg.right {
+            right: 30px;
+            animation: legMove 0.3s ease-in-out infinite alternate;
+        }
+
+        /* 腳掌 */
+        .foot {
+            width: 20px;
+            height: 10px;
+            background: #8B4513;
+            position: absolute;
+            bottom: -8px;
+            left: -6px;
+            border-radius: 2px;
+        }
+
+        /* 動畫定義 */
+        @keyframes rotateWheel {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pedalMove {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(180deg); }
+        }
+
+        @keyframes bodyBob {
+            from { transform: translate(-50%, 0) scale(1); }
+            to { transform: translate(-50%, -3px) scale(1.02); }
+        }
+
+        @keyframes wingFlap {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-20deg); }
+        }
+
+        @keyframes legMove {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(15deg); }
+        }
+
+        /* 雲朵 */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: floatCloud 20s linear infinite;
+        }
+
+        .cloud:nth-child(1) {
+            width: 80px; height: 40px;
+            top: 50px; left: -100px;
+            animation-delay: 0s;
+        }
+        .cloud:nth-child(2) {
+            width: 120px; height: 60px;
+            top: 80px; right: -100px;
+            animation-delay: -5s;
+        }
+
+        @keyframes floatCloud {
+            from { transform: translateX(-200px); }
+            to { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        /* 標題 */
+        h1 {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2C3E50;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* 提示 */
+        .hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2C3E50;
+            font-size: 1rem;
+            opacity: 0.8;
+            z-index: 10;
+        }
+
+        /* 腳踩動畫 */
+        .pedal.right {
+            animation: pedalMove 0.3s ease-in-out infinite alternate;
+            animation-delay: -0.15s;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🦆 鵜鶘騎自行車 🚲</h1>
+
+<div class="cloud"></div>
+<div class="cloud"></div>
+
+<div class="ground"></div>
+
+<div class="bicycle">
+    <div class="wheel back">
+        <div class="spoke"></div><div class="spoke"></div><div class="spoke"></div><div class="spoke"></div>
+    </div>
+    <div class="frame"></div>
+    <div class="handlebar"></div>
+    <div class="wheel front">
+        <div class="spoke"></div><div class="spoke"></div><div class="spoke"></div><div class="spoke"></div>
+    </div>
+    <div class="pedal left"></div>
+    <div class="pedal right"></div>
+</div>
+
+<div class="cormorant">
+    <div class="body">
+        <div class="head">
+            <div class="beak"></div>
+            <div class="eye"></div>
+        </div>
+        <div class="wing"></div>
+    </div>
+    <div class="leg left"><div class="foot"></div></div>
+    <div class="leg right"><div class="foot"></div></div>
+</div>
+
+<div class="hint">👆 刷新頁面重新開始動畫</div>
+
+<script>
+    // 可選：點擊讓鵜鶘鳴叫效果
+    const body = document.querySelector('.body');
+    let clickCount = 0;
+    
+    body.addEventListener('click', () => {
+        clickCount++;
+        if (clickCount % 5 === 0) {
+            // 創建一個臨時的「鳴叫」效果
+            const soundText = document.createElement('div');
+            soundText.textContent = '嘎～';
+            soundText.style.position = 'absolute';
+            soundText.style.top = '100px';
+            soundText.style.left = '50%';
+            soundText.style.transform = 'translateX(-50%)';
+            soundText.style.fontSize = '2rem';
+            soundText.style.color = '#E74C3C';
+            soundText.style.zIndex = '100';
+            soundText.style.transition = 'all 0.5s';
+            document.body.appendChild(soundText);
+            
+            setTimeout(() => {
+                soundText.style.opacity = '0';
+                soundText.style.transform = 'translateX(-50%) translateY(-30px)';
+            }, 100);
+            
+            setTimeout(() => {
+                document.body.removeChild(soundText);
+            }, 600);
+        }
+    });
+</script>
+
+</body>
+</html>
