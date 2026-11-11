@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="一隻鵜鶘在土星環上騎自行車的互動 SVG 動畫：可調整速度、傾角、光暈、星塵，並匯出圖片。">
+<meta name="theme-color" content="#0b1030">
+<title>土星環單車手｜鵜鶘的宇宙兜風</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+<style>
+/* ---------- 色彩系統：土星琥珀 × 深空靛 × 電光藍 × 熱粉 ---------- */
+:root{
+  --bg1:#050816; --bg2:#0b1030; --bg3:#161c4a;
+  --aur1:rgba(53,199,255,.16); --aur2:rgba(255,79,163,.14);
+  --surface:rgba(13,18,44,.72); --surface2:rgba(22,28,64,.6);
+  --line:rgba(255,181,77,.18);
+  --text:#f4ead8; --muted:#9aa3c7;
+  --amber:#ffb54d; --cyan:#35c7ff; --pink:#ff4fa3;
+  --green:#7ee06b; --red:#ff5d6c;
+  --track:rgba(154,163,199,.18);
+}
+body[data-theme="nebula"]{--bg1:#0d0620;--bg2:#1c0f3c;--bg3:#31175a;--aur1:rgba(199,88,255,.2);--aur2:rgba(64,220,255,.13)}
+body[data-theme="dawn"]{--bg1:#04121d;--bg2:#0b2b34;--bg3:#3a2a1e;--aur1:rgba(255,181,77,.18);--aur2:rgba(75,227,192,.14)}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; overflow:hidden; color:var(--text);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2) 45%,var(--bg3)) fixed;
+}
+::selection{background:rgba(255,181,77,.35)}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:6px}
+
+/* 自繪捲軸 */
+*{scrollbar-width:thin;scrollbar-color:var(--amber) rgba(8,11,28,.6)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:rgba(8,11,28,.6);border-radius:99px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#ffb54d,#ff8f3d);border-radius:99px;border:2px solid #0b1030}
+::-webkit-scrollbar-thumb:hover{background:#ffd98a}
+
+/* ---------- 背景層：極光 → 星野 → 顆粒 ---------- */
+.aurora{position:fixed;width:62vmax;height:62vmax;border-radius:50%;filter:blur(64px);z-index:0;pointer-events:none}
+.a1{top:-14%;left:-12%;background:radial-gradient(circle at 32% 32%,var(--aur1),transparent 70%);animation:drift1 46s ease-in-out infinite alternate}
+.a2{bottom:-18%;right:-12%;background:radial-gradient(circle at 60% 60%,var(--aur2),transparent 70%);animation:drift2 58s ease-in-out infinite alternate}
+@keyframes drift1{to{transform:translate(9vmax,7vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-8vmax,-6vmax) scale(1.1)}}
+#stars{position:fixed;inset:0;z-index:1;pointer-events:none}
+.grain{position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.055;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  background-size:160px}
+
+/* ---------- 固定頂欄 ---------- */
+header{
+  position:fixed;inset:0 0 auto 0;height:62px;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  background:rgba(8,11,28,.66);backdrop-filter:blur(14px) saturate(1.3);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none}
+.brand h1{margin:0;font-size:19px;letter-spacing:.06em;white-space:nowrap;
+  background:linear-gradient(90deg,#ffd98a,#ffb54d 45%,#ff4fa3);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.brand p{margin:1px 0 0;font-size:10.5px;letter-spacing:.2em;color:var(--muted);white-space:nowrap}
+#btnSound{
+  display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600;
+  transition:border-color .15s, transform .15s;font-family:inherit;
+}
+#btnSound:hover{border-color:var(--amber);transform:translateY(-1px)}
+#btnSound[aria-pressed="false"]{color:var(--muted)}
+
+/* ---------- 主版面 ---------- */
+main{
+  position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) 332px;
+  gap:14px;height:100vh;padding:76px 14px 14px;
+}
+.stage{
+  position:relative;min-height:0;min-width:0;border-radius:20px;overflow:hidden;user-select:none;
+  border:1px solid var(--line);
+  background:radial-gradient(120% 100% at 50% 0%,rgba(22,30,76,.35),rgba(6,9,24,.55));
+  box-shadow:0 30px 80px rgba(0,0,0,.45), inset 0 0 130px rgba(8,12,38,.55);
+}
+#scene{width:100%;height:100%;display:block}
+#rider{cursor:pointer}
+#bellHit{cursor:pointer}
+.hint{
+  position:absolute;top:12px;left:14px;max-width:78%;pointer-events:none;
+  font-size:11px;color:var(--muted);padding:6px 11px;border-radius:999px;
+  background:rgba(8,11,28,.55);border:1px solid var(--line);backdrop-filter:blur(8px);
+}
+.stats{position:absolute;left:14px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:12px;padding:6px 11px;border-radius:10px;background:rgba(8,11,28,.62);
+  border:1px solid var(--line);backdrop-filter:blur(8px)}
+.chip b{color:var(--amber);font-variant-numeric:tabular-nums}
+#toast{
+  position:absolute;bottom:16px;left:50%;transform:translate(-50%,16px);opacity:0;
+  padding:10px 17px;border-radius:12px;font-size:13px;pointer-events:none;white-space:nowrap;
+  background:rgba(12,16,40,.94);border:1px solid var(--amber);transition:.3s;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.ok{border-color:var(--green)} #toast.err{border-color:var(--red)}
+
+/* ---------- 控制台 ---------- */
+.panel{min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:14px 14px 12px;backdrop-filter:blur(12px)}
+.card h2{margin:0 0 12px;font-size:11.5px;letter-spacing:.24em;color:var(--amber);
+  display:flex;align-items:center;gap:8px;font-weight:700}
+.card h2::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber),var(--pink));box-shadow:0 0 8px rgba(255,181,77,.7)}
+.ctl{display:grid;grid-template-columns:1fr auto;gap:6px 10px;margin-bottom:13px;align-items:center}
+.ctl-name{font-size:13px}
+.ctl-val{font-size:11.5px;color:var(--cyan);background:rgba(53,199,255,.08);
+  border:1px solid rgba(53,199,255,.16);padding:2px 8px;border-radius:6px;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl input[type=range]{grid-column:1/-1}
+
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;margin:6px 0 2px;
+  background:linear-gradient(90deg,var(--amber) var(--fill,50%),var(--track) var(--fill,50%));cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:#ffd98a;border:2px solid #0b1030;
+  box-shadow:0 0 0 3px rgba(255,181,77,.25),0 2px 8px rgba(0,0,0,.5);transition:box-shadow .15s}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 5px rgba(255,181,77,.35),0 2px 10px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#ffd98a;border:2px solid #0b1030;
+  box-shadow:0 0 0 3px rgba(255,181,77,.25)}
+input[type=range]::-moz-range-track{height:6px;border-radius:99px;background:var(--track)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:99px;background:var(--amber)}
+
+.switch-row{display:flex;align-items:center;justify-content:space-between;margin:11px 0;font-size:13px;cursor:pointer}
+.switch{position:relative;display:inline-block}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch i{display:block;width:41px;height:23px;border-radius:99px;background:var(--track);
+  border:1px solid var(--line);transition:.2s;position:relative}
+.switch i::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+  background:#cfd6ee;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.switch input:checked+i{background:linear-gradient(90deg,var(--amber),#ff8f3d);border-color:transparent}
+.switch input:checked+i::after{transform:translateX(18px);background:#fff8ec}
+.switch input:focus-visible+i{outline:2px solid var(--cyan);outline-offset:2px}
+
+select{width:100%;padding:9px 34px 9px 11px;border-radius:10px;font-size:13px;color:var(--text);
+  background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffb54d' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;
+  border:1px solid var(--line);-webkit-appearance:none;appearance:none;cursor:pointer;font-family:inherit}
+select option{background:#0b1030;color:var(--text)}
+
+.color-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+input[type=color]{width:44px;height:31px;padding:2px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface2);cursor:pointer}
+.swatches{display:flex;gap:7px;flex-wrap:wrap}
+.swatch{width:19px;height:19px;border-radius:50%;border:2px solid rgba(255,255,255,.25);cursor:pointer;
+  padding:0;transition:transform .15s,border-color .15s}
+.swatch:hover{transform:scale(1.2)}
+.swatch.active{border-color:#fff8ec;box-shadow:0 0 8px rgba(255,255,255,.4)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);
+  color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+.btn:hover{border-color:var(--amber);transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(135deg,#ffcf7d,#ff9a3d);color:#2a1602;border:none;
+  box-shadow:0 6px 20px rgba(255,154,61,.35)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.pink{background:linear-gradient(135deg,#ff6fb1,#ff2f8f);color:#fff;border:none;
+  box-shadow:0 6px 20px rgba(255,47,143,.3)}
+.btn.small{padding:8px;font-size:12px;margin-top:8px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kbd-hint{margin:10px 0 0;font-size:10.5px;color:var(--muted);letter-spacing:.05em;text-align:center}
+.note{margin:10px 0 0;font-size:11px;color:var(--muted);line-height:1.7}
+.rolling{animation:roll .5s ease}
+@keyframes roll{to{transform:rotate(360deg)}}
+
+/* SVG 內的以太陽動畫 */
+.rays{animation:spin 90s linear infinite;transform-box:fill-box;transform-origin:center}
+.sunCore{animation:pulse 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.07)}}
+
+/* 進場 */
+.reveal{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+header.reveal{animation-delay:.02s}.stage.reveal{animation-delay:.12s}
+.panel .card:nth-child(1){animation-delay:.2s}.panel .card:nth-child(2){animation-delay:.28s}
+.panel .card:nth-child(3){animation-delay:.36s}.panel .card:nth-child(4){animation-delay:.44s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}}
+
+@media (max-width:920px){
+  body{overflow:auto;height:auto}
+  main{display:flex;flex-direction:column;height:auto;padding-top:70px}
+  .stage{height:56vh;min-height:360px;flex:none}
+  .panel{overflow:visible;display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:12px;padding-right:0}
+  .brand p{display:none}
+  .brand h1{font-size:16px}
+  .hint{font-size:10px;max-width:64%}
+  #toast{bottom:64px}
+}
+@media (prefers-reduced-motion:reduce){
+  .aurora,.rays,.sunCore,.reveal,.rolling{animation:none!important}
+}
+</style>
+</head>
+<body data-theme="deep">
+
+<div class="aurora a1"></div><div class="aurora a2"></div>
+<canvas id="stars"></canvas>
+<div class="grain"></div>
+
+<header class="reveal">
+  <div class="brand">
+    <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="8.5" fill="#ffb54d"/>
+      <circle cx="13" cy="13" r="4" fill="#ffd98a" opacity=".7"/>
+      <ellipse cx="16" cy="16" rx="14" ry="4.6" fill="none" stroke="#ff4fa3" stroke-width="2" transform="rotate(-18 16 16)"/>
+    </svg>
+    <div>
+      <h1>土星環單車手</h1>
+      <p>PELICAN · SATURN RIDE · 鵜鶘的宇宙兜風</p>
+    </div>
+  </div>
+  <button id="btnSound" aria-pressed="true" title="切換所有音效（M）">
+    <span id="soundIcon">🔊</span><span id="soundLabel">音效 開</span>
+  </button>
+</header>
+
+<main>
+  <!-- ================= 場景 ================= -->
+  <section class="stage reveal" id="stage" aria-label="互動場景">
+    <svg id="scene" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img"
+         aria-label="鵜鶘戴著安全帽，在土星環上騎自行車的互動動畫">
+      <defs>
+        <radialGradient id="gradPlanet" cx=".35" cy=".3" r=".85">
+          <stop offset="0" stop-color="#ffe9bd"/><stop offset=".35" stop-color="#f6bd72"/>
+          <stop offset=".68" stop-color="#d98a4a"/><stop offset="1" stop-color="#8a4b26"/>
+        </radialGradient>
+        <radialGradient id="gradShade" cx=".33" cy=".28" r=".92">
+          <stop offset=".55" stop-color="#0a0820" stop-opacity="0"/>
+          <stop offset="1" stop-color="#0a0820" stop-opacity=".58"/>
+        </radialGradient>
+        <radialGradient id="gradGlow">
+          <stop offset="0" stop-color="#ffd9a0" stop-opacity=".85"/>
+          <stop offset=".55" stop-color="#ff9a4d" stop-opacity=".3"/>
+          <stop offset="1" stop-color="#ff9a4d" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gradRing" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff3d4"/><stop offset=".5" stop-color="#f0c489"/>
+          <stop offset="1" stop-color="#a97e50"/>
+        </linearGradient>
+        <linearGradient id="gradRingSoft" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e6c79c"/><stop offset="1" stop-color="#8f6a44"/>
+        </linearGradient>
+        <radialGradient id="gradSun">
+          <stop offset="0" stop-color="#fff8e0"/><stop offset=".45" stop-color="#ffd98a" stop-opacity=".5"/>
+          <stop offset="1" stop-color="#ffd98a" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="gradBeam" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#bfefff" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#bfefff" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="fGlow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur id="blurGlow" stdDeviation="20"/>
+        </filter>
+        <clipPath id="clipPlanet"><circle r="150"/></clipPath>
+      </defs>
+
+      <!-- 天空：太陽與衛星 -->
+      <g id="sky">
+        <g transform="translate(112 112)">
+          <circle r="74" fill="url(#gradSun)" opacity=".85"/>
+          <g class="rays" stroke="#ffd98a" stroke-width="2" stroke-linecap="round" opacity=".32">
+            <line x1="-58" y1="0" x2="58" y2="0"/><line x1="0" y1="-58" x2="0" y2="58"/>
+            <line x1="-41" y1="-41" x2="41" y2="41"/><line x1="-41" y1="41" x2="41" y2="-41"/>
+          </g>
+          <circle class="sunCore" r="20" fill="#fff6da"/>
+        </g>
+        <g id="moonA">
+          <circle r="10" fill="#d9c9ff"/><circle cx="3" cy="3" r="9" fill="#0a0820" opacity=".22"/>
+          <circle cx="-3" cy="-2" r="1.8" fill="#b9a8e6"/><circle cx="2" cy="-5" r="1.2" fill="#b9a8e6"/>
+        </g>
+        <g id="moonB"><circle r="5" fill="#cfd8e6"/><circle cx="1.5" cy="1.5" r="4" fill="#0a0820" opacity=".2"/></g>
+      </g>
+
+      <!-- 土星系統（整體傾斜 −10°，可縮放） -->
+      <g id="sysG">
+        <g id="backG">
+          <g id="gRingsBack"></g><g id="gShadowBack"></g>
+          <g id="particlesBack"></g><g id="slotBack"></g>
+        </g>
+        <g id="planetG">
+          <circle id="glowCircle" r="168" fill="url(#gradGlow)" filter="url(#fGlow)" opacity=".6"/>
+          <circle r="150" fill="url(#gradPlanet)"/>
+          <g clip-path="url(#clipPlanet)">
+            <ellipse cx="0" cy="-70" rx="165" ry="14" fill="#ffedc9" opacity=".25"/>
+            <ellipse cx="0" cy="-40" rx="165" ry="12" fill="#c97b3f" opacity=".22"/>
+            <ellipse cx="0" cy="-12" rx="165" ry="16" fill="#ffe2ae" opacity=".3"/>
+            <ellipse cx="0" cy="18"  rx="165" ry="12" fill="#b96a35" opacity=".25"/>
+            <ellipse cx="0" cy="52"  rx="165" ry="14" fill="#f2b877" opacity=".28"/>
+            <ellipse cx="0" cy="88"  rx="165" ry="12" fill="#a05a2e" opacity=".22"/>
+            <ellipse cx="0" cy="120" rx="165" ry="14" fill="#8a4b26" opacity=".25"/>
+            <ellipse cx="55" cy="-30" rx="14" ry="7" fill="#ffe9c4" opacity=".5" transform="rotate(-8 55 -30)"/>
+            <ellipse cx="55" cy="-30" rx="7" ry="3.5" fill="#fff6e0" opacity=".6" transform="rotate(-8 55 -30)"/>
+            <circle r="150" fill="url(#gradShade)"/>
+          </g>
+          <circle r="150" fill="none" stroke="#ffd9a0" stroke-opacity=".3" stroke-width="2"/>
+        </g>
+        <g id="frontG">
+          <g id="gRingsFront"></g><g id="gShadowFront"></g>
+          <g id="particlesFront"></g>
+          <g id="slotFront">
+
+            <!-- ====== 鵜鶘 + 單車（本地座標：面向右、輪地線 y=30） ====== -->
+            <g id="rider" transform="translate(0 64) scale(-1.12 1.12)">
+              <ellipse cx="0" cy="31" rx="62" ry="6" fill="#000" opacity=".18"/>
+              <g id="beamG"><path d="M 46 -52 L 152 -27 L 152 -77 Z" fill="url(#gradBeam)" opacity=".5"/></g>
+
+              <!-- 遠側曲柄 / 踏板 / 腿 / 蹼 -->
+              <line id="crankF" x1="-4" y1="6" x2="-18" y2="6" stroke="#8f97b8" stroke-width="5" stroke-linecap="round"/>
+              <g id="pedalF"><rect x="-9" y="-2" width="18" height="4" rx="2" fill="#232842" stroke="#8f97b8" stroke-width="1"/></g>
+              <path id="legF" d="" fill="none" stroke="#cf7a2e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+              <g id="footF"><path d="M -6 -2 L 14 -2 L 11 2 L 8 0 L 5 3 L 2 1 L -2 4 Q -7 2 -6 -2 Z" fill="#cf7a2e"/></g>
+
+              <!-- 輪組 -->
+              <g transform="translate(-52 0)">
+                <circle r="30" fill="none" stroke="#1c2138" stroke-width="7"/>
+                <circle r="25.5" fill="none" stroke="#cdd6f4" stroke-width="3"/>
+                <g id="spokesR" stroke="#8f9ac0" stroke-width="1.6">
+                  <line x1="-24" y1="0" x2="24" y2="0"/><line x1="-12" y1="-20.8" x2="12" y2="20.8"/>
+                  <line x1="-12" y1="20.8" x2="12" y2="-20.8"/><circle cx="0" cy="-25.5" r="1.6" fill="#ffb54d" stroke="none"/>
+                </g>
+                <circle r="3.6" fill="#ffb54d" stroke="#b8791f" stroke-width="1"/>
+              </g>
+              <g transform="translate(52 0)">
+                <circle r="30" fill="none" stroke="#1c2138" stroke-width="7"/>
+                <circle r="25.5" fill="none" stroke="#cdd6f4" stroke-width="3"/>
+                <g id="spokesF" stroke="#8f9ac0" stroke-width="1.6">
+                  <line x1="-24" y1="0" x2="24" y2="0"/><line x1="-12" y1="-20.8" x2="12" y2="20.8"/>
+                  <line x1="-12" y1="20.8" x2="12" y2="-20.8"/><circle cx="0" cy="-25.5" r="1.6" fill="#ffb54d" stroke="none"/>
+                </g>
+                <circle r="3.6" fill="#ffb54d" stroke="#b8791f" stroke-width="1"/>
+              </g>
+
+              <!-- 貨架 + 晚餐魚 + 籃子 -->
+              <path d="M -52 0 L -61 -29 M -73 -29 L -50 -29" stroke="#cbd3ea" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <g id="fishG">
+                <path d="M -63 -46 L -68 -55 L -58 -55 Z" fill="#5fb9e8"/>
+                <ellipse cx="-63" cy="-43" rx="6" ry="5" fill="#7fd0ff"/>
+                <circle cx="-65" cy="-44" r="1" fill="#1b2036"/>
+              </g>
+              <path d="M -75 -44 L -51 -44 L -54 -29 L -72 -29 Z" fill="#b97b3e" stroke="#8a5a2b" stroke-width="1.5"/>
+              <path d="M -74 -39 L -52 -39 M -73 -34 L -53 -34 M -67 -44 L -66 -29 M -59 -44 L -60 -29"
+                    stroke="#8a5a2b" stroke-width="1" opacity=".7" fill="none"/>
+
+              <!-- 車架 -->
+              <path class="fp" d="M -4 6 L -52 0 M -52 0 L -26 -48 M -4 6 L -26 -48 M -26 -48 L 38 -48 M -4 6 L 42 -36 M 38 -48 L 42 -36"
+                    fill="none" stroke="#35c7ff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="fp" d="M 42 -36 Q 46 -18 52 0" fill="none" stroke="#35c7ff" stroke-width="5" stroke-linecap="round"/>
+              <path d="M -27 -53 L -26 -47" stroke="#cbd3ea" stroke-width="4" stroke-linecap="round"/>
+              <path d="M -39 -55 Q -28 -61 -17 -55 L -19 -51 Q -28 -56 -37 -51 Z" fill="#2a3050" stroke="#1c2138" stroke-width="1"/>
+              <path d="M 38 -48 L 36 -60 C 33 -64 27 -64 20 -64" fill="none" stroke="#cbd3ea" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="20" cy="-64" r="3.2" fill="#2a3050"/>
+              <g id="bellG">
+                <path d="M 25 -61 A 5 5 0 0 1 35 -61 Z" fill="#ffd34d" stroke="#c9971f" stroke-width="1"/>
+                <circle cx="30" cy="-59" r="1.2" fill="#c9971f"/>
+              </g>
+              <g id="lampG">
+                <path d="M 42 -44 L 46 -52" stroke="#cbd3ea" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="46" cy="-52" r="4.5" fill="#e8fbff" stroke="#9adfff" stroke-width="1.5"/>
+                <circle cx="46" cy="-52" r="1.8" fill="#fff"/>
+              </g>
+
+              <!-- 鏈條與大盤 -->
+              <path id="chainEl" d="M -52 -5 L -4 -4 A 10 10 0 0 1 -4 16 L -52 5 A 5 5 0 0 1 -52 -5 Z"
+                    fill="none" stroke="#262c4a" stroke-width="3" stroke-dasharray="5 4"/>
+              <circle cx="-4" cy="6" r="10" fill="none" stroke="#cbd3ea" stroke-width="3"/>
+              <circle cx="-52" cy="0" r="5" fill="none" stroke="#cbd3ea" stroke-width="2.5"/>
+
+              <!-- 鵜鶘本體（隨踏板微幅起伏） -->
+              <g id="bobG">
+                <path d="M -36 -84 L -52 -92 L -44 -82 L -56 -80 L -44 -76 L -52 -68 L -36 -74 Z"
+                      fill="#f7f3e8" stroke="#e2d8c2" stroke-width="1"/>
+                <ellipse cx="-14" cy="-82" rx="27" ry="20" fill="#f7f3e8" stroke="#e2d8c2" stroke-width="1"
+                         transform="rotate(-14 -14 -82)"/>
+                <ellipse cx="-16" cy="-74" rx="20" ry="12" fill="#e9e1cd" opacity=".8" transform="rotate(-14 -16 -74)"/>
+                <path d="M 0 -92 C -4 -108 2 -118 12 -124" fill="none" stroke="#f7f3e8" stroke-width="13" stroke-linecap="round"/>
+                <circle cx="18" cy="-128" r="9.5" fill="#f7f3e8" stroke="#e2d8c2" stroke-width="1"/>
+                <path d="M 26 -125 C 34 -104 58 -103 72 -121 L 26 -125 Z" fill="#ff9840"/>
+                <path d="M 30 -122 C 38 -108 56 -107 68 -120" fill="none" stroke="#e07f28" stroke-width="1.5"/>
+                <path d="M 25 -132 L 74 -125 L 73 -121 L 25 -125 Z" fill="#ffb54d"/>
+                <path d="M 26 -130 L 72 -124" stroke="#e08f2f" stroke-width="1"/>
+                <circle cx="21" cy="-133" r="2.7" fill="#1b2036"/>
+                <circle cx="22" cy="-134" r=".9" fill="#fff"/>
+                <g id="helmetG">
+                  <path d="M 7 -131 A 11.5 11.5 0 0 1 30 -131 L 30 -128 L 7 -128 Z"
+                        fill="#35c7ff" stroke="#1f8fbf" stroke-width="1.5"/>
+                  <path d="M 12 -138 L 14 -131 M 19 -140 L 20 -131" stroke="#1f8fbf" stroke-width="2"/>
+                  <path d="M 10 -128 L 16 -120" stroke="#1f8fbf" stroke-width="1.5"/>
+                </g>
+                <g id="tuftG" style="display:none" fill="none" stroke="#f7f3e8" stroke-width="2" stroke-linecap="round">
+                  <path d="M 15 -137 Q 13 -144 10 -146"/><path d="M 18 -138 Q 18 -146 16 -149"/>
+                  <path d="M 21 -137 Q 23 -144 26 -146"/>
+                </g>
+              </g>
+
+              <!-- 圍巾（飄揚） -->
+              <g id="scarfG">
+                <path id="scarfA" d="" fill="none" stroke="#ff4fa3" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path id="scarfB" d="" fill="none" stroke="#ff8fc6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="4" cy="-106" r="4.5" fill="#ff4fa3"/>
+              </g>
+
+              <!-- 翅膀（握把手） -->
+              <path id="wingEl" d="" fill="#efe7d6" stroke="#d9cfba" stroke-width="1"/>
+              <path d="M 14 -72 C 17 -69 19 -66 20 -64 L 16 -63 C 13 -66 12 -69 11 -72 Z" fill="#2a3050"/>
+
+              <!-- 近側曲柄 / 踏板 / 腿 / 蹼 -->
+              <line id="crankN" x1="-4" y1="6" x2="10" y2="6" stroke="#cbd3ea" stroke-width="5" stroke-linecap="round"/>
+              <g id="pedalN"><rect x="-9" y="-2" width="18" height="4" rx="2" fill="#2a3050" stroke="#cbd3ea" stroke-width="1"/></g>
+              <path id="legN" d="" fill="none" stroke="#ff9f3d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+              <g id="footN"><path d="M -6 -2 L 14 -2 L 11 2 L 8 0 L 5 3 L 2 1 L -2 4 Q -7 2 -6 -2 Z"
+                    fill="#ff9f3d" stroke="#d97b29" stroke-width="1"/></g>
+
+              <circle id="bellHit" cx="30" cy="-61" r="10" fill="#fff" fill-opacity="0" pointer-events="all"/>
+
+              <!-- 對話泡泡（反向翻轉保持文字正常） -->
+              <g id="bubbleG" display="none">
+                <rect id="bubRect" x="-40" y="-32" width="80" height="26" rx="9" fill="#fff8ec" stroke="#ffb54d" stroke-width="1.5"/>
+                <path d="M -5 -7 L 5 -7 L 0 2 Z" fill="#fff8ec"/>
+                <text id="bubText" x="0" y="-14" text-anchor="middle" font-size="14" font-weight="700" fill="#1b2036"
+                      font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif">呱！</text>
+              </g>
+            </g>
+          </g>
+        </g>
+        <ellipse id="guideEl" cx="0" cy="0" rx="290" ry="64" fill="none" stroke="#35c7ff"
+                 stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="7 9" stroke-linecap="round" style="display:none"/>
+      </g>
+    </svg>
+
+    <div class="hint">🖱️ 點鵜鶘＝呱呱 · 點鈴鐺＝叮叮 · 滾輪＝縮放 · 點背景＝流星</div>
+    <div class="stats">
+      <span class="chip">🚴 <b id="statSpeed">88</b> km/h</span>
+      <span class="chip">🪐 第 <b id="statLaps">0</b> 圈</span>
+      <span class="chip">📏 <b id="statDist">0</b> km</span>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </section>
+
+  <!-- ================= 控制台 ================= -->
+  <aside class="panel" aria-label="控制台">
+    <section class="card reveal">
+      <h2>騎乘控制 RIDE</h2>
+      <label class="ctl"><span class="ctl-name">騎乘速度</span><span class="ctl-val" id="v-speed">1.00×</span>
+        <input type="range" id="in-speed" min="0" max="3" step="0.05" value="1"></label>
+      <label class="ctl"><span class="ctl-name">踏板轉速</span><span class="ctl-val" id="v-rpm">64 rpm</span>
+        <input type="range" id="in-rpm" min="0" max="120" step="1" value="64"></label>
+      <div class="btn-row">
+        <button class="btn" id="btnPause" aria-pressed="false"><span id="pauseIcon">⏸</span><span id="pauseLabel">暫停</span></button>
+        <button class="btn" id="btnBell">🔔 按鈴</button>
+      </div>
+      <p class="kbd-hint">Space 暫停 · B 按鈴 · M 靜音 · R 隨機</p>
+    </section>
+
+    <section class="card reveal">
+      <h2>宇宙場景 SPACE</h2>
+      <label class="ctl"><span class="ctl-name">土星環傾角</span><span class="ctl-val" id="v-tilt">22%</span>
+        <input type="range" id="in-tilt" min="8" max="40" step="1" value="22"></label>
+      <label class="ctl"><span class="ctl-name">鏡頭縮放</span><span class="ctl-val" id="v-zoom">100%</span>
+        <input type="range" id="in-zoom" min="60" max="150" step="1" value="100"></label>
+      <label class="ctl"><span class="ctl-name">星星密度</span><span class="ctl-val" id="v-stars">260 顆</span>
+        <input type="range" id="in-stars" min="40" max="600" step="10" value="260"></label>
+      <label class="ctl"><span class="ctl-name">土星光暈</span><span class="ctl-val" id="v-glow">55%</span>
+        <input type="range" id="in-glow" min="0" max="100" step="1" value="55"></label>
+      <label class="ctl"><span class="ctl-name">星塵拖尾</span><span class="ctl-val" id="v-trail">45%</span>
+        <input type="range" id="in-trail" min="0" max="100" step="1" value="45"></label>
+      <label class="ctl"><span class="ctl-name">背景主題</span><span></span>
+        <select id="in-theme">
+          <option value="deep" selected>深空藍 Deep Space</option>
+          <option value="nebula">星雲紫 Nebula</option>
+          <option value="dawn">極光曙 Aurora Dawn</option>
+        </select></label>
+    </section>
+
+    <section class="card reveal">
+      <h2>鵜鶘與單車 STYLE</h2>
+      <div class="ctl"><span class="ctl-name">車架顏色</span><span></span>
+        <div class="color-row" style="grid-column:1/-1">
+          <input type="color" id="in-frame" value="#35c7ff" aria-label="車架顏色">
+          <div class="swatches" id="swatches">
+            <button class="swatch" data-c="#35c7ff" style="background:#35c7ff" aria-label="電光藍"></button>
+            <button class="swatch" data-c="#ff4f5e" style="background:#ff4f5e" aria-label="岩漿紅"></button>
+            <button class="swatch" data-c="#a8f04b" style="background:#a8f04b" aria-label="酸性綠"></button>
+            <button class="swatch" data-c="#ff4fa3" style="background:#ff4fa3" aria-label="熱粉"></button>
+            <button class="swatch" data-c="#ffb54d" style="background:#ffb54d" aria-label="琥珀"></button>
+            <button class="swatch" data-c="#4be3c0" style="background:#4be3c0" aria-label="薄荷"></button>
+          </div>
+        </div>
+      </div>
+      <label class="switch-row"><span>圍巾飄揚 🧣</span><span class="switch"><input type="checkbox" id="in-scarf" checked><i></i></span></label>
+      <label class="switch-row"><span>安全帽 ⛑️</span><span class="switch"><input type="checkbox" id="in-helmet" checked><i></i></span></label>
+      <label class="switch-row"><span>車頭燈 🔦</span><span class="switch"><input type="checkbox" id="in-lamp" checked><i></i></span></label>
+      <label class="switch-row"><span>軌道導引 🛰️</span><span class="switch"><input type="checkbox" id="in-guide"><i></i></span></label>
+    </section>
+
+    <section class="card reveal">
+      <h2>快速動作 ACTIONS</h2>
+      <div class="btn-row">
+        <button class="btn" id="btnReset">↺ 重設</button>
+        <button class="btn pink" id="btnRandom"><span id="diceIcon">🎲</span> 隨機</button>
+      </div>
+      <button class="btn primary" id="btnPng" style="margin-top:8px">⬇ 匯出 PNG</button>
+      <button class="btn small" id="btnSvg">匯出 SVG 向量檔</button>
+      <p class="note">匯出會保留目前所有參數與鵜鶘位置。純 SVG 手繪、零外部相依；每繞一圈 2,827 公里（夢想單位）。</p>
+    </section>
+  </aside>
+</main>
+
+<noscript><p style="position:fixed;inset:auto 0 0 0;padding:12px;text-align:center;background:#0b1030">此頁面需要 JavaScript 才能讓鵜鶘騎起來 🚲</p></noscript>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const TAU=Math.PI*2, RAD=180/Math.PI;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const svgNS='http://www.w3.org/2000/svg';
+
+/* ---------- 狀態 ---------- */
+const DEFAULTS={speed:RM?0.6:1,rpm:64,tilt:22,zoom:100,stars:260,glow:55,trail:45,
+  theme:'deep',frame:'#35c7ff',scarf:true,helmet:true,lamp:true,guide:false};
+const state=Object.assign({},DEFAULTS);
+let paused=false, soundOn=true;
+
+const THEMES={
+  deep:{bg:['#050816','#0b1030','#161c4a'],aur:['rgba(53,199,255,.16)','rgba(255,79,163,.14)'],tint:['#ffffff','#cfe6ff','#ffe9c4'],name:'深空藍'},
+  nebula:{bg:['#0d0620','#1c0f3c','#31175a'],aur:['rgba(199,88,255,.2)','rgba(64,220,255,.13)'],tint:['#ffffff','#e6d4ff','#ffd9f0'],name:'星雲紫'},
+  dawn:{bg:['#04121d','#0b2b34','#3a2a1e'],aur:['rgba(255,181,77,.18)','rgba(75,227,192,.14)'],tint:['#ffffff','#ffe3b8','#c9fff2'],name:'極光曙'}
+};
+const PRESETS=['#35c7ff','#ff4f5e','#a8f04b','#ff4fa3','#ffb54d','#4be3c0'];
+const CONFETTI=['#ffb54d','#35c7ff','#ff4fa3','#a8f04b','#fff2d9'];
+const THOUGHTS=['呱～今天路況極佳','環景第一排搖滾區！','宇宙沒有紅燈 🚦','這不是坡，是環','魚在籃子裡，安心','順風！土星風速 1800 km/h','我的安全帽很時尚吧','踏板就是我的心跳'];
+
+/* ---------- 元素 ---------- */
+const scene=$('scene'), stage=$('stage'), sysG=$('sysG'), rider=$('rider');
+const slotBack=$('slotBack'), slotFront=$('slotFront'), guideEl=$('guideEl');
+const spokesR=$('spokesR'), spokesF=$('spokesF');
+const crankN=$('crankN'), crankF=$('crankF'), pedalN=$('pedalN'), pedalF=$('pedalF');
+const legN=$('legN'), legF=$('legF'), footN=$('footN'), footF=$('footF');
+const chainEl=$('chainEl'), bobG=$('bobG'), wingEl=$('wingEl');
+const scarfG=$('scarfG'), scarfA=$('scarfA'), scarfB=$('scarfB');
+const helmetG=$('helmetG'), tuftG=$('tuftG'), beamG=$('beamG'), fishG=$('fishG'), bellG=$('bellG');
+const bubbleG=$('bubbleG'), bubRect=$('bubRect'), bubText=$('bubText');
+const glowCircle=$('glowCircle'), blurGlow=$('blurGlow');
+const moonA=$('moonA'), moonB=$('moonB');
+const statSpeed=$('statSpeed'), statLaps=$('statLaps'), statDist=$('statDist'), toastEl=$('toast');
+
+/* ---------- 土星環 ---------- */
+const R_RIDE=290, WHEEL_R=30, BASE_W=0.35;
+const BANDS=[{r:225,w:9,main:false,op:.5},{r:258,w:15,main:false,op:.75},{r:290,w:30,main:true,op:1},
+             {r:318,w:11,main:false,op:.7},{r:336,w:4,main:false,op:.45}];
+function mkPath(parent,stroke,w,op){
+  const p=document.createElementNS(svgNS,'path');
+  p.setAttribute('fill','none');p.setAttribute('stroke',stroke);
+  p.setAttribute('stroke-width',w);p.setAttribute('opacity',op);
+  parent.appendChild(p);return p;
+}
+BANDS.forEach(b=>{
+  const g=b.main?'url(#gradRing)':'url(#gradRingSoft)';
+  b.back=mkPath($('gRingsBack'),g,b.w,b.op);
+  b.front=mkPath($('gRingsFront'),g,b.w,b.op);
+});
+const shadows=[];
+[[290,30],[318,11]].forEach(([r,w])=>{
+  shadows.push({r,w,back:mkPath($('gShadowBack'),'#060a20',w,.45),front:mkPath($('gShadowFront'),'#060a20',w,.45)});
+});
+function arcSeg(r,ry,a0,a1,sweep){
+  const x0=r*Math.cos(a0),y0=ry*Math.sin(a0),x1=r*Math.cos(a1),y1=ry*Math.sin(a1);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${ry.toFixed(2)} 0 0 ${sweep} ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+let ryRide=R_RIDE*state.tilt/100;
+function rebuildRings(){
+  const t=state.tilt/100; ryRide=R_RIDE*t;
+  BANDS.forEach(b=>{
+    const ry=(b.r*t).toFixed(2);
+    b.back.setAttribute('d',`M ${-b.r} 0 A ${b.r} ${ry} 0 0 1 ${b.r} 0`);
+    b.front.setAttribute('d',`M ${-b.r} 0 A ${b.r} ${ry} 0 0 0 ${b.r} 0`);
+  });
+  shadows.forEach(s=>{
+    const ry=s.r*t;
+    s.back.setAttribute('d',arcSeg(s.r,ry,-0.55,0,1));
+    s.front.setAttribute('d',arcSeg(s.r,ry,0,0.14,1));
+  });
+  guideEl.setAttribute('ry',ryRide.toFixed(2));
+}
+
+/* ---------- 星野 Canvas ---------- */
+const cv=$('stars'), ctx=cv.getContext('2d');
+let starArr=[], shooters=[], starTints=THEMES.deep.tint, nextShoot=4;
+function sizeCanvas(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.floor(innerWidth*dpr); cv.height=Math.floor(innerHeight*dpr);
+  cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  starArr=[]; syncStars();
+}
+function newStar(){
+  return {x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+    r:.4+Math.pow(Math.random(),2)*1.7,ph:Math.random()*TAU,sp:.5+Math.random()*2,tint:pick(starTints)};
+}
+function syncStars(){const n=state.stars|0;while(starArr.length<n)starArr.push(newStar());starArr.length=n;}
+function spawnShoot(x,y){
+  const a=Math.PI*(0.14+Math.random()*0.22)*(Math.random()<.5?1:-1)+(Math.random()<.5?0:Math.PI/2.2);
+  const sp=rand(560,900);
+  shooters.push({x,y,vx:Math.cos(a)*sp,vy:Math.abs(Math.sin(a))*sp,t:0,life:rand(.7,1.1)});
+}
+function drawSky(dt,t){
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  // 銀河帶
+  ctx.save();ctx.translate(innerWidth/2,innerHeight/2);ctx.rotate(-.5);
+  const mg=ctx.createLinearGradient(0,-innerHeight*.14,0,innerHeight*.14);
+  mg.addColorStop(0,'rgba(180,200,255,0)');mg.addColorStop(.5,'rgba(180,200,255,.05)');mg.addColorStop(1,'rgba(180,200,255,0)');
+  ctx.fillStyle=mg;ctx.fillRect(-innerWidth,-innerHeight*.14,innerWidth*2,innerHeight*.28);ctx.restore();
+  for(const s of starArr){
+    const a=RM?.55:(.3+.7*(.5+.5*Math.sin(s.ph+t*s.sp)));
+    ctx.globalAlpha=a;ctx.fillStyle=s.tint;
+    if(s.r<1)ctx.fillRect(s.x,s.y,s.r*2,s.r*2);
+    else{ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,TAU);ctx.fill();
+      if(s.r>1.8){ctx.globalAlpha=a*.4;ctx.fillRect(s.x-s.r*3,s.y-.5,s.r*6,1);ctx.fillRect(s.x-.5,s.y-s.r*3,1,s.r*6);}}
+  }
+  ctx.globalAlpha=1;
+  if(!RM&&t>nextShoot){nextShoot=t+rand(6,13);spawnShoot(rand(innerWidth*.1,innerWidth*.9),rand(0,innerHeight*.35));}
+  for(let i=shooters.length-1;i>=0;i--){
+    const s=shooters[i];s.t+=dt;
+    if(s.t>s.life){shooters.splice(i,1);continue;}
+    s.x+=s.vx*dt;s.y+=s.vy*dt;
+    const p=s.t/s.life,k=.13*(1-p*.4),a=1-p;
+    const g=ctx.createLinearGradient(s.x,s.y,s.x-s.vx*k,s.y-s.vy*k);
+    g.addColorStop(0,`rgba(255,255,255,${.9*a})`);g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.strokeStyle=g;ctx.lineWidth=2;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-s.vx*k,s.y-s.vy*k);ctx.stroke();
+    ctx.fillStyle=`rgba(255,246,218,${a})`;ctx.beginPath();ctx.arc(s.x,s.y,1.6,0,TAU);ctx.fill();
+  }
+}
+
+/* ---------- 粒子（星塵 / 彩帶） ---------- */
+const pools={back:{g:$('particlesBack'),arr:[]},front:{g:$('particlesFront'),arr:[]}};
+function spawnParticle(layer,x,y,vx,vy,r,life,color,grav){
+  const pool=pools[layer];
+  let p=pool.arr.find(q=>!q.alive);
+  if(!p){if(pool.arr.length>=130)return;
+    const el=document.createElementNS(svgNS,'circle');pool.g.appendChild(el);
+    p={el};pool.arr.push(p);}
+  Object.assign(p,{alive:true,x,y,vx,vy,r,life,t:0,color,grav});
+  p.el.setAttribute('fill',color);p.el.setAttribute('display','');
+}
+function updateParticles(dt){
+  for(const key of ['back','front'])for(const p of pools[key].arr){
+    if(!p.alive)continue;
+    p.t+=dt;
+    if(p.t>=p.life){p.alive=false;p.el.setAttribute('display','none');continue;}
+    p.vy+=p.grav*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+    const k=1-p.t/p.life;
+    p.el.setAttribute('cx',p.x.toFixed(1));p.el.setAttribute('cy',p.y.toFixed(1));
+    p.el.setAttribute('r',(p.r*(0.5+0.5*k)).toFixed(2));p.el.setAttribute('opacity',(k*.9).toFixed(2));
+  }
+}
+
+/* ---------- 音效（WebAudio，全部對應可見事件） ---------- */
+let AC=null,master=null,noiseBuf=null;
+function ensureAudio(){
+  if(AC){if(AC.state==='suspended'&&soundOn)AC.resume();return;}
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    master=AC.createGain();master.gain.value=soundOn?.55:0;master.connect(AC.destination);
+    noiseBuf=AC.createBuffer(1,Math.floor(AC.sampleRate*.2),AC.sampleRate);
+    const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    // 宇宙低鳴
+    const amb=AC.createGain();amb.gain.value=.06;
+    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=240;
+    [[55,.05],[82.41,.035]].forEach(([f,v])=>{
+      const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.value=v;
+      o.connect(g);g.connect(lp);o.start();});
+    lp.connect(amb);amb.connect(master);
+    const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.value=.06;lg.gain.value=.02;
+    lfo.connect(lg);lg.connect(amb.gain);lfo.start();
+    // 太陽風
+    const ns=AC.createBufferSource();ns.buffer=noiseBuf;ns.loop=true;
+    const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=420;bp.Q.value=.6;
+    const ng=AC.createGain();ng.gain.value=.012;
+    ns.connect(bp);bp.connect(ng);ng.connect(master);ns.start();
+  }catch(e){AC=null;}
+}
+function tone(f,type,t0,dur,vol){
+  if(!AC||!soundOn)return;
+  try{
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.type=type;o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(vol,t0+.008);
+    g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    o.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+.05);
+    return o;
+  }catch(e){}
+}
+function sndBell(){if(!AC||!soundOn)return;const t=AC.currentTime;
+  [t,t+.13].forEach((t0,i)=>{const v=i?.7:1;tone(1568,'sine',t0,.5,.16*v);tone(3951,'sine',t0,.22,.06*v);});}
+function sndHonk(){if(!AC||!soundOn)return;
+  try{const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(),bp=AC.createBiquadFilter();
+    o.type='sawtooth';o.frequency.setValueAtTime(340,t);o.frequency.exponentialRampToValueAtTime(190,t+.2);
+    bp.type='bandpass';bp.frequency.value=800;bp.Q.value=1.5;
+    g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.24);
+    o.connect(bp);bp.connect(g);g.connect(master);o.start(t);o.stop(t+.3);
+    tone(170,'sine',t,.22,.07);
+  }catch(e){}}
+function sndTick(vol){if(!AC||!soundOn)return;
+  try{const t=AC.currentTime,s=AC.createBufferSource(),g=AC.createGain(),hp=AC.createBiquadFilter();
+    s.buffer=noiseBuf;hp.type='highpass';hp.frequency.value=2500;
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+.04);
+    s.connect(hp);hp.connect(g);g.connect(master);s.start(t);s.stop(t+.05);
+  }catch(e){}}
+function sndChime(){if(!AC||!soundOn)return;const t=AC.currentTime;tone(660,'triangle',t,.14,.12);tone(990,'triangle',t+.11,.2,.12);}
+function uiTick(){if(!AC||!soundOn)return;tone(1200,'sine',AC.currentTime,.035,.04);}
+function setSound(on){
+  soundOn=on;
+  const b=$('btnSound');b.setAttribute('aria-pressed',String(on));
+  $('soundIcon').textContent=on?'🔊':'🔇';$('soundLabel').textContent=on?'音效 開':'已靜音';
+  if(AC){master.gain.setTargetAtTime(on?.55:0,AC.currentTime,.04);if(on)AC.resume();}
+}
+
+/* ---------- 泡泡 / Toast ---------- */
+let bubble=null,tNow=0;
+function easeOutBack(x){const c=2.0;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2);}
+function spawnBubble(text,dur){
+  bubText.textContent=text;
+  const w=Math.max(50,bubText.getComputedTextLength()+28);
+  bubRect.setAttribute('x',(-w/2).toFixed(1));bubRect.setAttribute('width',w.toFixed(1));
+  bubble={t0:tNow,dur:dur||1.8};bubbleG.setAttribute('display','');
+}
+let toastTimer=null;
+function toast(msg,tone){
+  toastEl.textContent=msg;toastEl.className='show'+(tone?' '+tone:'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.className='',2400);
+}
+
+/* ---------- 騎乘運動學 ---------- */
+let totalAng=0,laps=0,wheelDeg=0,crankAng=0,lastStep=0,bobAmp=0;
+let facing=-1,phiDisp=0,lastLayer='front',hop=0,hopV=0,bellWig=0,trailAcc=0;
+let nextIdle=8,statTimer=0,guideOff=0;
+const HIP={x:-26,y:-62},BB={x:-4,y:6},CRANK=14,L1=44,L2=46;
+function ik(hx,hy,fx,fy){
+  let dx=fx-hx,dy=fy-hy,d=Math.hypot(dx,dy);
+  const max=L1+L2-.5;
+  if(d>max){dx*=max/d;dy*=max/d;d=max;fx=hx+dx;fy=hy+dy;}
+  const a=(L1*L1-L2*L2+d*d)/(2*d),h=Math.sqrt(Math.max(L1*L1-a*a,0));
+  const mx=hx+a*dx/d,my=hy+a*dy/d;
+  return [mx+h*dy/d,my-h*dx/d];
+}
+function smoothPath(pts){
+  let d=`M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for(let i=1;i<pts.length-1;i++){
+    const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;
+    d+=` Q ${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
+  }
+  const l=pts[pts.length-1];return d+` L ${l[0].toFixed(1)} ${l[1].toFixed(1)}`;
+}
+let riderX=0,riderY=0;
+function updateRide(dt,t){
+  const w=paused?0:state.speed*BASE_W;
+  totalAng+=w*dt;
+  const ang=totalAng%TAU+Math.PI/2;
+  const sn=Math.sin(ang),cs=Math.cos(ang);
+  const x=R_RIDE*cs,y=ryRide*sn;
+  const vx=-R_RIDE*sn,vy=ryRide*cs;
+  if(Math.abs(vx)>1e-3)facing=vx<0?-1:1;
+  const targetPhi=clamp(Math.atan2(facing*vy,Math.max(Math.abs(vx),1e-6)),-.45,.45);
+  phiDisp+=(targetPhi-phiDisp)*Math.min(1,dt*6);
+  const depth=(sn+1)/2, s=.82+.30*depth, op=.78+.22*depth;
+  const layer=sn<0?'back':'front';
+  if(layer!==lastLayer){(layer==='back'?slotBack:slotFront).appendChild(rider);lastLayer=layer;}
+  if(hop>0||hopV>0){hopV-=600*dt;hop+=hopV*dt;if(hop<0){hop=0;hopV=0;}}
+  riderX=x;riderY=y;
+  rider.setAttribute('transform',`translate(${x.toFixed(2)} ${(y-hop).toFixed(2)}) rotate(${(phiDisp*RAD).toFixed(2)}) scale(${(facing*s).toFixed(3)} ${s.toFixed(3)})`);
+  rider.setAttribute('opacity',op.toFixed(2));
+
+  const vlen=w*Math.hypot(R_RIDE*sn,ryRide*cs);
+  wheelDeg=(wheelDeg+vlen/WHEEL_R*RAD*dt)%360;
+  spokesR.setAttribute('transform',`rotate(${wheelDeg.toFixed(1)})`);
+  spokesF.setAttribute('transform',`rotate(${wheelDeg.toFixed(1)})`);
+
+  if(!paused)crankAng+=state.rpm/60*TAU*dt;
+  const step=Math.floor(crankAng/Math.PI);
+  if(step!==lastStep){lastStep=step;if(!paused&&state.rpm>0)sndTick(.01+.02*Math.min(1,state.speed/2));}
+  const px=BB.x+CRANK*Math.cos(crankAng),py=BB.y+CRANK*Math.sin(crankAng);
+  const qx=BB.x-CRANK*Math.cos(crankAng),qy=BB.y-CRANK*Math.sin(crankAng);
+  crankN.setAttribute('x2',px.toFixed(1));crankN.setAttribute('y2',py.toFixed(1));
+  crankF.setAttribute('x2',qx.toFixed(1));crankF.setAttribute('y2',qy.toFixed(1));
+  pedalN.setAttribute('transform',`translate(${px.toFixed(1)} ${py.toFixed(1)})`);
+  pedalF.setAttribute('transform',`translate(${qx.toFixed(1)} ${qy.toFixed(1)})`);
+  chainEl.setAttribute('stroke-dashoffset',(-crankAng*10).toFixed(1));
+
+  const bobTarget=(state.rpm>0&&!paused)?1.4:0;
+  bobAmp+=(bobTarget-bobAmp)*Math.min(1,dt*5);
+  const bob=Math.sin(crankAng*2)*bobAmp;
+  bobG.setAttribute('transform',`translate(0 ${bob.toFixed(2)})`);
+  scarfG.setAttribute('transform',`translate(0 ${bob.toFixed(2)})`);
+
+  const hy=HIP.y+bob;
+  const [knx,kny]=ik(HIP.x,hy,px,py-3);
+  legN.setAttribute('d',`M ${HIP.x} ${hy.toFixed(1)} L ${knx.toFixed(1)} ${kny.toFixed(1)} L ${px.toFixed(1)} ${(py-3).toFixed(1)}`);
+  footN.setAttribute('transform',`translate(${px.toFixed(1)} ${(py-2).toFixed(1)})`);
+  const [kfx,kfy]=ik(HIP.x,hy,qx,qy-3);
+  legF.setAttribute('d',`M ${HIP.x} ${hy.toFixed(1)} L ${kfx.toFixed(1)} ${kfy.toFixed(1)} L ${qx.toFixed(1)} ${(qy-3).toFixed(1)}`);
+  footF.setAttribute('transform',`translate(${qx.toFixed(1)} ${(qy-2).toFixed(1)})`);
+
+  wingEl.setAttribute('d',`M -10 ${(-96+bob).toFixed(1)} C 4 ${(-92+bob).toFixed(1)} 12 -80 20 -66 C 21 -64 20 -63 18 -63 C 10 -66 0 -76 -12 ${(-86+bob).toFixed(1)} Z`);
+
+  if(state.scarf){
+    const wind=paused?.35:.5+state.speed*.7,pts=[];
+    for(let i=0;i<9;i++){
+      pts.push([4-i*8.5-i*i*.25,
+        -106+Math.sin(t*7+i*.85)*(1.5+i*1.5)*wind*.5+i*1.4]);
+    }
+    const d=smoothPath(pts);scarfA.setAttribute('d',d);scarfB.setAttribute('d',d);
+  }
+  fishG.setAttribute('transform',`rotate(${(Math.sin(t*2.2)*8).toFixed(1)} -63 -44)`);
+  bellWig*=Math.exp(-dt*4);
+  bellG.setAttribute('transform',`rotate(${(Math.sin(t*45)*14*bellWig).toFixed(1)} 30 -61)`);
+
+  if(bubble){
+    const age=t-bubble.t0;
+    if(age>bubble.dur){bubble=null;bubbleG.setAttribute('display','none');}
+    else{
+      const pop=easeOutBack(Math.min(1,age/.22));
+      const fade=age>bubble.dur-.25?(bubble.dur-age)/.25:1;
+      bubbleG.setAttribute('transform',`translate(20 -158) scale(${(facing*pop).toFixed(3)} ${pop.toFixed(3)})`);
+      bubbleG.setAttribute('opacity',fade.toFixed(2));
+    }
+  }else if(t>nextIdle&&!paused){spawnBubble(pick(THOUGHTS),2.2);nextIdle=t+rand(12,21);}
+
+  // 星塵拖尾
+  if(!paused&&state.speed>0&&state.trail>0){
+    trailAcc+=dt*state.trail*.9;
+    const c=Math.cos(phiDisp),sn2=Math.sin(phiDisp);
+    while(trailAcc>1){
+      trailAcc--;
+      const lx=-52*facing*s,ly=30*s;
+      const wx=x+lx*c-ly*sn2,wy=(y-hop)+lx*sn2+ly*c;
+      const bx=-c*facing,by=-sn2*facing,sp2=rand(40,90);
+      spawnParticle(layer,wx,wy,bx*sp2+rand(-25,25),by*sp2+rand(-30,10),
+        rand(1.2,3.6),rand(.6,1.4),pick(['#ffd98a','#ffd98a','#35c7ff','#ff4fa3','#fff2d9']),0);
+    }
+  }
+  guideOff-=vlen*dt*.5;guideEl.setAttribute('stroke-dashoffset',guideOff.toFixed(1));
+
+  // 圈數與里程
+  const lapNow=Math.floor(totalAng/TAU);
+  if(lapNow>laps){
+    laps=lapNow;sndChime();toast(`🎉 完成第 ${laps} 圈！`,'ok');
+    for(let i=0;i<26;i++){
+      const a=rand(0,TAU),sp2=rand(60,190);
+      spawnParticle(layer,x,y-40,Math.cos(a)*sp2,Math.sin(a)*sp2-80,rand(2,4),rand(1,1.6),pick(CONFETTI),140);
+    }
+  }
+  statTimer+=dt;
+  if(statTimer>.2){
+    statTimer=0;
+    statSpeed.textContent=Math.round(paused?0:state.speed*88);
+    statLaps.textContent=laps;
+    statDist.textContent=Math.round(totalAng/TAU*2827).toLocaleString();
+  }
+}
+
+/* ---------- 主迴圈（單一 rAF） ---------- */
+let lastT=performance.now();
+function loop(now){
+  const dt=Math.min((now-lastT)/1000,.05);lastT=now;tNow=now/1000;
+  const t=tNow;
+  const z=state.zoom/100;
+  const dx=RM?0:6*Math.sin(t*.11),dy=RM?0:4*Math.sin(t*.07+1),dr=RM?0:.6*Math.sin(t*.05);
+  sysG.setAttribute('transform',`translate(${(600+dx).toFixed(1)} ${(430+dy).toFixed(1)}) rotate(${(-10+dr).toFixed(2)}) scale(${z.toFixed(3)})`);
+  const aA=t*.05+2,aB=-t*.03+5;
+  moonA.setAttribute('transform',`translate(${(600+470*Math.cos(aA)).toFixed(1)} ${(430+150*Math.sin(aA)).toFixed(1)})`);
+  moonB.setAttribute('transform',`translate(${(600+540*Math.cos(aB)).toFixed(1)} ${(430+190*Math.sin(aB)).toFixed(1)})`);
+  updateRide(dt,t);
+  updateParticles(dt);
+  drawSky(dt,t);
+  requestAnimationFrame(loop);
+}
+
+/* ---------- 控制台綁定 ---------- */
+const RANGES=[
+  ['speed',v=>v.toFixed(2)+'×'],['rpm',v=>Math.round(v)+' rpm'],
+  ['tilt',v=>Math.round(v)+'%'],['zoom',v=>Math.round(v)+'%'],
+  ['stars',v=>Math.round(v)+' 顆'],['glow',v=>Math.round(v)+'%'],['trail',v=>Math.round(v)+'%']
+];
+function paintRange(inp){
+  const p=(inp.value-inp.min)/(inp.max-inp.min)*100;
+  inp.style.setProperty('--fill',p+'%');
+}
+function applyGlow(){
+  blurGlow.setAttribute('stdDeviation',(4+state.glow*.3).toFixed(1));
+  glowCircle.setAttribute('opacity',(.15+state.glow*.008).toFixed(2));
+}
+function applyFrame(){
+  document.querySelectorAll('#rider .fp').forEach(p=>p.setAttribute('stroke',state.frame));
+  document.querySelectorAll('.swatch').forEach(b=>b.classList.toggle('active',b.dataset.c===state.frame));
+}
+function applyTheme(){
+  document.body.dataset.theme=state.theme;
+  starTints=THEMES[state.theme].tint;
+  starArr.forEach(s=>s.tint=pick(starTints));
+}
+function applyLooks(){
+  scarfG.style.display=state.scarf?'':'none';
+  helmetG.style.display=state.helmet?'':'none';
+  tuftG.style.display=state.helmet?'none':'';
+  beamG.style.display=state.lamp?'':'none';
+  guideEl.style.display=state.guide?'':'none';
+}
+RANGES.forEach(([k,f])=>{
+  const inp=$('in-'+k),val=$('v-'+k);
+  inp.addEventListener('input',()=>{
+    state[k]=+inp.value;val.textContent=f(state[k]);paintRange(inp);
+    if(k==='stars')syncStars();else if(k==='glow')applyGlow();else if(k==='tilt')rebuildRings();
+  });
+});
+['scarf','helmet','lamp','guide'].forEach(k=>{
+  $('in-'+k).addEventListener('change',e=>{state[k]=e.target.checked;applyLooks();uiTick();});
+});
+$('in-theme').addEventListener('change',e=>{state.theme=e.target.value;applyTheme();uiTick();toast('背景：'+THEMES[state.theme].name);});
+$('in-frame').addEventListener('input',e=>{state.frame=e.target.value;applyFrame();});
+document.querySelectorAll('.swatch').forEach(b=>b.addEventListener('click',()=>{
+  state.frame=b.dataset.c;$('in-frame').value=b.dataset.c;applyFrame();uiTick();
+}));
+
+function togglePause(){
+  paused=!paused;
+  $('pauseIcon').textContent=paused?'▶':'⏸';
+  $('pauseLabel').textContent=paused?'繼續':'暫停';
+  $('btnPause').setAttribute('aria-pressed',String(paused));uiTick();
+}
+function ringBell(){bellWig=1;sndBell();spawnBubble('叮鈴～',1.4);}
+function honk(){sndHonk();spawnBubble('呱呱！',1.5);hopV=220;}
+$('btnPause').addEventListener('click',togglePause);
+$('btnBell').addEventListener('click',ringBell);
+$('btnSound').addEventListener('click',()=>{ensureAudio();setSound(!soundOn);});
+
+function syncUI(){
+  RANGES.forEach(([k,f])=>{const inp=$('in-'+k);inp.value=state[k];$('v-'+k).textContent=f(state[k]);paintRange(inp);});
+  ['scarf','helmet','lamp','guide'].forEach(k=>$('in-'+k).checked=state[k]);
+  $('in-theme').value=state.theme;$('in-frame').value=state.frame;
+  applyTheme();applyFrame();applyGlow();rebuildRings();applyLooks();syncStars();
+}
+$('btnReset').addEventListener('click',()=>{
+  Object.assign(state,JSON.parse(JSON.stringify(DEFAULTS)));
+  paused=false;$('pauseIcon').textContent='⏸';$('pauseLabel').textContent='暫停';
+  syncUI();uiTick();toast('已重設參數');
+});
+$('btnRandom').addEventListener('click',randomize);
+function randomize(){
+  state.speed=+rand(.4,2.6).toFixed(2);state.rpm=Math.round(rand(40,110));
+  state.tilt=Math.round(rand(10,38));state.zoom=Math.round(rand(75,135));
+  state.stars=Math.round(rand(12,52))*10;state.glow=Math.round(rand(25,90));state.trail=Math.round(rand(15,90));
+  state.frame=pick(PRESETS);state.theme=pick(Object.keys(THEMES));
+  state.scarf=Math.random()<.7;state.helmet=Math.random()<.8;
+  state.lamp=Math.random()<.75;state.guide=Math.random()<.3;
+  syncUI();uiTick();toast('🎲 隨機參數！');
+  const d=$('diceIcon');d.classList.remove('rolling');void d.offsetWidth;d.classList.add('rolling');
+}
+
+/* ---------- 匯出（保留目前狀態） ---------- */
+function download(url,name){const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function cloneScene(w,h,withBg){
+  const c=scene.cloneNode(true);
+  c.setAttribute('xmlns',svgNS);c.setAttribute('width',w);c.setAttribute('height',h);
+  if(withBg){
+    const th=THEMES[state.theme];
+    const grad=document.createElementNS(svgNS,'linearGradient');
+    grad.setAttribute('id','expBg');grad.setAttribute('x1','0');grad.setAttribute('y1','0');grad.setAttribute('x2','1');grad.setAttribute('y2','1');
+    [[0,th.bg[0]],[.45,th.bg[1]],[1,th.bg[2]]].forEach(([o,col])=>{
+      const s=document.createElementNS(svgNS,'stop');s.setAttribute('offset',o);s.setAttribute('stop-color',col);grad.appendChild(s);});
+    c.querySelector('defs').appendChild(grad);
+    const r=document.createElementNS(svgNS,'rect');
+    r.setAttribute('x','0');r.setAttribute('y','0');r.setAttribute('width','1200');r.setAttribute('height','800');r.setAttribute('fill','url(#expBg)');
+    c.insertBefore(r,c.firstChild);
+  }
+  return c;
+}
+$('btnSvg').addEventListener('click',()=>{
+  try{
+    const str=new XMLSerializer().serializeToString(cloneScene(1200,800,true));
+    const url=URL.createObjectURL(new Blob([str],{type:'image/svg+xml'}));
+    download(url,'saturn-pelican.svg');setTimeout(()=>URL.revokeObjectURL(url),4000);
+    uiTick();toast('已匯出 SVG 🎉','ok');
+  }catch(e){toast('匯出失敗，請再試一次','err');}
+});
+$('btnPng').addEventListener('click',async()=>{
+  try{
+    const rect=scene.getBoundingClientRect();
+    const W=Math.round(Math.min(2200,rect.width*2)),H=Math.round(W*rect.height/rect.width);
+    const out=document.createElement('canvas');out.width=W;out.height=H;
+    const c=out.getContext('2d'),th=THEMES[state.theme];
+    const bg=c.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,th.bg[0]);bg.addColorStop(.45,th.bg[1]);bg.addColorStop(1,th.bg[2]);
+    c.fillStyle=bg;c.fillRect(0,0,W,H);
+    [[W*.25,H*.2,W*.55,th.aur[0]],[W*.8,H*.75,W*.5,th.aur[1]]].forEach(([x,y,r,col])=>{
+      const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');
+      c.fillStyle=g;c.fillRect(0,0,W,H);});
+    const k=cv.width/innerWidth;
+    c.drawImage(cv,rect.left*k,rect.top*k,rect.width*k,rect.height*k,0,0,W,H);
+    const str=new XMLSerializer().serializeToString(cloneScene(W,H,false));
+    const url=URL.createObjectURL(new Blob([str],{type:'image/svg+xml'}));
+    await new Promise((res,rej)=>{
+      const img=new Image();
+      img.onload=()=>{c.drawImage(img,0,0,W,H);res();};
+      img.onerror=rej;img.src=url;
+    });
+    URL.revokeObjectURL(url);
+    out.toBlob(b=>{
+      if(!b){toast('匯出失敗，請再試一次','err');return;}
+      const u=URL.createObjectURL(b);download(u,'saturn-pelican.png');
+      setTimeout(()=>URL.revokeObjectURL(u),4000);
+      toast('已匯出 PNG 🎉','ok');
+    },'image/png');
+    uiTick();
+  }catch(e){toast('匯出失敗，請再試一次','err');}
+});
+
+/* ---------- 場景互動 ---------- */
+scene.addEventListener('click',e=>{
+  ensureAudio();
+  if(e.target.closest('#bellHit')){ringBell();return;}
+  if(e.target.closest('#rider')){honk();return;}
+  spawnShoot(e.clientX,e.clientY);
+});
+stage.addEventListener('wheel',e=>{
+  e.preventDefault();
+  state.zoom=clamp(state.zoom+(e.deltaY<0?5:-5),60,150);
+  const inp=$('in-zoom');inp.value=state.zoom;$('v-zoom').textContent=Math.round(state.zoom)+'%';paintRange(inp);
+},{passive:false});
+window.addEventListener('pointerdown',ensureAudio);
+window.addEventListener('keydown',e=>{
+  ensureAudio();
+  const tag=e.target.tagName;
+  if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||tag==='BUTTON')return;
+  if(e.code==='Space'){e.preventDefault();togglePause();}
+  else if(e.code==='KeyB')ringBell();
+  else if(e.code==='KeyM')setSound(!soundOn);
+  else if(e.code==='KeyR')randomize();
+});
+window.addEventListener('resize',sizeCanvas);
+document.addEventListener('visibilitychange',()=>{
+  if(!AC)return;
+  if(document.hidden)AC.suspend();else if(soundOn)AC.resume();
+});
+
+/* ---------- 啟動 ---------- */
+sizeCanvas();syncUI();
+requestAnimationFrame(t=>{lastT=t;loop(t);});
+})();
+</script>
+</body>
+</html>
